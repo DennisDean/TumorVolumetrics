@@ -28,5 +28,5 @@ Optional collaboration once the application is fully developed
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0.
+This project is [licensed](LICENSE.md) under the GNU Affero General Public License v3.0.
 See the LICENSE.md file for details.
