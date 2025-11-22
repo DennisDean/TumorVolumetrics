@@ -24,6 +24,8 @@ import pandas as pd
 import numpy as np
 from typing import Optional
 
+from pkg_resources import non_empty_lines
+
 # Set up logger
 # Create logs directory if it does not exist
 os.makedirs("logs", exist_ok=True)
@@ -208,8 +210,9 @@ class tumorVolumeDataClass():
         # Check column names
         column_names_checked_out, _, _ = self.check_column_names(self.tmz_col_names, loaded_column_names)
 
-        # Summarize data
+        # Create internal summary and time series objects
         self.summarize_data_frame()
+        self.create_time_series_dict()
     @staticmethod
     def check_column_names(standard_column_names:str, file_column_names:str)->tuple[bool, list, list]:
         # Define return value
@@ -229,6 +232,36 @@ class tumorVolumeDataClass():
 
 
         return column_names_check_out, missing_column_names, columns_not_included
+
+    # Create time series dictionary
+    def create_time_series_dict(self):
+        # Preare data structure to analyze and plot individual time series
+        if self.unique_pdx_ids is None:
+            logger.info('Load data before creating time_series dictionary')
+            return
+
+        # Loop through pdx ids
+        df = self.tmz_data_df
+        for pdx in self.unique_pdx_ids:
+            # Time series
+            time_day = np.arry(df.loc[df['id'] == pdx, 'times'].values)
+            tumor_volume = np.arry(df.loc[df['id'] == pdx, 'volume'].values)
+            tumor_weight = np.arry(df.loc[df['id'] == pdx, 'body_weight'].values)
+
+            # Study variables
+            contributor = df[df['ID'] == pdx]['contributor'].iloc[0]
+            arm = df[df['ID'] == pdx]['contributor'].iloc[0]
+            study_group = df[df['ID'] == pdx]['stud_group'].iloc[0]
+            study = df[df['ID'] == pdx]['study'].iloc[0]
+            pdx_id = df[df['ID'] == pdx]['id'].iloc[0]
+            tumor = df[df['ID'] == pdx]['tumor'].iloc[0]
+            disease_type = df[df['ID'] == pdx]['disease_type'].iloc[0]
+            matched_controls = df[df['ID'] == pdx]['matched_controls'].iloc[0]
+
+            # Build and save time series object
+            tv_time_series_obj = tumorVolumeTimeSeriesClass(time_day, tumor_volume, tumor_weight,
+                contributor, arm, study_group, study, pdx_id, tumor, disease_type, matched_controls)
+            self.tumor_vol_time_series_dict[pdx] = tv_time_series_obj
 
     # Summarizing data
     def summarize_data_frame(self):
@@ -315,10 +348,8 @@ def main():
 
     # Example 1
     tvd_obj = tumorVolumeDataClass()
-    print(tvd_obj)
     tvd_obj.load_tmz_csv(test_data_tmz)
     tvd_obj.write_file_summary_text()
-    print(tvd_obj)
 
 if __name__ == '__main__':
     main()
