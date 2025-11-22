@@ -16,6 +16,11 @@ This repository is under active development and does not yet represent a stable 
 - Initial plotting support for tumor volume and weight
 - Logging framework for debugging and data validation
 
+<p align="center">    
+<img src="media/tumor_volume_and_weight.png" width="400" /><br>
+<b>Figure 1.</b> Example plot generated from TumorVolumeTimeSeriesClass.
+</p>
+
 ## Roadmap
 
 Future updates will include:

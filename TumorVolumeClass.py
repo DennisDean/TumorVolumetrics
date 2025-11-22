@@ -151,10 +151,9 @@ class TumorVolumeTimeSeriesClass():
 
     # Visualize
     def plot(self, figsize=(8, 5), volume_label="Tumor Volume (mm^3)",
-             weight_label="Tumor Weight", title=None):
+             weight_label="Weight (mg)", title=None, plot_weight=True):
         """
-        Plot tumor volume and optional tumor weight over time.
-        Left y axis is tumor volume. Right y axis is tumor weight.
+        Plot tumor volume and optional tumor weight over time in separate subplots.
 
         Parameters
         ----------
@@ -166,6 +165,8 @@ class TumorVolumeTimeSeriesClass():
             Label for the tumor weight axis.
         title : str or None
             Optional custom title. If None, a title is built from metadata.
+        plot_weight : bool
+            Whether to plot tumor weight data (if available). Default is True.
         """
 
         import matplotlib.pyplot as plt
@@ -173,22 +174,35 @@ class TumorVolumeTimeSeriesClass():
         if self.time_day is None or self.tumor_volume is None:
             raise ValueError("time_day and tumor_volume must not be None")
 
-        fig, ax1 = plt.subplots(figsize=figsize)
+        # Determine if we should plot weight
+        has_weight = (hasattr(self, "tumor_weight") and
+                      self.tumor_weight is not None and
+                      plot_weight)
 
-        # Plot tumor volume on left axis
-        ax1.plot(self.time_day, self.tumor_volume, marker="o")
+        # Create subplots with height ratio of 1:3 (weight:volume)
+        if has_weight:
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize, sharex=True,
+                                           gridspec_kw={'height_ratios': [5, 1]})
+        else:
+            fig, ax1 = plt.subplots(figsize=figsize)
+
+        # Plot weight if available and requested (on top)
+        if has_weight:
+            ax2.plot(self.time_day, self.tumor_weight, marker="s", color="black")
+            ax2.set_ylabel(weight_label)
+            ax2.minorticks_on()
+            ax2.grid(True, alpha=0.3)
+            ax2.grid(True, which='minor', alpha=0.15, linestyle=':')
+            ax2.tick_params(which='minor', labelleft=False, labelbottom=False)
+
+        # Plot tumor volume (on bottom or alone)
+        ax1.plot(self.time_day, self.tumor_volume, marker="o", color="tab:blue")
         ax1.set_xlabel("Time (days)")
         ax1.set_ylabel(volume_label)
-        ax1.tick_params(axis="y")
-
-        # Plot weight if available
-        if hasattr(self, "tumor_weight") and self.tumor_weight is not None:
-            ax2 = ax1.twinx()
-            ax2.plot(self.time_day, self.tumor_weight, color="tab:red", marker="s")
-            ax2.set_ylabel(weight_label)
-            ax2.tick_params(axis="y")
-        else:
-            ax2 = None
+        ax1.minorticks_on()
+        ax1.grid(True, alpha=0.3)
+        ax1.grid(True, which='minor', alpha=0.15, linestyle=':')
+        ax1.tick_params(which='major', labelleft=True, labelbottom=True)
 
         # Build title from metadata if not provided
         if title is None:
@@ -206,16 +220,7 @@ class TumorVolumeTimeSeriesClass():
 
             title = " | ".join(parts) if parts else "Tumor Time Series"
 
-        plt.title(title)
-
-        # Build a combined legend
-        handles = ax1.get_lines()
-        labels = ["Volume"]
-        if ax2:
-            handles += ax2.get_lines()
-            labels.append("Weight")
-
-        plt.legend(handles, labels, loc="best")
+        fig.suptitle(title)
 
         plt.tight_layout()
         plt.show()
@@ -432,11 +437,16 @@ def main():
     # test data
     test_data_tmz = Path("public_data") / "consensus" / "PVA_with_study_group.csv"
 
-    # Example 1
+    # Example 1: Create data structures
     tvd_obj = TumorVolumeDataClass()
     tvd_obj.load_tmz_csv(test_data_tmz)
     tvd_obj.write_file_summary_text()
     tvd_obj.list_time_series()
+
+    # Example 2
+    pdx_id = tvd_obj.unique_pdx_ids[0]
+    pdx_time_obj = tvd_obj.tumor_vol_time_series_dict[pdx_id]
+    pdx_time_obj.plot()
 
 if __name__ == '__main__':
     main()
