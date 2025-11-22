@@ -24,7 +24,6 @@ import pandas as pd
 import numpy as np
 from typing import Optional
 
-from pkg_resources import non_empty_lines
 
 # Set up logger
 # Create logs directory if it does not exist
@@ -112,7 +111,8 @@ def write_title_list(variable_name:str, value_list:list):
     logger.info(f"{variable_name}: {', '.join(value_list)}")
 
 # Main class
-class tumorVolumeTimeSeriesClass():
+class TumorVolumeTimeSeriesClass():
+    # Init
     def __init__(self, time_day:Optional[np.ndarray], tumor_volume:Optional[np.ndarray],
                  tumor_weigth:Optional[np.ndarray]=None, contributor:str|None = None, arm:str|None = None,
                  study_group:str|None = None, study:str|None = None, pdx_id:str|None = None,
@@ -137,17 +137,93 @@ class tumorVolumeTimeSeriesClass():
 
         # Compute variables
         self.num_points = len(time_day)
-    def write_time_series(self):
-        pass
+
+    # Summary
+    def summary(self)->str:
+        # Set values after check
+        contributor = 'Not Set' if self.contributor is None else self.contributor
+        arm = 'Not Set' if self.arm is None else self.arm
+        study = 'Not Set' if self.study is None else self.study
+        pdx_id = 'Not Set' if self.pdx_id is None else self.pdx_id
+
+        class_str = f'TV Data: pdx_id: {pdx_id}, contributor: {contributor}, arm: {arm}, study: {study}, num points: {self.num_points}'
+        return class_str
+
+    # Visualize
+    def plot(self, figsize=(8, 5), volume_label="Tumor Volume (mm^3)",
+             weight_label="Tumor Weight", title=None):
+        """
+        Plot tumor volume and optional tumor weight over time.
+        Left y axis is tumor volume. Right y axis is tumor weight.
+
+        Parameters
+        ----------
+        figsize : tuple
+            Size of the matplotlib figure.
+        volume_label : str
+            Label for the tumor volume axis.
+        weight_label : str
+            Label for the tumor weight axis.
+        title : str or None
+            Optional custom title. If None, a title is built from metadata.
+        """
+
+        import matplotlib.pyplot as plt
+
+        if self.time_day is None or self.tumor_volume is None:
+            raise ValueError("time_day and tumor_volume must not be None")
+
+        fig, ax1 = plt.subplots(figsize=figsize)
+
+        # Plot tumor volume on left axis
+        ax1.plot(self.time_day, self.tumor_volume, marker="o")
+        ax1.set_xlabel("Time (days)")
+        ax1.set_ylabel(volume_label)
+        ax1.tick_params(axis="y")
+
+        # Plot weight if available
+        if hasattr(self, "tumor_weight") and self.tumor_weight is not None:
+            ax2 = ax1.twinx()
+            ax2.plot(self.time_day, self.tumor_weight, color="tab:red", marker="s")
+            ax2.set_ylabel(weight_label)
+            ax2.tick_params(axis="y")
+        else:
+            ax2 = None
+
+        # Build title from metadata if not provided
+        if title is None:
+            parts = []
+            if self.study is not None:
+                parts.append(f"Study: {self.study}")
+            if self.study_group is not None:
+                parts.append(f"Group: {self.study_group}")
+            if self.pdx_id is not None:
+                parts.append(f"PDX ID: {self.pdx_id}")
+            if self.arm is not None:
+                parts.append(f"Arm: {self.arm}")
+            if self.contributor is not None:
+                parts.append(f"Contributor: {self.contributor}")
+
+            title = " | ".join(parts) if parts else "Tumor Time Series"
+
+        plt.title(title)
+
+        # Build a combined legend
+        handles = ax1.get_lines()
+        labels = ["Volume"]
+        if ax2:
+            handles += ax2.get_lines()
+            labels.append("Weight")
+
+        plt.legend(handles, labels, loc="best")
+
+        plt.tight_layout()
+        plt.show()
 
     # Class functions
     def __str__(self):
-        pdx_id = 'Not Set'
-        if self.pdx_id is not None:
-            pdx_id = self.pdx_id
-        class_str = f'Tumor Volume time Series: num points = {self.num_points}, pdx_id = {pdx_id}'
-        return class_str
-class tumorVolumeDataClass():
+        return self.summary()
+class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
         # Set up logger
@@ -190,7 +266,7 @@ class tumorVolumeDataClass():
         self.num_unmatched:int|None
 
         # Create time series dictionary
-        self.tumor_vol_time_series_dict:dict[str:]
+        self.tumor_vol_time_series_dict:dict[str:tumorVolumeTimeSeriesClass]|None = None
 
     # File loading
     def load_tmz_csv(self, fn):
@@ -233,37 +309,7 @@ class tumorVolumeDataClass():
 
         return column_names_check_out, missing_column_names, columns_not_included
 
-    # Create time series dictionary
-    def create_time_series_dict(self):
-        # Preare data structure to analyze and plot individual time series
-        if self.unique_pdx_ids is None:
-            logger.info('Load data before creating time_series dictionary')
-            return
-
-        # Loop through pdx ids
-        df = self.tmz_data_df
-        for pdx in self.unique_pdx_ids:
-            # Time series
-            time_day = np.arry(df.loc[df['id'] == pdx, 'times'].values)
-            tumor_volume = np.arry(df.loc[df['id'] == pdx, 'volume'].values)
-            tumor_weight = np.arry(df.loc[df['id'] == pdx, 'body_weight'].values)
-
-            # Study variables
-            contributor = df[df['ID'] == pdx]['contributor'].iloc[0]
-            arm = df[df['ID'] == pdx]['contributor'].iloc[0]
-            study_group = df[df['ID'] == pdx]['stud_group'].iloc[0]
-            study = df[df['ID'] == pdx]['study'].iloc[0]
-            pdx_id = df[df['ID'] == pdx]['id'].iloc[0]
-            tumor = df[df['ID'] == pdx]['tumor'].iloc[0]
-            disease_type = df[df['ID'] == pdx]['disease_type'].iloc[0]
-            matched_controls = df[df['ID'] == pdx]['matched_controls'].iloc[0]
-
-            # Build and save time series object
-            tv_time_series_obj = tumorVolumeTimeSeriesClass(time_day, tumor_volume, tumor_weight,
-                contributor, arm, study_group, study, pdx_id, tumor, disease_type, matched_controls)
-            self.tumor_vol_time_series_dict[pdx] = tv_time_series_obj
-
-    # Summarizing data
+    # Generate internal structures: summarize, create time sereies
     def summarize_data_frame(self):
         # Helper function
         unique = lambda x: list(set(x))
@@ -287,19 +333,49 @@ class tumorVolumeDataClass():
         self.unique_disease_types = unique(self.tmz_data_df['disease_type'])
         self.num_disease_types = len(unique(self.tmz_data_df['disease_type']))
 
-        #Supplemental variables
+        # Supplemental variables
         unmatched_str = self.unmatched_control_entry
-        unique_matched_controls =  unique(self.tmz_data_df['matched_controls'])
+        unique_matched_controls = unique(self.tmz_data_df['matched_controls'])
         self.unique_matched_controls = [entry for entry in unique_matched_controls if entry.lower() != unmatched_str]
         self.num_matched_controls = len(self.unique_matched_controls)
         self.num_unmatched = len(unique_matched_controls) - self.num_matched_controls
 
         # sort lists
-        summary_lists = [ self.unique_contributors, self.unique_arms, self.unique_studies,
-                          self.unique_pdx_ids, self.unique_pdxs, self.unique_disease_types,
-                          self.unique_matched_controls]
+        summary_lists = [self.unique_contributors, self.unique_arms, self.unique_studies,
+                         self.unique_pdx_ids, self.unique_pdxs, self.unique_disease_types,
+                         self.unique_matched_controls]
         for slist in summary_lists:
-            slist.sort(key = lambda x: pad_all_numbers(x, min_width=4))
+            slist.sort(key=lambda x: pad_all_numbers(x, min_width=4))
+    def create_time_series_dict(self):
+        # Preare data structure to analyze and plot individual time series
+        if self.unique_pdx_ids is None:
+            logger.info('Load data before creating time_series dictionary')
+            return
+
+        # Loop through pdx ids
+        df = self.tmz_data_df
+        tumor_vol_time_series_dict = {}
+        for pdx in self.unique_pdx_ids:
+            # Time series
+            time_day = np.array(df.loc[df['id'] == pdx, 'times'].values)
+            tumor_volume = np.array(df.loc[df['id'] == pdx, 'volume'].values)
+            tumor_weight = np.array(df.loc[df['id'] == pdx, 'body_weight'].values)
+
+            # Study variables
+            contributor = df[df['id'] == pdx]['contributor'].iloc[0]
+            arm = df[df['id'] == pdx]['arms'].iloc[0]
+            study_group = df[df['id'] == pdx]['study_group'].iloc[0]
+            study = df[df['id'] == pdx]['study'].iloc[0]
+            pdx_id = df[df['id'] == pdx]['id'].iloc[0]
+            tumor = df[df['id'] == pdx]['tumor'].iloc[0]
+            disease_type = df[df['id'] == pdx]['disease_type'].iloc[0]
+            matched_controls = df[df['id'] == pdx]['matched_controls'].iloc[0]
+
+            # Build and save time series object
+            tv_time_series_obj = TumorVolumeTimeSeriesClass(time_day, tumor_volume, tumor_weight,
+                contributor, arm, study_group, study, pdx_id, tumor, disease_type, matched_controls)
+            tumor_vol_time_series_dict[pdx] = tv_time_series_obj
+        self.tumor_vol_time_series_dict = tumor_vol_time_series_dict
 
     # Command line summary
     def write_file_summary_text(self):
@@ -332,6 +408,15 @@ class tumorVolumeDataClass():
         column_print(self.unique_matched_controls, number_of_columns=5)
         logger.info(f'num_matched_controls = {self.num_matched_controls}')
         logger.info(f'num_unmatched = {self.num_unmatched}')
+    def list_time_series(self):
+        # check if file is loaded
+        if self.unique_pdx_ids is None:
+            logger.info('')
+        # Write one line time series description to command line
+        logger.info('')
+        for pdx in self.unique_pdx_ids:
+            tv_time_series_obj = self.tumor_vol_time_series_dict[pdx]
+            logger.info(tv_time_series_obj.summary())
 
     # Class functions
     def __str__(self):
@@ -341,15 +426,17 @@ class tumorVolumeDataClass():
             file_str = self.tmz_data_fn
             number_of_points = self.num_of_data_points
         return f'Tumor Volume Data Class, num of data points = {number_of_points}, file: {file_str} '
-# Test application
+
+# Test tumor volume classes
 def main():
     # test data
     test_data_tmz = Path("public_data") / "consensus" / "PVA_with_study_group.csv"
 
     # Example 1
-    tvd_obj = tumorVolumeDataClass()
+    tvd_obj = TumorVolumeDataClass()
     tvd_obj.load_tmz_csv(test_data_tmz)
     tvd_obj.write_file_summary_text()
+    tvd_obj.list_time_series()
 
 if __name__ == '__main__':
     main()
