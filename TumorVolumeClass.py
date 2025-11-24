@@ -14,12 +14,14 @@
 # Import modules
 
 # Utilities
+import copy
 import logging
 import os
 import re
 from pathlib import Path
 
 # Data
+import sorted
 import pandas as pd
 import numpy as np
 from typing import Optional
@@ -228,6 +230,166 @@ class TumorVolumeTimeSeriesClass():
     # Class functions
     def __str__(self):
         return self.summary()
+class TumorVolumeStudyClass():
+    # Data structure for storing, analysisng, and plotting study data
+    def __init__(self, study_id:str, arm_col:list[str], id_col:list[str], tumor_col:list[str],
+                      study_tv_time_dict:dict[str, TumorVolumeTimeSeriesClass]):
+
+        # Create dictionary for holding data
+        self.study_id:str = study_id
+        self.arm_col = arm_col.copy()
+        self.id_col = id_col.copy()
+        self.tumor_col = tumor_col.copy()
+        self.study_tv_time_dict = copy.deepcopy(study_tv_time_dict)
+        self.study_arms_dict:dict[str,list]|None = None
+
+        # Summarize values
+        self.unique_arms = list(set(self.arm_col))
+        self.unique_ids = list(set(self.id_col))
+
+        # Create arms diction
+        study_arms_dict = {}
+        print(id_col[arm_col==self.unique_arms[0]])
+        for arm in self.unique_arms:
+            arm_ids = list(set([id_col[i] for i, id in enumerate(arm_col) if id == arm]))
+            study_arms_dict[arm] = arm_ids
+        print(study_arms_dict)
+        self.study_arms_dict = study_arms_dict
+
+    # Summary
+    def summarize(self):
+        # Write summary to log file
+
+        # Write unique lists
+        logger.info('')
+        logger.info(f'Study id: {self.study_id}')
+        unique_arm_str = f'unique_arms: ' + ', '.join(self.unique_arms)
+        logger.info(unique_arm_str)
+        unique_ids_str = f'unique_ids: ' + ', '.join(self.unique_ids)
+        logger.info(unique_ids_str)
+        logger.info(f'Arm:')
+        for arm in self.unique_arms:
+            print(self.study_arms_dict[arm])
+            logger.info(f'     {arm}: ' + ', '.join(self.study_arms_dict[arm]))
+
+    # Visualization
+    def plot_spider(self, figsize=(10, 6),
+                    volume_label="Tumor Volume (mm^3)",
+                    weight_label="Weight (mg)",
+                    title=None,
+                    plot_weight=True):
+        """
+        Spider plot for a study containing multiple arms and multiple tumor-volume
+        time series in each arm.
+
+        Each arm is plotted in a different color. Within an arm, each time series
+        gets its own line in the same color.
+
+        If tumor weight is available, a second subplot is created and visibility
+        controlled by the plot_weight flag.
+        """
+
+        import matplotlib.pyplot as plt
+        import itertools
+
+        if self.study_tv_time_dict is None or len(self.study_tv_time_dict) == 0:
+            raise ValueError("No time-series data available for the study.")
+
+        # Determine whether we should plot weight
+        has_any_weight = any(
+            hasattr(ts, "tumor_weight") and ts.tumor_weight is not None
+            for ts in self.study_tv_time_dict.values()
+        )
+        has_weight = has_any_weight and plot_weight
+
+        # Assign colors to arms
+        color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        arm_colors = {arm: color_cycle[i % len(color_cycle)]
+                      for i, arm in enumerate(self.unique_arms)}
+
+        # Create subplots
+        if has_weight:
+            fig, (ax_vol, ax_w) = plt.subplots(
+                2, 1, figsize=figsize, sharex=True,
+                gridspec_kw={'height_ratios': [4, 1]}
+            )
+        else:
+            fig, ax_vol = plt.subplots(figsize=figsize)
+            ax_w = None
+
+        # --- Plot VOLUME DATA ---
+        for arm in self.unique_arms:
+            color = arm_colors[arm]
+            ids_in_arm = self.study_arms_dict[arm]
+
+            for mouse_id in ids_in_arm:
+                if mouse_id not in self.study_tv_time_dict:
+                    continue
+
+                ts = self.study_tv_time_dict[mouse_id]
+
+                if ts.time_day is None or ts.tumor_volume is None:
+                    continue  # skip incomplete data
+
+                ax_vol.plot(ts.time_day,
+                            ts.tumor_volume,
+                            marker="o",
+                            alpha=0.8,
+                            label=f"{arm} - {mouse_id}",
+                            color=color)
+
+        ax_vol.set_ylabel(volume_label)
+        ax_vol.set_xlabel("Time (days)")
+        ax_vol.grid(True, alpha=0.3)
+        ax_vol.minorticks_on()
+        ax_vol.grid(True, which='minor', alpha=0.15, linestyle=':')
+
+        # Only one legend per arm: use unique arms instead of all mouse IDs
+        handles = []
+        labels = []
+        for arm, color in arm_colors.items():
+            h, = ax_vol.plot([], [], color=color, label=arm)
+            handles.append(h)
+            labels.append(arm)
+        ax_vol.legend(handles, labels, title="Arms")
+
+        # --- Plot WEIGHT DATA ---
+        if has_weight:
+            for arm in self.unique_arms:
+                color = arm_colors[arm]
+                ids_in_arm = self.study_arms_dict[arm]
+
+                for mouse_id in ids_in_arm:
+                    if mouse_id not in self.study_tv_time_dict:
+                        continue
+
+                    ts = self.study_tv_time_dict[mouse_id]
+
+                    if (not hasattr(ts, "tumor_weight") or
+                            ts.tumor_weight is None):
+                        continue  # no weight for this time series
+
+                    ax_w.plot(ts.time_day,
+                              ts.tumor_weight,
+                              marker="s",
+                              alpha=0.8,
+                              color=color)
+
+            ax_w.set_ylabel(weight_label)
+            ax_w.grid(True, alpha=0.3)
+            ax_w.minorticks_on()
+            ax_w.grid(True, which='minor', alpha=0.15, linestyle=':')
+            ax_w.tick_params(which='minor', labelleft=False, labelbottom=False)
+
+        # --- Title Construction ---
+        if title is None:
+            title = f"Tumor Volume Study: {self.study_id}"
+
+        fig.suptitle(title)
+        plt.tight_layout()
+        plt.show()
+
+
 class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
@@ -271,7 +433,8 @@ class TumorVolumeDataClass():
         self.num_unmatched:int|None
 
         # Create time series dictionary
-        self.tumor_vol_time_series_dict:dict[str:tumorVolumeTimeSeriesClass]|None = None
+        self.tumor_vol_time_series_dict:dict[str:TumorVolumeTimeSeriesClass]|None = None
+        self.tumor_vol_study_dict:dict[str:TumorVolumeStudyClass|None] = None
 
     # File loading
     def load_tmz_csv(self, fn):
@@ -352,7 +515,9 @@ class TumorVolumeDataClass():
         for slist in summary_lists:
             slist.sort(key=lambda x: pad_all_numbers(x, min_width=4))
     def create_time_series_dict(self):
-        # Preare data structure to analyze and plot individual time series
+        # Prepare data structure to analyze and plot individual time series
+
+        # Check if data is avaialble
         if self.unique_pdx_ids is None:
             logger.info('Load data before creating time_series dictionary')
             return
@@ -381,6 +546,33 @@ class TumorVolumeDataClass():
                 contributor, arm, study_group, study, pdx_id, tumor, disease_type, matched_controls)
             tumor_vol_time_series_dict[pdx] = tv_time_series_obj
         self.tumor_vol_time_series_dict = tumor_vol_time_series_dict
+    def create_study_dict(self):
+        # Prepare if study data structure for analysis and visualization
+
+        # Check if data is available
+        if self.unique_studies is None:
+            logger.info('Can not generate study dictionary. Load data file first.')
+            return
+
+        # Create dictionary
+        tumor_vol_study_dict = {}
+        df = self.tmz_data_df
+        for study in self.unique_studies:
+            # Get information to create study class
+            arms_col = list(df.loc[df['study'] == study, 'arms'].values)
+            id_col = list(df.loc[df['study'] == study, 'id'].values)
+            tumor_col = list(df.loc[df['study'] == study, 'tumor'].values)
+
+            # Create a study specific time series dictionary
+            unique_study_ids = list(set(id_col))
+            study_tv_time_dict = { id:self.tumor_vol_time_series_dict[id] for id in unique_study_ids}
+
+            # Create study object
+            tv_study_obj = TumorVolumeStudyClass(study, arms_col, id_col, tumor_col, study_tv_time_dict)
+            tumor_vol_study_dict[study] = tv_study_obj
+
+        # Store study dictionary
+        self.tumor_vol_study_dict = tumor_vol_study_dict
 
     # Command line summary
     def write_file_summary_text(self):
@@ -422,6 +614,18 @@ class TumorVolumeDataClass():
         for pdx in self.unique_pdx_ids:
             tv_time_series_obj = self.tumor_vol_time_series_dict[pdx]
             logger.info(tv_time_series_obj.summary())
+    def write_study_summary(self):
+
+        # Write study summary header
+        logger.info('')
+        logger.info('')
+        logger.info(f'Data file: {self.tmz_data_fn}')
+        logger.info(f'Study ids: ' + ', '.join(self.unique_studies))
+
+        # Write study summary to log file
+        for study in self.unique_studies:
+            study_obj = self.tumor_vol_study_dict[study]
+            study_obj.summarize()
 
     # Class functions
     def __str__(self):
@@ -447,6 +651,17 @@ def main():
     pdx_id = tvd_obj.unique_pdx_ids[0]
     pdx_time_obj = tvd_obj.tumor_vol_time_series_dict[pdx_id]
     pdx_time_obj.plot()
+    pdx_time_obj.plot(plot_weight=False)
+
+    # Example 3
+    tvd_obj.create_study_dict()
+    tvd_obj.write_study_summary()
+
+    # Example 4
+    first_study = tvd_obj.unique_studies[0]
+    first_study_obj = tvd_obj.tumor_vol_study_dict[first_study]
+    first_study_obj.plot_spider()
+
 
 if __name__ == '__main__':
     main()
