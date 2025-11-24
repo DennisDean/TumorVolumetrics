@@ -121,7 +121,8 @@ class TumorVolumeTimeSeriesClass():
     def __init__(self, time_day:Optional[np.ndarray], tumor_volume:Optional[np.ndarray],
                  tumor_weigth:Optional[np.ndarray]=None, contributor:str|None = None, arm:str|None = None,
                  study_group:str|None = None, study:str|None = None, pdx_id:str|None = None,
-                 tumor:str|None=None, disease_type:str|None=None, matched_controls:str|None=None):
+                 tumor:str|None=None, disease_type:str|None=None, matched_controls:str|None=None,
+                 volume_units="mm^3", weight_units="mg"):
 
         # Class variables
         # Tumor volume time series variables
@@ -129,6 +130,10 @@ class TumorVolumeTimeSeriesClass():
         self.tumor_volume:Optional[np.ndarray] = tumor_volume.copy()
         if tumor_weigth is not None:
             self.tumor_weight:Optional[np.ndarray] = tumor_weigth.copy()
+
+        # Save units
+        self.volume_units = volume_units
+        self.weight_units = weight_units
 
         # Descriptions
         self.contributor:str|None = contributor
@@ -143,6 +148,35 @@ class TumorVolumeTimeSeriesClass():
         # Compute variables
         self.num_points = len(time_day)
 
+        # Transforms
+        self.tv_transform_options = ["No Transform", "Percent Change", "Prop. Vol. Change", "Percent Prgress/Regress"]
+        self.tv_transform_dict = {"No Transform":self.tv_to_tv,
+                                  "Percent Change":self.tv_percent_change,
+                                  "Prop. Vol. Change":self.tv_proportion_volume_change,
+                                  "Percent Prgress/Regress":self.tv_percent_prog_regres_endpoint}
+        self.tv_transform_str = "No Transform"
+        self.tv_transform_f = self.tv_to_tv
+
+    # Transform functions
+    def tv_to_tv(self, tumor_volume_data_list:np.ndarray)->np.ndarray:
+        tv_to_tv:np.ndarray  = tumor_volume_data_list
+        return tv_to_tv
+    def tv_percent_change(self, tumor_volume_data_list:np.ndarray)->np.ndarray:
+        tv_per_change:np.ndarray  = tumor_volume_data_list
+        vo = tv_per_change[0]
+        tv_per_change = 100.0*(tv_per_change-vo)/vo
+        return tv_per_change
+    def tv_proportion_volume_change(self, tumor_volume_data_list:np.ndarray)->np.ndarray:
+        log2_change = tumor_volume_data_list.copy()
+        vo = log2_change[0]  # baseline volume
+        log2_change =  np.log2(log2_change/vo)
+        return log2_change
+    def tv_percent_prog_regres_endpoint(self, tumor_volume_data_list:np.ndarray)->np.ndarray:
+        pct_change = tumor_volume_data_list.copy()
+        vo = pct_change[0]
+        pct_change = ((pct_change - vo) / vo) * 100
+        return pct_change
+
     # Summary
     def summary(self)->str:
         # Set values after check
@@ -155,8 +189,9 @@ class TumorVolumeTimeSeriesClass():
         return class_str
 
     # Visualize
-    def plot(self, figsize=(8, 5), volume_label="Tumor Volume (mm^3)",
-             weight_label="Weight (mg)", title=None, plot_weight=True):
+    def plot(self, figsize=(8, 5), volume_label="Tumor Volume", volume_units="mm^3",
+             weight_label="Weight", weight_units="mg", title=None, plot_weight=True,
+             tv_transform_str="No Transform"):
         """
         Plot tumor volume and optional tumor weight over time in separate subplots.
 
@@ -193,17 +228,25 @@ class TumorVolumeTimeSeriesClass():
 
         # Plot weight if available and requested (on top)
         if has_weight:
+            weight_label_str = f'{weight_label} ({weight_units})'
             ax2.plot(self.time_day, self.tumor_weight, marker="s", color="black")
-            ax2.set_ylabel(weight_label)
+            ax2.set_ylabel(weight_label_str)
             ax2.minorticks_on()
             ax2.grid(True, alpha=0.3)
             ax2.grid(True, which='minor', alpha=0.15, linestyle=':')
             ax2.tick_params(which='minor', labelleft=False, labelbottom=False)
 
+        # Get data and transform if required
+        data_transform_f = self.tv_transform_dict[tv_transform_str]
+        tv_local_data = data_transform_f(self.tumor_volume)
+
         # Plot tumor volume (on bottom or alone)
-        ax1.plot(self.time_day, self.tumor_volume, marker="o", color="tab:blue")
+        ax1.plot(self.time_day, tv_local_data, marker="o", color="tab:blue")
         ax1.set_xlabel("Time (days)")
-        ax1.set_ylabel(volume_label)
+        volumelabel_str = f"{volume_label} ({volume_units})"
+        if not volume_units:
+            volumelabel_str = f"{volume_label}"
+        ax1.set_ylabel(volumelabel_str)
         ax1.minorticks_on()
         ax1.grid(True, alpha=0.3)
         ax1.grid(True, which='minor', alpha=0.15, linestyle=':')
@@ -252,11 +295,9 @@ class TumorVolumeStudyClass():
 
         # Create arms diction
         study_arms_dict = {}
-        print(id_col[arm_col==self.unique_arms[0]])
         for arm in self.unique_arms:
             arm_ids = list(set([id_col[i] for i, id in enumerate(arm_col) if id == arm]))
             study_arms_dict[arm] = arm_ids
-        print(study_arms_dict)
         self.study_arms_dict = study_arms_dict
 
     # Summary
@@ -272,18 +313,21 @@ class TumorVolumeStudyClass():
         logger.info(unique_ids_str)
         logger.info(f'Arm:')
         for arm in self.unique_arms:
-            print(self.study_arms_dict[arm])
             logger.info(f'     {arm}: ' + ', '.join(self.study_arms_dict[arm]))
 
     # Visualization
     def plot_spider(self, figsize=(10, 6),
-                    volume_label="Tumor Volume (mm^3)",
-                    weight_label="Weight (mg)",
+                    volume_label="Tumor Volume",
+                    volume_units="mm^3",
+                    weight_label="Weight",
+                    weight_units="mg",
                     title=None,
                     plot_weight=True,
                     show_individual=True,
                     show_aggregate=True,
-                    aggregate_sem=True):
+                    aggregate_sem=True,
+                    error_bars=False,
+                    aggregate_marker=None):
         """
         Spider plot for tumor volume study data with optional aggregation curves.
 
@@ -294,7 +338,12 @@ class TumorVolumeStudyClass():
         show_aggregate : bool
             Plot per-arm mean curves.
         aggregate_sem : bool
-            Shade SEM around the mean curves.
+            Shade SEM around the mean curves (ignored if error_bars=True).
+        error_bars : bool
+            Display error bars at each time point instead of shaded region.
+        aggregate_marker : str or None
+            Marker style for aggregate plots (e.g., 'o', 's', '^', 'D').
+            If None, no markers are shown on aggregate lines.
         plot_weight : bool
             Whether to include weight subplot.
         """
@@ -325,10 +374,9 @@ class TumorVolumeStudyClass():
             fig, ax_vol = plt.subplots(figsize=figsize)
             ax_w = None
 
-        # Storage for aggregation
-        arm_time = {arm: [] for arm in self.unique_arms}
-        arm_vol = {arm: [] for arm in self.unique_arms}
-        arm_wgt = {arm: [] for arm in self.unique_arms}
+        # Storage for aggregation - now using dictionaries keyed by time point
+        arm_time_vol = {arm: {} for arm in self.unique_arms}
+        arm_time_wgt = {arm: {} for arm in self.unique_arms}
 
         # ================================
         # 1. PLOT INDIVIDUAL TIME SERIES
@@ -342,9 +390,11 @@ class TumorVolumeStudyClass():
                 if ts is None or ts.time_day is None or ts.tumor_volume is None:
                     continue
 
-                # Store for aggregation
-                arm_time[arm].append(np.array(ts.time_day))
-                arm_vol[arm].append(np.array(ts.tumor_volume))
+                # Store for aggregation by time point
+                for t, v in zip(ts.time_day, ts.tumor_volume):
+                    if t not in arm_time_vol[arm]:
+                        arm_time_vol[arm][t] = []
+                    arm_time_vol[arm][t].append(v)
 
                 # Spider (volume)
                 if show_individual:
@@ -357,7 +407,10 @@ class TumorVolumeStudyClass():
 
                 # Weight
                 if has_weight and hasattr(ts, "tumor_weight") and ts.tumor_weight is not None:
-                    arm_wgt[arm].append(np.array(ts.tumor_weight))
+                    for t, w in zip(ts.time_day, ts.tumor_weight):
+                        if t not in arm_time_wgt[arm]:
+                            arm_time_wgt[arm][t] = []
+                        arm_time_wgt[arm][t].append(w)
 
                     if show_individual:
                         ax_w.plot(ts.time_day,
@@ -374,51 +427,95 @@ class TumorVolumeStudyClass():
             for arm in self.unique_arms:
                 color = arm_colors[arm]
 
-                if len(arm_vol[arm]) == 0:
+                if len(arm_time_vol[arm]) == 0:
                     continue
 
-                # Reference time vector
-                tvec = arm_time[arm][0]
+                # Sort time points and compute statistics
+                time_points = sorted(arm_time_vol[arm].keys())
+                mean_vol = []
+                sem_vol = []
 
-                # Stack (n_mice × n_timepoints)
-                vol_stack = np.vstack(arm_vol[arm])
-                mean_vol = np.mean(vol_stack, axis=0)
-                sem_vol = sem(vol_stack, axis=0) if aggregate_sem else None
+                for t in time_points:
+                    values = np.array(arm_time_vol[arm][t])
+                    mean_vol.append(np.mean(values))
+                    if aggregate_sem:
+                        sem_vol.append(sem(values))
 
-                # Mean tumor volume curve
-                ax_vol.plot(tvec, mean_vol,
-                            linewidth=2.8,
-                            color=color)
+                mean_vol = np.array(mean_vol)
+                sem_vol = np.array(sem_vol) if aggregate_sem else None
 
-                # SEM shading
-                if aggregate_sem and sem_vol is not None:
-                    ax_vol.fill_between(tvec,
-                                        mean_vol - sem_vol,
-                                        mean_vol + sem_vol,
-                                        color=color,
-                                        alpha=0.25)
+                # Plot mean tumor volume curve
+                if error_bars and aggregate_sem:
+                    # Error bars style (always with markers)
+                    ax_vol.errorbar(time_points, mean_vol,
+                                    yerr=sem_vol,
+                                    marker='o' if aggregate_marker is None else aggregate_marker,
+                                    markersize=6,
+                                    linewidth=2.8,
+                                    capsize=4,
+                                    capthick=2,
+                                    color=color)
+                else:
+                    # Line style (with optional markers)
+                    ax_vol.plot(time_points, mean_vol,
+                                marker=aggregate_marker,
+                                markersize=6 if aggregate_marker else None,
+                                linewidth=2.8,
+                                color=color)
+
+                    # SEM shading
+                    if aggregate_sem and sem_vol is not None:
+                        ax_vol.fill_between(time_points,
+                                            mean_vol - sem_vol,
+                                            mean_vol + sem_vol,
+                                            color=color,
+                                            alpha=0.25)
 
                 # Weight aggregation
-                if has_weight and len(arm_wgt[arm]) > 0:
-                    wstack = np.vstack(arm_wgt[arm])
-                    mean_w = np.mean(wstack, axis=0)
-                    sem_w = sem(wstack, axis=0) if aggregate_sem else None
+                if has_weight and len(arm_time_wgt[arm]) > 0:
+                    time_points_w = sorted(arm_time_wgt[arm].keys())
+                    mean_w = []
+                    sem_w = []
 
-                    ax_w.plot(tvec, mean_w,
-                              linewidth=2.8,
-                              color=color)
+                    for t in time_points_w:
+                        values = np.array(arm_time_wgt[arm][t])
+                        mean_w.append(np.mean(values))
+                        if aggregate_sem:
+                            sem_w.append(sem(values))
 
-                    if aggregate_sem and sem_w is not None:
-                        ax_w.fill_between(tvec,
-                                          mean_w - sem_w,
-                                          mean_w + sem_w,
-                                          color=color,
-                                          alpha=0.25)
+                    mean_w = np.array(mean_w)
+                    sem_w = np.array(sem_w) if aggregate_sem else None
+
+                    if error_bars and aggregate_sem:
+                        # Error bars style (always with markers)
+                        ax_w.errorbar(time_points_w, mean_w,
+                                      yerr=sem_w,
+                                      marker='s' if aggregate_marker is None else aggregate_marker,
+                                      markersize=6,
+                                      linewidth=2.8,
+                                      capsize=4,
+                                      capthick=2,
+                                      color=color)
+                    else:
+                        # Line style (with optional markers)
+                        ax_w.plot(time_points_w, mean_w,
+                                  marker=aggregate_marker,
+                                  markersize=6 if aggregate_marker else None,
+                                  linewidth=2.8,
+                                  color=color)
+
+                        if aggregate_sem and sem_w is not None:
+                            ax_w.fill_between(time_points_w,
+                                              mean_w - sem_w,
+                                              mean_w + sem_w,
+                                              color=color,
+                                              alpha=0.25)
 
         # ================================
         # 3. AXIS FORMATTING
         # ================================
-        ax_vol.set_ylabel(volume_label)
+        volume_label_str = f"{volume_label} ({volume_units})"
+        ax_vol.set_ylabel(volume_label_str)
         ax_vol.set_xlabel("Time (days)")
         ax_vol.minorticks_on()
         ax_vol.grid(True, alpha=0.3)
@@ -435,7 +532,8 @@ class TumorVolumeStudyClass():
 
         # Weight subplot formatting
         if has_weight:
-            ax_w.set_ylabel(weight_label)
+            weight_label_str = f"{weight_label} ({weight_units})"
+            ax_w.set_ylabel(weight_label_str)
             ax_w.minorticks_on()
             ax_w.grid(True, alpha=0.3)
             ax_w.grid(True, which='minor', linestyle=':', alpha=0.15)
@@ -449,8 +547,6 @@ class TumorVolumeStudyClass():
         fig.suptitle(title)
         plt.tight_layout()
         plt.show()
-
-
 class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
@@ -459,6 +555,8 @@ class TumorVolumeDataClass():
 
         # tumor volume
         self.tumor_volume_data_fn:str|None = None
+        self.volume_units:str|None = None
+        self.weight_units:str|None = None
 
         # data formats
         self.tmz_col_names:list|None  = ['contributor', 'arms', 'times', 'volume', 'study_group',
@@ -498,7 +596,7 @@ class TumorVolumeDataClass():
         self.tumor_vol_study_dict:dict[str:TumorVolumeStudyClass|None] = None
 
     # File loading
-    def load_tmz_csv(self, fn):
+    def load_tmz_csv(self, fn, volume_units='mm^3', weight_units='mg'):
         try:
             df = pd.read_csv(fn)
             self.tmz_data_df = df
@@ -506,6 +604,10 @@ class TumorVolumeDataClass():
         except FileNotFoundError:
             logger.info(f'Could not load the cnv file: {fn}')
             return
+
+        # Store units
+        self.volume_units = volume_units
+        self.weight_units = weight_units
 
         # create column rename dictionary
         column_rename_dict = {col_nm: sanitize_column_names(col_nm) for col_nm in df.columns}
@@ -592,6 +694,10 @@ class TumorVolumeDataClass():
             tumor_volume = np.array(df.loc[df['id'] == pdx, 'volume'].values)
             tumor_weight = np.array(df.loc[df['id'] == pdx, 'body_weight'].values)
 
+            # Time Series Unit
+            volume_units = self.volume_units
+            weight_units = self.weight_units
+
             # Study variables
             contributor = df[df['id'] == pdx]['contributor'].iloc[0]
             arm = df[df['id'] == pdx]['arms'].iloc[0]
@@ -604,7 +710,8 @@ class TumorVolumeDataClass():
 
             # Build and save time series object
             tv_time_series_obj = TumorVolumeTimeSeriesClass(time_day, tumor_volume, tumor_weight,
-                contributor, arm, study_group, study, pdx_id, tumor, disease_type, matched_controls)
+                contributor, arm, study_group, study, pdx_id, tumor, disease_type, matched_controls,
+                volume_units=volume_units, weight_units=weight_units)
             tumor_vol_time_series_dict[pdx] = tv_time_series_obj
         self.tumor_vol_time_series_dict = tumor_vol_time_series_dict
     def create_study_dict(self):
@@ -715,15 +822,27 @@ def main():
     pdx_time_obj.plot(plot_weight=False)
 
     # Example 3
+    pdx_time_obj.plot(plot_weight=False, tv_transform_str="No Transform", volume_label = "Tumor Volume", volume_units = "mm^3")
+    pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Change", volume_label = "Tumor Volume Change", volume_units = "%")
+    pdx_time_obj.plot(plot_weight=False, tv_transform_str="Prop. Vol. Change", volume_label = "Log2(Proportion Volume Change)", volume_units = "")
+    pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Prgress/Regress", volume_label = "% Progression/Regression Endpoint", volume_units = "")
+
+    return
+
+    # Example 4
     tvd_obj.create_study_dict()
     tvd_obj.write_study_summary()
 
-    # Example 4
-    first_study = tvd_obj.unique_studies[0]
-    first_study_obj = tvd_obj.tumor_vol_study_dict[first_study]
-    first_study_obj.plot_spider(plot_weight = False, show_individual=True, show_aggregate=False, aggregate_sem=False)
-    first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False)
-    first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=False)
-    first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=True)
+    # Example 5
+    aggregate_marker = 'o'
+    for study in tvd_obj.unique_studies:
+        first_study_obj = tvd_obj.tumor_vol_study_dict[study]
+        first_study_obj.plot_spider(plot_weight = False, show_individual=True, show_aggregate=False, aggregate_sem=False)
+        first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False)
+        first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=False, aggregate_marker=aggregate_marker)
+        first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=True, aggregate_marker=aggregate_marker)
+        first_study_obj.plot_spider(show_individual=False, show_aggregate=True, aggregate_sem=True,
+                                    aggregate_marker=aggregate_marker, error_bars=True)
+
 if __name__ == '__main__':
     main()
