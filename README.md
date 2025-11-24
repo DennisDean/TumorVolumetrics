@@ -16,9 +16,30 @@ This repository is under active development and does not yet represent a stable 
 - Initial plotting support for tumor volume and weight
 - Logging framework for debugging and data validation
 
+
+<p align="center">    
+<img src="media/tumor_volume.png" width="600" /><br>
+<b>Figure 1.</b> Example tumor volume plot.
+</p>
+
 <p align="center">    
 <img src="media/tumor_volume_and_weight.png" width="400" /><br>
-<b>Figure 1.</b> Example plot generated from TumorVolumeTimeSeriesClass.
+<b>Figure 2.</b> Example tumor volume plot with weights subplot.
+</p>
+
+<p align="center">    
+<img src="media/spider.png" width="600" /><br>
+<b>Figure 3.</b> Tumor volume spider plot.
+</p>
+
+<p align="center">    
+<img src="media/spider_with_weights.png" width="400" /><br>
+<b>Figure 4.</b> Tumor volume spider plots with weights shown as a subplot.
+</p>
+
+<p align="center">    
+<img src="media/tumor_volume_average_with_std.png" width="400" /><br>
+<b>Figure 5.</b> Average tumor volume curves with standard develation shown.
 </p>
 
 ## Roadmap

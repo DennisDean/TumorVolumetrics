@@ -21,10 +21,13 @@ import re
 from pathlib import Path
 
 # Data
-import sorted
 import pandas as pd
 import numpy as np
+from scipy.stats import sem
 from typing import Optional
+
+# Visualization
+import matplotlib.pyplot as plt
 
 
 # Set up logger
@@ -277,37 +280,42 @@ class TumorVolumeStudyClass():
                     volume_label="Tumor Volume (mm^3)",
                     weight_label="Weight (mg)",
                     title=None,
-                    plot_weight=True):
+                    plot_weight=True,
+                    show_individual=True,
+                    show_aggregate=True,
+                    aggregate_sem=True):
         """
-        Spider plot for a study containing multiple arms and multiple tumor-volume
-        time series in each arm.
+        Spider plot for tumor volume study data with optional aggregation curves.
 
-        Each arm is plotted in a different color. Within an arm, each time series
-        gets its own line in the same color.
-
-        If tumor weight is available, a second subplot is created and visibility
-        controlled by the plot_weight flag.
+        Parameters
+        ----------
+        show_individual : bool
+            Plot each individual mouse time series (spider lines).
+        show_aggregate : bool
+            Plot per-arm mean curves.
+        aggregate_sem : bool
+            Shade SEM around the mean curves.
+        plot_weight : bool
+            Whether to include weight subplot.
         """
 
-        import matplotlib.pyplot as plt
-        import itertools
+        # Validate data
+        if not self.study_tv_time_dict:
+            raise ValueError("No time-series data available.")
 
-        if self.study_tv_time_dict is None or len(self.study_tv_time_dict) == 0:
-            raise ValueError("No time-series data available for the study.")
-
-        # Determine whether we should plot weight
-        has_any_weight = any(
+        # Determine if any time-series contains weight
+        has_weight_data = any(
             hasattr(ts, "tumor_weight") and ts.tumor_weight is not None
             for ts in self.study_tv_time_dict.values()
         )
-        has_weight = has_any_weight and plot_weight
+        has_weight = plot_weight and has_weight_data
 
-        # Assign colors to arms
+        # Color per arm
         color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
         arm_colors = {arm: color_cycle[i % len(color_cycle)]
                       for i, arm in enumerate(self.unique_arms)}
 
-        # Create subplots
+        # Create figure
         if has_weight:
             fig, (ax_vol, ax_w) = plt.subplots(
                 2, 1, figsize=figsize, sharex=True,
@@ -317,71 +325,124 @@ class TumorVolumeStudyClass():
             fig, ax_vol = plt.subplots(figsize=figsize)
             ax_w = None
 
-        # --- Plot VOLUME DATA ---
+        # Storage for aggregation
+        arm_time = {arm: [] for arm in self.unique_arms}
+        arm_vol = {arm: [] for arm in self.unique_arms}
+        arm_wgt = {arm: [] for arm in self.unique_arms}
+
+        # ================================
+        # 1. PLOT INDIVIDUAL TIME SERIES
+        # ================================
         for arm in self.unique_arms:
             color = arm_colors[arm]
-            ids_in_arm = self.study_arms_dict[arm]
 
-            for mouse_id in ids_in_arm:
-                if mouse_id not in self.study_tv_time_dict:
+            for mouse_id in self.study_arms_dict[arm]:
+
+                ts = self.study_tv_time_dict.get(mouse_id)
+                if ts is None or ts.time_day is None or ts.tumor_volume is None:
                     continue
 
-                ts = self.study_tv_time_dict[mouse_id]
+                # Store for aggregation
+                arm_time[arm].append(np.array(ts.time_day))
+                arm_vol[arm].append(np.array(ts.tumor_volume))
 
-                if ts.time_day is None or ts.tumor_volume is None:
-                    continue  # skip incomplete data
+                # Spider (volume)
+                if show_individual:
+                    ax_vol.plot(ts.time_day,
+                                ts.tumor_volume,
+                                marker="o",
+                                alpha=0.7,
+                                linewidth=1.0,
+                                color=color)
 
-                ax_vol.plot(ts.time_day,
-                            ts.tumor_volume,
-                            marker="o",
-                            alpha=0.8,
-                            label=f"{arm} - {mouse_id}",
-                            color=color)
+                # Weight
+                if has_weight and hasattr(ts, "tumor_weight") and ts.tumor_weight is not None:
+                    arm_wgt[arm].append(np.array(ts.tumor_weight))
 
-        ax_vol.set_ylabel(volume_label)
-        ax_vol.set_xlabel("Time (days)")
-        ax_vol.grid(True, alpha=0.3)
-        ax_vol.minorticks_on()
-        ax_vol.grid(True, which='minor', alpha=0.15, linestyle=':')
+                    if show_individual:
+                        ax_w.plot(ts.time_day,
+                                  ts.tumor_weight,
+                                  marker="s",
+                                  alpha=0.7,
+                                  linewidth=1.0,
+                                  color=color)
 
-        # Only one legend per arm: use unique arms instead of all mouse IDs
-        handles = []
-        labels = []
-        for arm, color in arm_colors.items():
-            h, = ax_vol.plot([], [], color=color, label=arm)
-            handles.append(h)
-            labels.append(arm)
-        ax_vol.legend(handles, labels, title="Arms")
-
-        # --- Plot WEIGHT DATA ---
-        if has_weight:
+        # ================================
+        # 2. MEAN / AGGREGATE CURVES
+        # ================================
+        if show_aggregate:
             for arm in self.unique_arms:
                 color = arm_colors[arm]
-                ids_in_arm = self.study_arms_dict[arm]
 
-                for mouse_id in ids_in_arm:
-                    if mouse_id not in self.study_tv_time_dict:
-                        continue
+                if len(arm_vol[arm]) == 0:
+                    continue
 
-                    ts = self.study_tv_time_dict[mouse_id]
+                # Reference time vector
+                tvec = arm_time[arm][0]
 
-                    if (not hasattr(ts, "tumor_weight") or
-                            ts.tumor_weight is None):
-                        continue  # no weight for this time series
+                # Stack (n_mice × n_timepoints)
+                vol_stack = np.vstack(arm_vol[arm])
+                mean_vol = np.mean(vol_stack, axis=0)
+                sem_vol = sem(vol_stack, axis=0) if aggregate_sem else None
 
-                    ax_w.plot(ts.time_day,
-                              ts.tumor_weight,
-                              marker="s",
-                              alpha=0.8,
+                # Mean tumor volume curve
+                ax_vol.plot(tvec, mean_vol,
+                            linewidth=2.8,
+                            color=color)
+
+                # SEM shading
+                if aggregate_sem and sem_vol is not None:
+                    ax_vol.fill_between(tvec,
+                                        mean_vol - sem_vol,
+                                        mean_vol + sem_vol,
+                                        color=color,
+                                        alpha=0.25)
+
+                # Weight aggregation
+                if has_weight and len(arm_wgt[arm]) > 0:
+                    wstack = np.vstack(arm_wgt[arm])
+                    mean_w = np.mean(wstack, axis=0)
+                    sem_w = sem(wstack, axis=0) if aggregate_sem else None
+
+                    ax_w.plot(tvec, mean_w,
+                              linewidth=2.8,
                               color=color)
 
-            ax_w.set_ylabel(weight_label)
-            ax_w.grid(True, alpha=0.3)
-            ax_w.minorticks_on()
-            ax_w.grid(True, which='minor', alpha=0.15, linestyle=':')
-            ax_w.tick_params(which='minor', labelleft=False, labelbottom=False)
+                    if aggregate_sem and sem_w is not None:
+                        ax_w.fill_between(tvec,
+                                          mean_w - sem_w,
+                                          mean_w + sem_w,
+                                          color=color,
+                                          alpha=0.25)
 
-        # --- Title Construction ---
+        # ================================
+        # 3. AXIS FORMATTING
+        # ================================
+        ax_vol.set_ylabel(volume_label)
+        ax_vol.set_xlabel("Time (days)")
+        ax_vol.minorticks_on()
+        ax_vol.grid(True, alpha=0.3)
+        ax_vol.grid(True, which='minor', linestyle=':', alpha=0.15)
+
+        # Legend for arms
+        legend_handles = []
+        legend_labels = []
+        for arm, color in arm_colors.items():
+            h, = ax_vol.plot([], [], color=color, linewidth=3, label=arm)
+            legend_handles.append(h)
+            legend_labels.append(arm)
+        ax_vol.legend(legend_handles, legend_labels, title="Arms")
+
+        # Weight subplot formatting
+        if has_weight:
+            ax_w.set_ylabel(weight_label)
+            ax_w.minorticks_on()
+            ax_w.grid(True, alpha=0.3)
+            ax_w.grid(True, which='minor', linestyle=':', alpha=0.15)
+
+        # ================================
+        # 4. TITLE
+        # ================================
         if title is None:
             title = f"Tumor Volume Study: {self.study_id}"
 
@@ -660,8 +721,9 @@ def main():
     # Example 4
     first_study = tvd_obj.unique_studies[0]
     first_study_obj = tvd_obj.tumor_vol_study_dict[first_study]
-    first_study_obj.plot_spider()
-
-
+    first_study_obj.plot_spider(plot_weight = False, show_individual=True, show_aggregate=False, aggregate_sem=False)
+    first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False)
+    first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=False)
+    first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=True)
 if __name__ == '__main__':
     main()
