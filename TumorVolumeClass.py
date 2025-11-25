@@ -695,7 +695,7 @@ class TumorVolumeStudyClass():
         plt.tight_layout()
         plt.show()
     def plot_event_free_survival(self, delta=1.0, cutoff=None, figsize=(10, 8),
-                                 title="Event-Free Survival (Tumor Volume Doubling)", show_kaplan_meier_curve=True,
+                                 title="Event-Free Survival (Tumor Volume Doubling)",
                                  show_number_at_risk_plot=True, show_at_risk_table=True):
         """
         Three-panel figure:
@@ -716,7 +716,9 @@ class TumorVolumeStudyClass():
         # -----------------------------------------------------
         fig = plt.figure(figsize=figsize)
 
-        km_subplot_proportion = 3.0 if show_kaplan_meier_curve == True else 0
+        # Setup subplot proportions
+        show_kaplan_meier_curve = True  # axis linked to km has to be true
+        km_subplot_proportion = 4.0 if show_kaplan_meier_curve == True else 0
         num_at_risk_plot_proportion = 1.0 if show_number_at_risk_plot == True else 0
         at_risk_table_proportion = 0.6 if show_at_risk_table == True else 0
 
@@ -735,13 +737,13 @@ class TumorVolumeStudyClass():
                               height_ratios=height_ratios, hspace=0.15)
 
         current_sub_plot = 0
-        if show_kaplan_meier_curve:
+        if show_kaplan_meier_curve == True:
             ax_km = fig.add_subplot(gs[current_sub_plot])
             current_sub_plot += 1
-        if num_at_risk_plot_proportion:
+        if show_number_at_risk_plot == True:
             ax_labels = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
             current_sub_plot += 1
-        if num_at_risk_plot_proportion:
+        if show_at_risk_table == True:
             ax_risk = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
 
         # -----------------------------------------------------
@@ -760,27 +762,25 @@ class TumorVolumeStudyClass():
         ax_km.set_title(f"{title}\nP-value = {p_val:.4g}")
         ax_km.grid(True, alpha=0.3)
 
-        # force whole-number x-ticks
-        max_t = int(t_grid[-1])
-        step = 5 if max_t > 5 else 1
-        ax_km.set_xticks(np.arange(0, max_t + 1, step))
-        ax_km.set_xlim(-0.5, max_t + 0.5)
-        ax_km.get_xmajorticklabels()
-
         # Hide top and right spines
         for spine in ["right", "left"]:
             ax_km.spines[spine].set_visible(False)
 
-        # Add numbers at major tick mark
-        for xtick in ax_km.get_xticks():
-            ax_km.text(xtick, -0.08, f"{int(xtick)}",
-                       transform=ax_km.get_xaxis_transform(),
-                       ha="center", va="top", fontsize=10)
+        # # force whole-number x-ticks
+        max_t = int(t_grid[-1])
+        # step = 5 if max_t > 5 else 1
+        # ax_km.set_xticks(np.arange(0, max_t + 1, step))
+        # ax_km.set_xlim(-0.5, max_t + 0.5)
+        # ax_km.get_xmajorticklabels()
+
+        # Set major tick labels using the built-in function
+        #ax_km.set_xticklabels([f"{int(x)}" for x in ax_km.get_xticks()])
+        # ax_km.tick_params(axis='x', which='major', labelsize=10)
 
         #-----------------------------------------------------
         # Middle panel: AT-RISK LINE PLOTS
         # -----------------------------------------------------
-        if show_number_at_risk_plot:
+        if show_number_at_risk_plot  == True:
             ax_labels.set_ylabel("Number at Risk")
             ax_labels.set_ylim(0-0.76, max(max(risk_table[arm]) for arm in self.unique_arms) * 1.1+0.5)
 
@@ -789,7 +789,7 @@ class TumorVolumeStudyClass():
                 ax_labels.plot(t_grid, risk_table[arm],
                                color=arm_colors[arm],
                                linewidth=2,
-                               marker='o',
+                               marker='none',
                                markersize=4,
                                label=arm)
 
@@ -809,7 +809,7 @@ class TumorVolumeStudyClass():
         # -----------------------------------------------------
         # Bottom panel: NUMBERS AT RISK
         # -----------------------------------------------------
-        if show_at_risk_table:
+        if show_at_risk_table == True:
             ax_risk.set_yticks(range(len(self.unique_arms)))
             ax_risk.set_yticklabels(self.unique_arms)
             ax_risk.set_xlabel("Time (days)")
@@ -830,8 +830,7 @@ class TumorVolumeStudyClass():
 
             ax_risk.grid(False)
 
-            plt.tight_layout()
-            plt.show()
+        plt.show()
 class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
@@ -1147,8 +1146,10 @@ def main():
     if True:
         study = tvd_obj.unique_studies[2]
         first_study_obj = tvd_obj.tumor_vol_study_dict[study]
-        first_study_obj.plot_event_free_survival(delta=1.0, cutoff=None, figsize=(10, 8),
-                                 title="Event-Free Survival (Tumor Volume Doubling)")
+        title = f"{study} - Event-Free Survival (Tumor Volume Doubling)"
+        first_study_obj.plot_event_free_survival(delta=1.0, cutoff=None, figsize=(10, 8),title=title)
+        first_study_obj.plot_event_free_survival(delta=1.0, cutoff=None, figsize=(10, 8),title=title,
+                                                 show_number_at_risk_plot=False, show_at_risk_table=False)
 
 
 if __name__ == '__main__':
