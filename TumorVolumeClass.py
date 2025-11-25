@@ -1100,14 +1100,14 @@ def main():
     tvd_obj.list_time_series()
 
     # Example 2
-    if False:
+    if True:
         pdx_id = tvd_obj.unique_pdx_ids[0]
         pdx_time_obj = tvd_obj.tumor_vol_time_series_dict[pdx_id]
         pdx_time_obj.plot()
         pdx_time_obj.plot(plot_weight=False)
 
     # Example 3
-    if False:
+    if True:
         pdx_time_obj.plot(plot_weight=False, tv_transform_str="No Transform", volume_label = "Tumor Volume", volume_units = "mm^3")
         pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Change", volume_label = "Tumor Volume Change", volume_units = "%")
         pdx_time_obj.plot(plot_weight=False, tv_transform_str="Prop. Vol. Change", volume_label = "Log2(Proportion Volume Change)", volume_units = "")
@@ -1118,7 +1118,7 @@ def main():
     tvd_obj.write_study_summary()
 
     # Example 5
-    if False:
+    if True:
         aggregate_marker = 'o'
         for study in tvd_obj.unique_studies:
             first_study_obj = tvd_obj.tumor_vol_study_dict[study]
@@ -1130,7 +1130,7 @@ def main():
                                         aggregate_marker=aggregate_marker, error_bars=True)
 
     # Example 6
-    if False:
+    if True:
         study = tvd_obj.unique_studies[2]
         first_study_obj = tvd_obj.tumor_vol_study_dict[study]
         first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False,
