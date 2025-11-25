@@ -26,6 +26,10 @@ import numpy as np
 from scipy.stats import sem
 from typing import Optional
 
+# Computation
+from lifelines import KaplanMeierFitter
+from lifelines.statistics import logrank_test
+
 # Visualization
 import matplotlib.pyplot as plt
 
@@ -331,6 +335,105 @@ class TumorVolumeStudyClass():
         pct_change = ((pct_change - vo) / vo) * 100
         return pct_change
 
+    # Computation
+    def compute_event_time(self, time_day, volume, delta=1.0, cutoff=None):
+        # Compute the event time for one mouse
+        """
+        Event defined as tumor volume increasing by factor (1+delta)
+        or exceeding 'cutoff'. Returns (event_time, event_flag).
+        """
+        if len(volume) == 0:
+            return None, 0
+
+        baseline = volume[0]
+        doubling_threshold = baseline * (1 + delta)
+
+        for t, v in zip(time_day, volume):
+            if v >= doubling_threshold:
+                return t, 1
+            if cutoff is not None and v >= cutoff:
+                return t, 1
+
+        # Censored at last time point
+        return time_day[-1], 0
+    def build_survival_data(self, delta=1.0, cutoff=None):
+        # Build per-arm survival data
+        """
+        Returns: {arm: {"time": [...], "event": [...]}}
+        """
+        result = {}
+
+        for arm in self.unique_arms:
+            times = []
+            events = []
+
+            for mouse_id in self.study_arms_dict[arm]:
+                ts = self.study_tv_time_dict.get(mouse_id)
+                if ts is None:
+                    continue
+
+                t, e = self.compute_event_time(
+                    ts.time_day,
+                    ts.tumor_volume,
+                    delta=delta,
+                    cutoff=cutoff
+                )
+
+                if t is not None:
+                    times.append(t)
+                    events.append(e)
+
+            result[arm] = {"time": np.array(times), "event": np.array(events)}
+
+        return result
+    def compute_numbers_at_risk(self, survival_dict, grid_points=10):
+        # Compute numbers at risk for all arms at shared time grid
+        """
+        Returns:
+            time_grid: array of time points
+            risk_table: {arm: array[num at risk at each time point]}
+        """
+        all_times = np.concatenate([survival_dict[a]["time"] for a in survival_dict])
+        t_grid = np.linspace(0, np.max(all_times), grid_points)
+
+        risk_table = {}
+
+        for arm in survival_dict:
+            t = survival_dict[arm]["time"]
+            e = survival_dict[arm]["event"]
+
+            at_risk = []
+            for tg in t_grid:
+                still_at_risk = np.sum(t >= tg)
+                at_risk.append(still_at_risk)
+
+            risk_table[arm] = np.array(at_risk)
+
+        return t_grid, risk_table
+    def compute_logrank_pvalue(self, survival_dict):
+        # Log-rank p-value comparing all arms
+        arms = list(survival_dict.keys())
+
+        # pairwise combine into multi-arm log-rank
+        time_arrays = [survival_dict[a]["time"] for a in arms]
+        event_arrays = [survival_dict[a]["event"] for a in arms]
+
+        # lifelines supports k-sample test
+        from lifelines.statistics import multivariate_logrank_test
+        labels = np.concatenate([[i] * len(time_arrays[i]) for i in range(len(arms))])
+        all_times = np.concatenate(time_arrays)
+        all_events = np.concatenate(event_arrays)
+
+        results = multivariate_logrank_test(
+            all_times,
+            labels,
+            event_observed=all_events
+        )
+
+        return results.p_value
+
+
+
     # Summary
     def summarize(self):
         # Write summary to log file
@@ -591,6 +694,144 @@ class TumorVolumeStudyClass():
         fig.suptitle(title)
         plt.tight_layout()
         plt.show()
+    def plot_event_free_survival(self, delta=1.0, cutoff=None, figsize=(10, 8),
+                                 title="Event-Free Survival (Tumor Volume Doubling)", show_kaplan_meier_curve=True,
+                                 show_number_at_risk_plot=True, show_at_risk_table=True):
+        """
+        Three-panel figure:
+        - Top: Kaplan–Meier event-free survival curves + p-value
+        - Middle: Arm labels only (aligned with the numbers-at-risk table)
+        - Bottom: Numbers at risk table
+        """
+
+        # -----------------------------------------------------
+        # Compute survival data
+        # -----------------------------------------------------
+        survival = self.build_survival_data(delta=delta, cutoff=cutoff)
+        t_grid, risk_table = self.compute_numbers_at_risk(survival)
+        p_val = self.compute_logrank_pvalue(survival)
+
+        # -----------------------------------------------------
+        # Figure with THREE rows
+        # -----------------------------------------------------
+        fig = plt.figure(figsize=figsize)
+
+        km_subplot_proportion = 3.0 if show_kaplan_meier_curve == True else 0
+        num_at_risk_plot_proportion = 1.0 if show_number_at_risk_plot == True else 0
+        at_risk_table_proportion = 0.6 if show_at_risk_table == True else 0
+
+        # Determine number of subplots
+        num_of_subplots = int(show_kaplan_meier_curve)+int(show_number_at_risk_plot)+int(show_at_risk_table)
+
+        # Set up height proportions
+        height_ratios = []
+        if show_kaplan_meier_curve:
+            height_ratios.append(km_subplot_proportion)
+        if show_number_at_risk_plot:
+            height_ratios.append(num_at_risk_plot_proportion)
+        if show_at_risk_table:
+            height_ratios.append(at_risk_table_proportion)
+        gs = fig.add_gridspec(num_of_subplots, 1,
+                              height_ratios=height_ratios, hspace=0.15)
+
+        current_sub_plot = 0
+        if show_kaplan_meier_curve:
+            ax_km = fig.add_subplot(gs[current_sub_plot])
+            current_sub_plot += 1
+        if num_at_risk_plot_proportion:
+            ax_labels = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
+            current_sub_plot += 1
+        if num_at_risk_plot_proportion:
+            ax_risk = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
+
+        # -----------------------------------------------------
+        # KM curves
+        # -----------------------------------------------------
+
+        km = KaplanMeierFitter()
+        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        arm_colors = {arm: colors[i % len(colors)] for i, arm in enumerate(self.unique_arms)}
+
+        for arm in self.unique_arms:
+            km.fit(survival[arm]["time"], survival[arm]["event"], label=arm)
+            km.plot(ax=ax_km, ci_show=False, color=arm_colors[arm], linewidth=2)
+
+        ax_km.set_ylabel("Event-Free Probability")
+        ax_km.set_title(f"{title}\nP-value = {p_val:.4g}")
+        ax_km.grid(True, alpha=0.3)
+
+        # force whole-number x-ticks
+        max_t = int(t_grid[-1])
+        step = 5 if max_t > 5 else 1
+        ax_km.set_xticks(np.arange(0, max_t + 1, step))
+        ax_km.set_xlim(-0.5, max_t + 0.5)
+        ax_km.get_xmajorticklabels()
+
+        # Hide top and right spines
+        for spine in ["right", "left"]:
+            ax_km.spines[spine].set_visible(False)
+
+        # Add numbers at major tick mark
+        for xtick in ax_km.get_xticks():
+            ax_km.text(xtick, -0.08, f"{int(xtick)}",
+                       transform=ax_km.get_xaxis_transform(),
+                       ha="center", va="top", fontsize=10)
+
+        #-----------------------------------------------------
+        # Middle panel: AT-RISK LINE PLOTS
+        # -----------------------------------------------------
+        if show_number_at_risk_plot:
+            ax_labels.set_ylabel("Number at Risk")
+            ax_labels.set_ylim(0-0.76, max(max(risk_table[arm]) for arm in self.unique_arms) * 1.1+0.5)
+
+            # Plot line for each arm showing numbers at risk over time
+            for arm in self.unique_arms:
+                ax_labels.plot(t_grid, risk_table[arm],
+                               color=arm_colors[arm],
+                               linewidth=2,
+                               marker='o',
+                               markersize=4,
+                               label=arm)
+
+            ax_labels.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+            ax_labels.grid(True, alpha=0.3, axis='y')
+            ax_labels.legend(loc='best', framealpha=0.9)
+
+            # Hide top and right spines
+            for spine in ["right", "left"]:
+                ax_labels.spines[spine].set_visible(False)
+
+            # Match x-axis limits with KM plot
+            ax_labels.set_xlim(-0.5, max_t + 0.5)
+
+
+
+        # -----------------------------------------------------
+        # Bottom panel: NUMBERS AT RISK
+        # -----------------------------------------------------
+        if show_at_risk_table:
+            ax_risk.set_yticks(range(len(self.unique_arms)))
+            ax_risk.set_yticklabels(self.unique_arms)
+            ax_risk.set_xlabel("Time (days)")
+            ax_risk.set_xlim(-0.5, max_t + 0.5)
+            ax_risk.set_ylim(-0.6, len(self.unique_arms))
+
+            # Clear spines except left
+            for spine in ["right", "left"]:
+                ax_risk.spines[spine].set_visible(False)
+
+            # Plot the numbers at risk
+            for i, arm in enumerate(self.unique_arms):
+                # invisible line to preserve alignment
+                ax_risk.plot(t_grid, [i] * len(t_grid), alpha=0)
+
+                for x, y_val in zip(t_grid, risk_table[arm]):
+                    ax_risk.text(x, i, f"{y_val}", ha="center", va="center", fontsize=10)
+
+            ax_risk.grid(False)
+
+            plt.tight_layout()
+            plt.show()
 class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
@@ -860,43 +1101,55 @@ def main():
     tvd_obj.list_time_series()
 
     # Example 2
-    pdx_id = tvd_obj.unique_pdx_ids[0]
-    pdx_time_obj = tvd_obj.tumor_vol_time_series_dict[pdx_id]
-    pdx_time_obj.plot()
-    pdx_time_obj.plot(plot_weight=False)
+    if False:
+        pdx_id = tvd_obj.unique_pdx_ids[0]
+        pdx_time_obj = tvd_obj.tumor_vol_time_series_dict[pdx_id]
+        pdx_time_obj.plot()
+        pdx_time_obj.plot(plot_weight=False)
 
     # Example 3
-    pdx_time_obj.plot(plot_weight=False, tv_transform_str="No Transform", volume_label = "Tumor Volume", volume_units = "mm^3")
-    pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Change", volume_label = "Tumor Volume Change", volume_units = "%")
-    pdx_time_obj.plot(plot_weight=False, tv_transform_str="Prop. Vol. Change", volume_label = "Log2(Proportion Volume Change)", volume_units = "")
-    pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Prgress/Regress", volume_label = "% Progression/Regression Endpoint", volume_units = "")
+    if False:
+        pdx_time_obj.plot(plot_weight=False, tv_transform_str="No Transform", volume_label = "Tumor Volume", volume_units = "mm^3")
+        pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Change", volume_label = "Tumor Volume Change", volume_units = "%")
+        pdx_time_obj.plot(plot_weight=False, tv_transform_str="Prop. Vol. Change", volume_label = "Log2(Proportion Volume Change)", volume_units = "")
+        pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Prgress/Regress", volume_label = "% Progression/Regression Endpoint", volume_units = "")
 
     # Example 4
     tvd_obj.create_study_dict()
     tvd_obj.write_study_summary()
 
     # Example 5
-    aggregate_marker = 'o'
-    for study in tvd_obj.unique_studies:
-        first_study_obj = tvd_obj.tumor_vol_study_dict[study]
-        first_study_obj.plot_spider(plot_weight = False, show_individual=True, show_aggregate=False, aggregate_sem=False)
-        first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False)
-        first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=False, aggregate_marker=aggregate_marker)
-        first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=True, aggregate_marker=aggregate_marker)
-        first_study_obj.plot_spider(show_individual=False, show_aggregate=True, aggregate_sem=True,
-                                    aggregate_marker=aggregate_marker, error_bars=True)
+    if False:
+        aggregate_marker = 'o'
+        for study in tvd_obj.unique_studies:
+            first_study_obj = tvd_obj.tumor_vol_study_dict[study]
+            first_study_obj.plot_spider(plot_weight = False, show_individual=True, show_aggregate=False, aggregate_sem=False)
+            first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False)
+            first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=False, aggregate_marker=aggregate_marker)
+            first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=True, aggregate_marker=aggregate_marker)
+            first_study_obj.plot_spider(show_individual=False, show_aggregate=True, aggregate_sem=True,
+                                        aggregate_marker=aggregate_marker, error_bars=True)
 
     # Example 6
-    study = tvd_obj.unique_studies[2]
-    first_study_obj = tvd_obj.tumor_vol_study_dict[study]
-    first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False,
-                                tv_transform_str="No Transform", volume_label="Tumor Volume", volume_units="mm^3")
-    first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
-                                tv_transform_str="Percent Change", volume_label="Tumor Volume Change", volume_units="%")
-    first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
-                                tv_transform_str="Prop. Vol. Change", volume_label="Log2(Proportion Volume Change)", volume_units="")
-    first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
-                                tv_transform_str="Percent Prgress/Regress", volume_label="% Progression/Regression Endpoint", volume_units="")
+    if False:
+        study = tvd_obj.unique_studies[2]
+        first_study_obj = tvd_obj.tumor_vol_study_dict[study]
+        first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False,
+                                    tv_transform_str="No Transform", volume_label="Tumor Volume", volume_units="mm^3")
+        first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
+                                    tv_transform_str="Percent Change", volume_label="Tumor Volume Change", volume_units="%")
+        first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
+                                    tv_transform_str="Prop. Vol. Change", volume_label="Log2(Proportion Volume Change)", volume_units="")
+        first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
+                                    tv_transform_str="Percent Prgress/Regress", volume_label="% Progression/Regression Endpoint", volume_units="")
+
+    # Example 7: Survival Free Curve
+    if True:
+        study = tvd_obj.unique_studies[2]
+        first_study_obj = tvd_obj.tumor_vol_study_dict[study]
+        first_study_obj.plot_event_free_survival(delta=1.0, cutoff=None, figsize=(10, 8),
+                                 title="Event-Free Survival (Tumor Volume Doubling)")
+
 
 if __name__ == '__main__':
     main()
