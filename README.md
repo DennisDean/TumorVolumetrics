@@ -55,9 +55,25 @@ This repository is under active development and does not yet represent a stable 
 </p>
 
 <p align="center">    
-<img src="media/kaplan_meier_with_at_risk_plot_table.png" width="600" /><br>
+<img src="media/kaplan_meier_with_at_risk_plot_table.png" width="600" /> <br>
 <b>Figure 8.</b> Event Free Kaplan Meier curve with at risk shown.
 </p>
+
+<div align="center">
+
+<table>
+  <tr>
+    <td><img src="media/transform_spider_1.png" width="400"></td>
+    <td><img src="media/transform_spider_2.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="media/transform_spider_3.png" width="400"></td>
+    <td><img src="media/transform_spider_4.png" width="400"></td>
+  </tr>
+</table>
+
+</div>
+
 
 ## Roadmap
 
