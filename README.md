@@ -71,7 +71,9 @@ This repository is under active development and does not yet represent a stable 
     <td><img src="media/transform_spider_4.png" width="400"></td>
   </tr>
 </table>
-
+<p align="center">
+<b>Figure 9.</b> Common tumor volume transformations.
+</p>
 </div>
 
 
