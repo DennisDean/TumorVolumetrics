@@ -42,6 +42,17 @@ This repository is under active development and does not yet represent a stable 
 <b>Figure 5.</b> Average tumor volume curves with standard develation shown.
 </p>
 
+
+<p align="center">    
+<img src="media/kaplan_meier.png" /><br>
+<b>Figure 6.</b> Event Free Kaplan Meier curve.
+</p>
+
+<p align="center">    
+<img src="media/kaplan_meier_with_at_risk_plot_table.png" width="600" /><br>
+<b>Figure 7.</b> Event Free Kaplan Meier curve with at risk shown.
+</p>
+
 ## Roadmap
 
 Future updates will include:
