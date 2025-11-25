@@ -300,6 +300,37 @@ class TumorVolumeStudyClass():
             study_arms_dict[arm] = arm_ids
         self.study_arms_dict = study_arms_dict
 
+        # Transforms
+        self.tv_transform_options = ["No Transform", "Percent Change", "Prop. Vol. Change", "Percent Prgress/Regress"]
+        self.tv_transform_dict = {"No Transform": self.tv_to_tv,
+                                  "Percent Change": self.tv_percent_change,
+                                  "Prop. Vol. Change": self.tv_proportion_volume_change,
+                                  "Percent Prgress/Regress": self.tv_percent_prog_regres_endpoint}
+        self.tv_transform_reccomended_labels = ["Tumor Volume", "Percent Change", f"% Change from $V_0$",
+                                                r"$\log_2(V/V_0)$", f"% Progress/Regress from $V_0$"]
+        self.tv_transform_str = "No Transform"
+        self.tv_transform_f = self.tv_to_tv
+
+    # Transform functions
+    def tv_to_tv(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
+        tv_to_tv: np.ndarray = tumor_volume_data_list
+        return tv_to_tv
+    def tv_percent_change(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
+        tv_per_change: np.ndarray = tumor_volume_data_list
+        vo = tv_per_change[0]
+        tv_per_change = 100.0 * (tv_per_change - vo) / vo
+        return tv_per_change
+    def tv_proportion_volume_change(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
+        log2_change = tumor_volume_data_list.copy()
+        vo = log2_change[0]  # baseline volume
+        log2_change = np.log2(log2_change / vo)
+        return log2_change
+    def tv_percent_prog_regres_endpoint(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
+        pct_change = tumor_volume_data_list.copy()
+        vo = pct_change[0]
+        pct_change = ((pct_change - vo) / vo) * 100
+        return pct_change
+
     # Summary
     def summarize(self):
         # Write summary to log file
@@ -317,17 +348,9 @@ class TumorVolumeStudyClass():
 
     # Visualization
     def plot_spider(self, figsize=(10, 6),
-                    volume_label="Tumor Volume",
-                    volume_units="mm^3",
-                    weight_label="Weight",
-                    weight_units="mg",
-                    title=None,
-                    plot_weight=True,
-                    show_individual=True,
-                    show_aggregate=True,
-                    aggregate_sem=True,
-                    error_bars=False,
-                    aggregate_marker=None):
+                    volume_label="Tumor Volume", volume_units="mm^3", weight_label="Weight", weight_units="mg",
+                    title=None, plot_weight=True, show_individual=True, show_aggregate=True, aggregate_sem=True,
+                    error_bars=False, aggregate_marker=None, tv_transform_str="No Transform"):
         """
         Spider plot for tumor volume study data with optional aggregation curves.
 
@@ -346,11 +369,19 @@ class TumorVolumeStudyClass():
             If None, no markers are shown on aggregate lines.
         plot_weight : bool
             Whether to include weight subplot.
+        tv_transform_str : str
+            Transform to apply to tumor volume data. Options: "No Transform",
+            "Percent Change", "Prop. Vol. Change", "Percent Prgress/Regress"
         """
 
         # Validate data
         if not self.study_tv_time_dict:
             raise ValueError("No time-series data available.")
+
+        # Get transform function
+        if tv_transform_str not in self.tv_transform_dict:
+            raise ValueError(f"Invalid transform: {tv_transform_str}. Options: {self.tv_transform_options}")
+        tv_transform_f = self.tv_transform_dict[tv_transform_str]
 
         # Determine if any time-series contains weight
         has_weight_data = any(
@@ -390,8 +421,11 @@ class TumorVolumeStudyClass():
                 if ts is None or ts.time_day is None or ts.tumor_volume is None:
                     continue
 
+                # Apply transform to tumor volume data
+                transformed_volume = tv_transform_f(ts.tumor_volume)
+
                 # Store for aggregation by time point
-                for t, v in zip(ts.time_day, ts.tumor_volume):
+                for t, v in zip(ts.time_day, transformed_volume):
                     if t not in arm_time_vol[arm]:
                         arm_time_vol[arm][t] = []
                     arm_time_vol[arm][t].append(v)
@@ -399,7 +433,7 @@ class TumorVolumeStudyClass():
                 # Spider (volume)
                 if show_individual:
                     ax_vol.plot(ts.time_day,
-                                ts.tumor_volume,
+                                transformed_volume,
                                 marker="o",
                                 alpha=0.7,
                                 linewidth=1.0,
@@ -514,12 +548,20 @@ class TumorVolumeStudyClass():
         # ================================
         # 3. AXIS FORMATTING
         # ================================
+        # Adjust label based on transform
         volume_label_str = f"{volume_label} ({volume_units})"
+        if not volume_units:
+            volume_label_str = f"{volume_label}"
+
         ax_vol.set_ylabel(volume_label_str)
         ax_vol.set_xlabel("Time (days)")
         ax_vol.minorticks_on()
         ax_vol.grid(True, alpha=0.3)
         ax_vol.grid(True, which='minor', linestyle=':', alpha=0.15)
+
+        # Add horizontal line at 0 for transformed data
+        if tv_transform_str != "No Transform":
+            ax_vol.axhline(y=0, color='k', linestyle='--', alpha=0.3, linewidth=1)
 
         # Legend for arms
         legend_handles = []
@@ -543,6 +585,8 @@ class TumorVolumeStudyClass():
         # ================================
         if title is None:
             title = f"Tumor Volume Study: {self.study_id}"
+            if tv_transform_str != "No Transform":
+                title += f" ({tv_transform_str})"
 
         fig.suptitle(title)
         plt.tight_layout()
@@ -827,8 +871,6 @@ def main():
     pdx_time_obj.plot(plot_weight=False, tv_transform_str="Prop. Vol. Change", volume_label = "Log2(Proportion Volume Change)", volume_units = "")
     pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Prgress/Regress", volume_label = "% Progression/Regression Endpoint", volume_units = "")
 
-    return
-
     # Example 4
     tvd_obj.create_study_dict()
     tvd_obj.write_study_summary()
@@ -843,6 +885,18 @@ def main():
         first_study_obj.plot_spider(show_individual=False,show_aggregate=True, aggregate_sem=True, aggregate_marker=aggregate_marker)
         first_study_obj.plot_spider(show_individual=False, show_aggregate=True, aggregate_sem=True,
                                     aggregate_marker=aggregate_marker, error_bars=True)
+
+    # Example 6
+    study = tvd_obj.unique_studies[2]
+    first_study_obj = tvd_obj.tumor_vol_study_dict[study]
+    first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False,
+                                tv_transform_str="No Transform", volume_label="Tumor Volume", volume_units="mm^3")
+    first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
+                                tv_transform_str="Percent Change", volume_label="Tumor Volume Change", volume_units="%")
+    first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
+                                tv_transform_str="Prop. Vol. Change", volume_label="Log2(Proportion Volume Change)", volume_units="")
+    first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
+                                tv_transform_str="Percent Prgress/Regress", volume_label="% Progression/Regression Endpoint", volume_units="")
 
 if __name__ == '__main__':
     main()
