@@ -27,6 +27,7 @@ from scipy.stats import sem
 from typing import Optional
 
 # Computation
+import math
 from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test
 
@@ -151,6 +152,9 @@ class TumorVolumeTimeSeriesClass():
 
         # Compute variables
         self.num_points = len(time_day)
+        self.max_day = max(self.time_day)
+        self.auc, self.normalized_auc = self.compute_auc()
+
 
         # Transforms
         self.tv_transform_options = ["No Transform", "Percent Change", "Prop. Vol. Change", "Percent Prgress/Regress"]
@@ -180,6 +184,33 @@ class TumorVolumeTimeSeriesClass():
         vo = pct_change[0]
         pct_change = ((pct_change - vo) / vo) * 100
         return pct_change
+
+    # Compute
+    def compute_auc(self, max_day:int|None = None):
+        # Compute auc and normalized auc across time series.
+
+        # define returns
+        auc = math.nan
+        normalized_auc = math.nan
+
+        # Set max day if not given
+        if max_day is None:
+            max_day = self.time_day[-1]
+
+        # Determine index for max day
+        max_index = [i for i, val in enumerate(self.time_day) if val >= max_day]
+        if not max_index:
+            max_index = min(max_index)
+        else:
+            max_index =  math.nan
+
+
+        # compute auc up to day if provided
+        if max_index != math.nan:
+            auc = np.trapezoid(self.tumor_volume, self.time_day)
+            normalized_auc = auc/(self.time_day[-1] - self.time_day[0])
+
+        return auc, normalized_auc
 
     # Summary
     def summary(self)->str:
@@ -754,7 +785,7 @@ class TumorVolumeStudyClass():
 
         for arm in self.unique_arms:
             km.fit(survival[arm]["time"], survival[arm]["event"], label=arm)
-            km.plot(ax=ax_km, ci_show=False, color=arm_colors[arm], linewidth=2)
+            km.plot_survival_function(ax=ax_km, ci_show=False, color=arm_colors[arm], linewidth=2)
 
         ax_km.set_ylabel("Event-Free Probability")
         ax_km.set_title(f"{title}\nP-value = {p_val:.4g}")
