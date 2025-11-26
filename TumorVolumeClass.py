@@ -432,8 +432,6 @@ class TumorVolumeStudyClass():
 
         return results.p_value
 
-
-
     # Summary
     def summarize(self):
         # Write summary to log file
@@ -831,6 +829,46 @@ class TumorVolumeStudyClass():
             ax_risk.grid(False)
 
         plt.show()
+class TumorVolumeExperimentalGroup():
+    # Class supports the organiziation, presentation, and analysis of tumor volume experimental groups
+    def __init__(self, experimental_group_col:list, study_col:list, study_dict:dict[str, TumorVolumeStudyClass]):
+
+        # Copy column and dictionary information
+        self.experimental_group_col = experimental_group_col.copy()
+        self.study_col = study_col.copy()
+        self.study_dict = copy.deepcopy(study_dict)
+
+        # Create summary information
+        self.unique_experimental_groups = list(set(self.experimental_group_col))
+        self.unique_experimental_groups.sort()
+
+        # Create Experimental Group Dictionary
+        self.experimental_group_dict:dict[str, list[TumorVolumeStudyClass]] = {}
+        for experiment_group in self.unique_experimental_groups:
+            # Get study entries assoicated with experiment
+            study_keys = [s for i, s in enumerate(self.study_col) if experimental_group_col[i] == experiment_group ]
+            study_keys = list(set(study_keys))
+
+            # Create reduced study dict
+            temp_study_dict = {}
+            for study in study_keys:
+                temp_study_dict[study] = self.study_dict[study]
+            self.experimental_group_dict[experiment_group] = temp_study_dict
+
+    # Summary
+    def summarize(self):
+        # Write summary to log file
+        # Header
+        logger.info("")
+        logger.info("")
+        logger.info(f"Experimental Groups ({len(self.unique_experimental_groups)}): "+", ".join(self.unique_experimental_groups))
+        logger.info(f"-------------------")
+        for experimental_group in self.unique_experimental_groups:
+            exp_grp_study_dict = self.experimental_group_dict[experimental_group]
+            study_keys = list(exp_grp_study_dict.keys())
+            study_keys.sort()
+            for study in study_keys:
+                exp_grp_study_dict[study].summarize()
 class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
@@ -843,7 +881,7 @@ class TumorVolumeDataClass():
         self.weight_units:str|None = None
 
         # data formats
-        self.tmz_col_names:list|None  = ['contributor', 'arms', 'times', 'volume', 'study_group',
+        self.tmz_col_names:list|None  = ['contributor', 'arms', 'times', 'volume', 'experimental_group',
                                          'study', 'id', 'tumor', 'disease_type',
                                          'body_weight', 'matched_controls']
         self.unmatched_control_entry = 'unmatched'
@@ -871,6 +909,8 @@ class TumorVolumeDataClass():
         self.num_disease_types:int|None
 
         # Add on columns
+        self.unique_experimental_groups:list[str]|None
+        self.num_experimental_groups:int|none
         self.unique_matched_controls:list|None
         self.num_matched_controls:int|None
         self.num_unmatched:int|None
@@ -878,6 +918,7 @@ class TumorVolumeDataClass():
         # Create time series dictionary
         self.tumor_vol_time_series_dict:dict[str:TumorVolumeTimeSeriesClass]|None = None
         self.tumor_vol_study_dict:dict[str:TumorVolumeStudyClass|None] = None
+        self.tumor_vol_experimental_group_dict:dict[str,TumorVolumeExperimentalGroup|None] = None
 
     # File loading
     def load_tmz_csv(self, fn, volume_units='mm^3', weight_units='mg'):
@@ -903,7 +944,11 @@ class TumorVolumeDataClass():
 
         # Create internal summary and time series objects
         self.summarize_data_frame()
+
+        # Create class dictionaries
         self.create_time_series_dict()
+        self.create_study_dict()
+        self.create_experimental_group_dict()
     @staticmethod
     def check_column_names(standard_column_names:str, file_column_names:str)->tuple[bool, list, list]:
         # Define return value
@@ -949,6 +994,9 @@ class TumorVolumeDataClass():
         self.num_disease_types = len(unique(self.tmz_data_df['disease_type']))
 
         # Supplemental variables
+        self.unique_experimental_groups = unique(self.tmz_data_df['experimental_group'])
+        self.num_experimental_groups = unique(self.tmz_data_df['experimental_group'])
+
         unmatched_str = self.unmatched_control_entry
         unique_matched_controls = unique(self.tmz_data_df['matched_controls'])
         self.unique_matched_controls = [entry for entry in unique_matched_controls if entry.lower() != unmatched_str]
@@ -985,7 +1033,7 @@ class TumorVolumeDataClass():
             # Study variables
             contributor = df[df['id'] == pdx]['contributor'].iloc[0]
             arm = df[df['id'] == pdx]['arms'].iloc[0]
-            study_group = df[df['id'] == pdx]['study_group'].iloc[0]
+            study_group = df[df['id'] == pdx]['experimental_group'].iloc[0]
             study = df[df['id'] == pdx]['study'].iloc[0]
             pdx_id = df[df['id'] == pdx]['id'].iloc[0]
             tumor = df[df['id'] == pdx]['tumor'].iloc[0]
@@ -999,7 +1047,7 @@ class TumorVolumeDataClass():
             tumor_vol_time_series_dict[pdx] = tv_time_series_obj
         self.tumor_vol_time_series_dict = tumor_vol_time_series_dict
     def create_study_dict(self):
-        # Prepare if study data structure for analysis and visualization
+        # Prepare study data structure for analysis and visualization
 
         # Check if data is available
         if self.unique_studies is None:
@@ -1025,6 +1073,33 @@ class TumorVolumeDataClass():
 
         # Store study dictionary
         self.tumor_vol_study_dict = tumor_vol_study_dict
+    def create_experimental_group_dict(self):
+        # Prepare experimental group data structure for analysis and visualization
+
+        # Check if data is available
+        if self.unique_experimental_groups is None:
+            logger.info('Can not generate experimental group dictionary. Load data file first.')
+            return
+
+        # Create dictionary
+        tumor_vol_experimental_group_dict = {}
+        df = self.tmz_data_df
+        for experimental_group in self.unique_experimental_groups:
+            # Get information to create study class
+            experimental_group_col = list(df.loc[df['experimental_group'] == experimental_group, 'experimental_group'].values)
+            study_col = list(df.loc[df['experimental_group'] == experimental_group, 'study'].values)
+            arms_col = list(df.loc[df['experimental_group'] == experimental_group, 'arms'].values)
+
+            # Create experimental group class
+            data_file_name = self.tmz_data_fn
+            study_dict = self.tumor_vol_study_dict
+            tv_experimental_group_obj = TumorVolumeExperimentalGroup(experimental_group_col, study_col, study_dict)
+
+            # Store tumor volume experimental group object
+            tumor_vol_experimental_group_dict[experimental_group] = tv_experimental_group_obj
+
+        # Store study dictionary
+        self.tumor_vol_experimental_group_dict = tumor_vol_experimental_group_dict
 
     # Command line summary
     def write_file_summary_text(self):
@@ -1090,6 +1165,9 @@ class TumorVolumeDataClass():
 
 # Test tumor volume classes
 def main():
+    # Test Flag
+    established_test = False
+
     # test data
     test_data_tmz = Path("public_data") / "consensus" / "PVA_with_study_group.csv"
 
@@ -1100,25 +1178,24 @@ def main():
     tvd_obj.list_time_series()
 
     # Example 2
-    if True:
+    if established_test:
         pdx_id = tvd_obj.unique_pdx_ids[0]
         pdx_time_obj = tvd_obj.tumor_vol_time_series_dict[pdx_id]
         pdx_time_obj.plot()
         pdx_time_obj.plot(plot_weight=False)
 
     # Example 3
-    if True:
+    if established_test:
         pdx_time_obj.plot(plot_weight=False, tv_transform_str="No Transform", volume_label = "Tumor Volume", volume_units = "mm^3")
         pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Change", volume_label = "Tumor Volume Change", volume_units = "%")
         pdx_time_obj.plot(plot_weight=False, tv_transform_str="Prop. Vol. Change", volume_label = "Log2(Proportion Volume Change)", volume_units = "")
         pdx_time_obj.plot(plot_weight=False, tv_transform_str="Percent Prgress/Regress", volume_label = "% Progression/Regression Endpoint", volume_units = "")
 
     # Example 4
-    tvd_obj.create_study_dict()
     tvd_obj.write_study_summary()
 
     # Example 5
-    if True:
+    if established_test:
         aggregate_marker = 'o'
         for study in tvd_obj.unique_studies:
             first_study_obj = tvd_obj.tumor_vol_study_dict[study]
@@ -1130,20 +1207,24 @@ def main():
                                         aggregate_marker=aggregate_marker, error_bars=True)
 
     # Example 6
-    if True:
+    if established_test:
         study = tvd_obj.unique_studies[2]
         first_study_obj = tvd_obj.tumor_vol_study_dict[study]
         first_study_obj.plot_spider(show_individual=True,show_aggregate=False, aggregate_sem=False,
-                                    tv_transform_str="No Transform", volume_label="Tumor Volume", volume_units="mm^3")
+                                    tv_transform_str="No Transform", volume_label="Tumor Volume", volume_units="mm^3",
+                                    plot_weight=False)
         first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
-                                    tv_transform_str="Percent Change", volume_label="Tumor Volume Change", volume_units="%")
+                                    tv_transform_str="Percent Change", volume_label="Tumor Volume Change", volume_units="%",
+                                    plot_weight=False)
         first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
-                                    tv_transform_str="Prop. Vol. Change", volume_label="Log2(Proportion Volume Change)", volume_units="")
+                                    tv_transform_str="Prop. Vol. Change", volume_label="Log2(Proportion Volume Change)", volume_units="",
+                                    plot_weight=False)
         first_study_obj.plot_spider(show_individual=True, show_aggregate=False, aggregate_sem=False,
-                                    tv_transform_str="Percent Prgress/Regress", volume_label="% Progression/Regression Endpoint", volume_units="")
+                                    tv_transform_str="Percent Prgress/Regress", volume_label="% Progression/Regression Endpoint",
+                                    volume_units="", plot_weight=False)
 
     # Example 7: Survival Free Curve
-    if True:
+    if established_test:
         study = tvd_obj.unique_studies[2]
         first_study_obj = tvd_obj.tumor_vol_study_dict[study]
         title = f"{study} - Event-Free Survival (Tumor Volume Doubling)"
@@ -1151,6 +1232,12 @@ def main():
         first_study_obj.plot_event_free_survival(delta=1.0, cutoff=None, figsize=(10, 8),title=title,
                                                  show_number_at_risk_plot=False, show_at_risk_table=False)
 
+    #Example 8: Experimental Group
+    if True:
+        unique_experimental_groups = tvd_obj.unique_experimental_groups
+        for experimental_group in unique_experimental_groups:
+            exp_grp_obj = tvd_obj.tumor_vol_experimental_group_dict[experimental_group]
+            exp_grp_obj.summarize()
 
 if __name__ == '__main__':
     main()
