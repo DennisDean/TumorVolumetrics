@@ -186,29 +186,48 @@ class TumorVolumeTimeSeriesClass():
         return pct_change
 
     # Compute
-    def compute_auc(self, max_day:int|None = None):
-        # Compute auc and normalized auc across time series.
+    def compute_auc(self, compute_day: int | None = None):
+        """
+        Compute AUC and normalized AUC for tumor volume data.
 
-        # define returns
-        auc = math.nan
-        normalized_auc = math.nan
+        Parameters
+        ----------
+        compute_day : int or None
+            If provided, compute AUC only up to this day.
+            Otherwise compute full AUC.
+        """
 
-        # Set max day if not given
-        if max_day is None:
-            max_day = self.time_day[-1]
+        # No data?
+        if self.time_day is None or len(self.time_day) == 0:
+            return math.nan, math.nan
 
-        # Determine index for max day
-        max_index = [i for i, val in enumerate(self.time_day) if val >= max_day]
-        if not max_index:
-            max_index = min(max_index)
+        # Determine the day limit
+        if compute_day is None:
+            cutoff_day = self.time_day[-1]
         else:
-            max_index =  math.nan
+            cutoff_day = compute_day
 
+        # Determine maximum usable index
+        # Find first index where time >= cutoff_day
+        idx_list = [i for i, t in enumerate(self.time_day) if t >= cutoff_day]
 
-        # compute auc up to day if provided
-        if max_index != math.nan:
-            auc = np.trapezoid(self.tumor_volume, self.time_day)
-            normalized_auc = auc/(self.time_day[-1] - self.time_day[0])
+        if len(idx_list) == 0:
+            # cutoff beyond end of data → use full series
+            max_index = len(self.time_day)
+        else:
+            # use the first index where time crosses the cutoff
+            max_index = idx_list[0] + 1  # +1 so slicing includes this point
+
+        # Slice data up to max_index
+        t = np.array(self.time_day[:max_index])
+        v = np.array(self.tumor_volume[:max_index])
+
+        # Compute AUC
+        auc = np.trapezoid(v, t)
+
+        # Normalized AUC per day
+        time_duration = t[-1] - t[0] if len(t) > 1 else math.nan
+        normalized_auc = auc / time_duration if time_duration > 0 else math.nan
 
         return auc, normalized_auc
 
@@ -725,7 +744,7 @@ class TumorVolumeStudyClass():
         plt.show()
     def plot_event_free_survival(self, delta=1.0, cutoff=None, figsize=(10, 8),
                                  title="Event-Free Survival (Tumor Volume Doubling)",
-                                 show_number_at_risk_plot=True, show_at_risk_table=True):
+                                 show_number_at_risk_plot=True, show_at_risk_table=False):
         """
         Three-panel figure:
         - Top: Kaplan–Meier event-free survival curves + p-value
@@ -860,6 +879,130 @@ class TumorVolumeStudyClass():
             ax_risk.grid(False)
 
         plt.show()
+
+    def plot_auc_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
+                     control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85,
+                     bar_edgecolor="black", show_bar_labels=False, title="AUC by Arm", color_cycle=None,
+                     show_axis_labels:bool=True, plot_normalized_auc=False, show_legend:bool=True):
+        """
+        Vertical bar plot of AUC values for each time-series.
+        Controls are plotted first, followed by experimental arms.
+
+        Parameters
+        ----------
+        compute_day : int or None
+            Compute AUC up to max_day if provided.
+        sort_descending : bool
+            Sort AUC values within each arm.
+        show_bar_labels : bool
+            If True, display numeric AUC above each bar.
+        control_arms : tuple
+            Arms considered control and plotted first.
+        """
+
+        # -------------------------------------------
+        # 1. COLLECT AUC PER ARM
+        # -------------------------------------------
+        unique_arms = list(set(self.arm_col))
+        auc_dict = {}
+
+        for arm in unique_arms:
+            ts_ids = self.study_arms_dict[arm]
+            arm_auc = []
+
+            for ts_id in ts_ids:
+                ts = self.study_tv_time_dict[ts_id]
+                auc_val, normalized_auc = ts.compute_auc(compute_day=compute_day)
+                if plot_normalized_auc:
+                    arm_auc.append((ts_id, normalized_auc))
+                else:
+                    arm_auc.append((ts_id, auc_val))
+
+            arm_auc.sort(key=lambda x: x[1], reverse=sort_descending)
+            auc_dict[arm] = arm_auc
+
+        # -------------------------------------------
+        # 2. ARM ORDERING
+        # -------------------------------------------
+        controls = [a for a in unique_arms if a.lower() in control_arms]
+        experimental = [a for a in unique_arms if a not in controls]
+        ordered_arms = controls + experimental
+
+        # -------------------------------------------
+        # 3. COLOR MAP FOR ARMS
+        # -------------------------------------------
+        if color_cycle is None:
+            color_cycle = list(plt.cm.tab10.colors)
+
+        arm_colors = {
+            arm: color_cycle[i % len(color_cycle)]
+            for i, arm in enumerate(ordered_arms)
+        }
+
+        # -------------------------------------------
+        # 4. FLATTEN BAR DATA
+        # -------------------------------------------
+        bar_x_positions = []
+        bar_heights = []
+        bar_colors = []
+        bar_labels = []  # mouse IDs only (no arm)
+
+        idx = 0
+        for arm in ordered_arms:
+            color = arm_colors[arm]
+            for ts_id, auc_val in auc_dict[arm]:
+                bar_x_positions.append(idx)
+                bar_heights.append(auc_val)
+                bar_colors.append(color)
+                bar_labels.append(str(ts_id))  # no arm name
+
+                idx += 1
+
+        # -------------------------------------------
+        # 5. PLOT
+        # -------------------------------------------
+        fig, ax = plt.subplots(figsize=figsize)
+
+        ax.bar(
+            bar_x_positions,
+            bar_heights,
+            color=bar_colors,
+            alpha=bar_alpha,
+            edgecolor=bar_edgecolor
+        )
+
+        # Tick labels (mouse IDs only)
+        if show_axis_labels:
+            ax.set_xticks(bar_x_positions)
+            ax.set_xticklabels(bar_labels, rotation=75, ha='right', fontsize=8)
+        else:
+            ax.set_xticks([])
+            ax.set_xticklabels([])
+
+        # Add labels and titles
+        y_label = "AUC" if not plot_normalized_auc else "Normalized AUC"
+        ax.set_ylabel(y_label)
+        ax.set_title(title)
+        ax.grid(True, axis='y', alpha=0.3)
+
+        # -------------------------------------------
+        # 6. OPTIONAL: Annotate Bars with AUC Values
+        # -------------------------------------------
+        if show_bar_labels:
+            for x, h in zip(bar_x_positions, bar_heights):
+                ax.text(x, h, f"{h:.1f}", ha='center', va='bottom', fontsize=8)
+
+        # -------------------------------------------
+        # 7. LEGEND FOR ARMS
+        # -------------------------------------------
+        if show_legend:
+            handles = [plt.Line2D([], [], color=arm_colors[a], lw=8)
+                       for a in ordered_arms]
+            ax.legend(handles, ordered_arms, title="Arms", loc="best")
+
+        plt.tight_layout()
+        plt.show()
+
 class TumorVolumeExperimentalGroup():
     # Class supports the organiziation, presentation, and analysis of tumor volume experimental groups
     def __init__(self, experimental_group_col:list, study_col:list, study_dict:dict[str, TumorVolumeStudyClass]):
@@ -895,11 +1038,29 @@ class TumorVolumeExperimentalGroup():
         logger.info(f"Experimental Groups ({len(self.unique_experimental_groups)}): "+", ".join(self.unique_experimental_groups))
         logger.info(f"-------------------")
         for experimental_group in self.unique_experimental_groups:
+            # Experntal Group Header
+            logger.info(f"Experimental Groups: {experimental_group}")
+
+            # Write summary for each study
             exp_grp_study_dict = self.experimental_group_dict[experimental_group]
             study_keys = list(exp_grp_study_dict.keys())
             study_keys.sort()
             for study in study_keys:
                 exp_grp_study_dict[study].summarize()
+
+    # Visualization
+    def plot_auc_bar(self, experimental_group_str:str, max_day:int|None):
+        # AUC histogram for each study with arms plotted first followed by controlled data
+        exp_grp_study_dict = self.experimental_group_dict[experimental_group_str]
+        study_keys = exp_grp_study_dict.keys()
+        study_keys.sort()
+
+        # Get auc for each study
+
+
+        pass
+
+
 class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
@@ -1264,11 +1425,21 @@ def main():
                                                  show_number_at_risk_plot=False, show_at_risk_table=False)
 
     #Example 8: Experimental Group
-    if True:
+    if established_test:
         unique_experimental_groups = tvd_obj.unique_experimental_groups
         for experimental_group in unique_experimental_groups:
             exp_grp_obj = tvd_obj.tumor_vol_experimental_group_dict[experimental_group]
             exp_grp_obj.summarize()
+
+    # Example 9: CLass AUC
+    if True:
+        study_keys = tvd_obj.unique_studies
+        day = 15
+        for study in study_keys:
+            title = f"{study} - Normalized AUC by Arm - Day {day}"
+            study_obj = tvd_obj.tumor_vol_study_dict[study]
+            study_obj.plot_auc_bar(title=title, compute_day=day, plot_normalized_auc = True, show_legend = False,
+                                   show_axis_labels=False)
 
 if __name__ == '__main__':
     main()
