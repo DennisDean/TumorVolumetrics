@@ -274,7 +274,6 @@ class TumorVolumeTimeSeriesClass():
 
         # No data?
         if self.time_day is None or len(self.time_day) == 0:
-            print('Data not found. Using Nans.')
             return math.nan, math.nan
 
         # Determine the day limit
@@ -297,7 +296,6 @@ class TumorVolumeTimeSeriesClass():
 
         # Check validity - need at least 2 points and positive initial volume
         if len(v) < 2 or v[0] <= 0 or np.isnan(v[0]):
-            print(f'need two points. using nans, len(v) = {len(v)}, v[0] = {v[0]}, max_index = {max_index}, compute_dau = {compute_day}')
             return math.nan, math.nan
 
         # Compute percent change: (final - initial) / initial * 100
@@ -306,7 +304,6 @@ class TumorVolumeTimeSeriesClass():
         # Normalized percent change per day
         time_duration = t[-1] - t[0]
         if time_duration <= 0:
-            print('time less then zero')
             return math.nan, math.nan
 
         normalized_percent_tv_change = percent_tv_change / time_duration
@@ -315,20 +312,15 @@ class TumorVolumeTimeSeriesClass():
     def compute_objective_response(self, compute_day:int|None = None) -> str:
         percent_tumor_volume_change, _ = self.compute_percent_change_tumor_volume(compute_day)
         if self.is_complete_response(percent_tumor_volume_change)==True:
-            print(f'% tv change = {percent_tumor_volume_change}, CR')
             return "CR"
         elif self.is_partial_response(percent_tumor_volume_change)==True:
-            print(f'% tv change = {percent_tumor_volume_change}, PR')
             return "PR"
         elif self.is_stable_disease(percent_tumor_volume_change)==True:
-            print(f'% tv change = {percent_tumor_volume_change}, SD')
             return "SD"
         elif self.is_progressive_disease(percent_tumor_volume_change)==True:
-            print(f'% tv change = {percent_tumor_volume_change}, PD')
             return "PD"
         else:
             # No category matched – optional fallback
-            print(f'percent_tumor_volume_change = {percent_tumor_volume_change}')
             return ""
 
     # Summary
@@ -1299,7 +1291,6 @@ class TumorVolumeStudyClass():
 
             for (ts_id, tv_val), (_, resp_code) in zip(
                     vol_change_dict[arm], response_code_dict[arm]):
-                print(f'tv_val: {tv_val} resp_code: ({resp_code})')
                 bar_x_positions.append(idx)
                 bar_heights.append(tv_val)
                 bar_colors.append(self.objective_response_colors[resp_code])
@@ -1823,35 +1814,36 @@ def main():
             exp_grp_obj.summarize()
 
     # Example 9: CLass AUC
-    if established_test:
+    if True:
         study_keys = tvd_obj.unique_studies
-        day = 15
+        day = 21
         for study in study_keys:
             title = f"{study} - Normalized AUC by Arm - Day {day}"
             study_obj = tvd_obj.tumor_vol_study_dict[study]
-            study_obj.plot_auc_bar(title=title, compute_day=day, plot_normalized_auc = True, show_legend = False,
-                                   show_axis_labels=False)
+            study_obj.plot_auc_bar(title=title, compute_day=day, plot_normalized_auc = True, show_legend = True,
+                                   show_axis_labels=True)
 
     # Example  10: change in tumor volume
-    if False:
+    if established_test:
         study_keys = tvd_obj.unique_studies
         day = None
         for study in study_keys:
-            title = f"{study} - Change in Tumor Volume- Day {day}"
+            title = f"{study} - Change in Tumor Volume"
             study_obj = tvd_obj.tumor_vol_study_dict[study]
             plot_normalized_tv_change = False
             study_obj.plot_percent_tumor_vol_change_bar(title=title, compute_day=day,
-                plot_normalized_tv_change=plot_normalized_tv_change, show_legend=False, show_axis_labels=False)
+                plot_normalized_tv_change=plot_normalized_tv_change, show_legend=True, show_axis_labels=False)
 
     # Example  11: Tumor volume as objective response
-    study_keys = tvd_obj.unique_studies
-    day = None
-    for study in study_keys:
-        title = f"{study} - Tumor Volume Change as Objective Response"
-        study_obj = tvd_obj.tumor_vol_study_dict[study]
-        plot_normalized_tv_change = False
-        study_obj.plot_vol_change_as_objective_response_bar(title=title, compute_day=day,
-            show_legend=True, show_axis_labels=False)
+    if established_test:
+        study_keys = tvd_obj.unique_studies
+        day = None
+        for study in study_keys:
+            title = f"{study} - Tumor Volume Change as Objective Response"
+            study_obj = tvd_obj.tumor_vol_study_dict[study]
+            plot_normalized_tv_change = False
+            study_obj.plot_vol_change_as_objective_response_bar(title=title, compute_day=day,
+                show_legend=True, show_axis_labels=False)
 
 if __name__ == '__main__':
     main()

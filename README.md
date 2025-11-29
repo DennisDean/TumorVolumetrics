@@ -76,6 +76,21 @@ This repository is under active development and does not yet represent a stable 
 </p>
 </div>
 
+<p align="center">    
+<img src="media/tumor_volume_change_with legend.png" /><br>
+<b>Figure 10.</b> Change in tumor volume as a percentage.
+</p>
+
+
+<p align="center">    
+<img src="media/tumor_volume_change_as_objective_response.png" /><br>
+<b>Figure 11.</b> Change in tumor volume plotted as objectiv response.
+</p>
+
+<p align="center">    
+<img src="media/tumor_volume_auc.png"  /> <br>
+<b>Figure 12.</b> Area under the Tumor Volume Curve.
+</p>
 
 ## Roadmap
 
