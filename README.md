@@ -16,6 +16,27 @@ This repository is under active development and does not yet represent a stable 
 - Initial plotting support for tumor volume and weight
 - Logging framework for debugging and data validation
 
+## Figure Examples
+
+<p align="center">    
+<img src="media/spider_with_weights.png" /><br>
+<b>Figure.</b> Tumor volume spider plots with weights shown as a subplot.
+</p>
+
+<p align="center">    
+<img src="media/tumor_volume_average_with_std.png" /><br>
+<b>Figure.</b> Average tumor volume curves with standard deviation shown.
+</p>
+
+<p align="center">    
+<img src="media/kaplan_meier_with_at_risk_plot_table.png" /> <br>
+<b>Figure.</b> Event Free Kaplan Meier curve with at risk shown.
+</p>
+
+<p align="center">    
+<img src="media/tumor_volume_change_as_objective_response.png" /><br>
+<b>Figure.</b> Change in tumor volume plotted as objectiv response.
+</p>
 
 
 ## Roadmap

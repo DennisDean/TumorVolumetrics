@@ -78,44 +78,44 @@ CSV files should include these columns:
 
 
 <p align="center">    
-<img src="media/tumor_volume.png" /><br>
+<img src="tumor_volume.png" /><br>
 <b>Figure 1.</b> Example tumor volume plot.
 </p>
 
 <p align="center">    
-<img src="media/tumor_volume_and_weight.png" width="600" /><br>
+<img src="tumor_volume_and_weight.png" width="600" /><br>
 <b>Figure 2.</b> Example tumor volume plot with weights subplot.
 </p>
 
 <p align="center">    
-<img src="media/spider.png"  /><br>
+<img src="spider.png"  /><br>
 <b>Figure 3.</b> Tumor volume spider plot.
 </p>
 
 <p align="center">    
-<img src="media/spider_with_weights.png" width="600" /><br>
+<img src="spider_with_weights.png" width="600" /><br>
 <b>Figure 4.</b> Tumor volume spider plots with weights shown as a subplot.
 </p>
 
 <p align="center">    
-<img src="media/tumor_volume_average_with_std_error_bars.png" width="600" /><br>
+<img src="tumor_volume_average_with_std_error_bars.png" width="600" /><br>
 <b>Figure 5.</b> Average tumor volume curves with error bars.
 </p>
 
 
 <p align="center">    
-<img src="media/tumor_volume_average_with_std.png" width="600" /><br>
+<img src="tumor_volume_average_with_std.png" width="600" /><br>
 <b>Figure 6.</b> Average tumor volume curves with standard deviation shown.
 </p>
 
 
 <p align="center">    
-<img src="media/kaplan_meier.png" /><br>
+<img src="kaplan_meier.png" /><br>
 <b>Figure 7.</b> Event Free Kaplan Meier curve.
 </p>
 
 <p align="center">    
-<img src="media/kaplan_meier_with_at_risk_plot_table.png" width="600" /> <br>
+<img src="kaplan_meier_with_at_risk_plot_table.png" width="600" /> <br>
 <b>Figure 8.</b> Event Free Kaplan Meier curve with at risk shown.
 </p>
 
@@ -123,12 +123,12 @@ CSV files should include these columns:
 
 <table>
   <tr>
-    <td><img src="media/transform_spider_1.png" width="400"></td>
-    <td><img src="media/transform_spider_2.png" width="400"></td>
+    <td><img src="transform_spider_1.png" width="400"></td>
+    <td><img src="transform_spider_2.png" width="400"></td>
   </tr>
   <tr>
-    <td><img src="media/transform_spider_3.png" width="400"></td>
-    <td><img src="media/transform_spider_4.png" width="400"></td>
+    <td><img src="transform_spider_3.png" width="400"></td>
+    <td><img src="transform_spider_4.png" width="400"></td>
   </tr>
 </table>
 <p align="center">
@@ -137,18 +137,18 @@ CSV files should include these columns:
 </div>
 
 <p align="center">    
-<img src="media/tumor_volume_change_with legend.png" /><br>
+<img src="tumor_volume_change_with legend.png" /><br>
 <b>Figure 10.</b> Change in tumor volume as a percentage.
 </p>
 
 
 <p align="center">    
-<img src="media/tumor_volume_change_as_objective_response.png" /><br>
+<img src="tumor_volume_change_as_objective_response.png" /><br>
 <b>Figure 11.</b> Change in tumor volume plotted as objectiv response.
 </p>
 
 <p align="center">    
-<img src="media/tumor_volume_auc.png"  /> <br>
+<img src="tumor_volume_auc.png"  /> <br>
 <b>Figure 12.</b> Area under the Tumor Volume Curve.
 </p>
 
