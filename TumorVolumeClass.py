@@ -9,7 +9,7 @@
 #         The NCI PDXNet Consensus, Mol Cancer Ther (2024) 23 (7): 924–938
 #
 
-
+# To Do
 
 # Import modules
 
@@ -165,6 +165,32 @@ class TumorVolumeTimeSeriesClass():
         self.tv_transform_str = "No Transform"
         self.tv_transform_f = self.tv_to_tv
 
+        # Objective Response
+        # Objective Response Definition
+        # "CR":#08306B # Deep Blue, "PR":#2171B5 # Blue, "SD":#BDBDBD # Gray, "PD":#D94801 # Red-Orange
+        self.default_response_color = "#CCCCCC"
+        self.objective_response_names = {
+            "CR": "Complete Response",
+            "PR": "Partial Response",
+            "SD": "Stable Disease",
+            "PD": "Progressive Disease",
+            "" : "Not Defined"}
+        self.objective_response_colors: dict[str, str] = \
+            {"CR": "#08306B",
+             "PR": "#2171B5",
+             "SD": "#BDBDBD",
+             "PD": "#D94801"}
+        self.objective_response_colors[""] = self.default_response_color
+
+        self.CR_THRESH = -90.0
+        self.PR_THRESH = -30.0
+        self.PD_THRESH = 20.0
+
+        self.is_complete_response = lambda x: x <= self.CR_THRESH
+        self.is_partial_response = lambda x: self.CR_THRESH < x <= self.PR_THRESH
+        self.is_stable_disease = lambda x: self.PR_THRESH < x < self.PD_THRESH
+        self.is_progressive_disease = lambda x: x >= self.PD_THRESH
+
     # Transform functions
     def tv_to_tv(self, tumor_volume_data_list:np.ndarray)->np.ndarray:
         tv_to_tv:np.ndarray  = tumor_volume_data_list
@@ -186,7 +212,7 @@ class TumorVolumeTimeSeriesClass():
         return pct_change
 
     # Compute
-    def compute_auc(self, compute_day: int | None = None):
+    def compute_auc(self, compute_day: int | None = None)->tuple[float,float]:
         """
         Compute AUC and normalized AUC for tumor volume data.
 
@@ -230,6 +256,80 @@ class TumorVolumeTimeSeriesClass():
         normalized_auc = auc / time_duration if time_duration > 0 else math.nan
 
         return auc, normalized_auc
+    def compute_percent_change_tumor_volume(self, compute_day: int | None = None) -> tuple[float, float]:
+        """
+        Compute percent change in tumor volume from baseline.
+
+        Parameters
+        ----------
+        compute_day : int or None
+            If provided, compute percent change up to this day.
+            Otherwise compute percent change to the final timepoint.
+
+        Returns
+        -------
+        tuple[float, float]
+            (percent change, percent change normalized per day)
+        """
+
+        # No data?
+        if self.time_day is None or len(self.time_day) == 0:
+            print('Data not found. Using Nans.')
+            return math.nan, math.nan
+
+        # Determine the day limit
+        if compute_day is None:
+            cutoff_day = self.time_day[-1]
+        else:
+            cutoff_day = compute_day
+
+        # Determine maximum usable index
+        idx_list = [i for i, t in enumerate(self.time_day) if t >= cutoff_day]
+
+        if len(idx_list) == 0:
+            max_index = len(self.time_day)
+        else:
+            max_index = idx_list[0] + 1
+
+        # Slice data up to max_index
+        t = np.array(self.time_day[:max_index])
+        v = np.array(self.tumor_volume[:max_index])
+
+        # Check validity - need at least 2 points and positive initial volume
+        if len(v) < 2 or v[0] <= 0 or np.isnan(v[0]):
+            print(f'need two points. using nans, len(v) = {len(v)}, v[0] = {v[0]}, max_index = {max_index}, compute_dau = {compute_day}')
+            return math.nan, math.nan
+
+        # Compute percent change: (final - initial) / initial * 100
+        percent_tv_change = 100 * (v[-1] - v[0]) / v[0]
+
+        # Normalized percent change per day
+        time_duration = t[-1] - t[0]
+        if time_duration <= 0:
+            print('time less then zero')
+            return math.nan, math.nan
+
+        normalized_percent_tv_change = percent_tv_change / time_duration
+
+        return percent_tv_change, normalized_percent_tv_change
+    def compute_objective_response(self, compute_day:int|None = None) -> str:
+        percent_tumor_volume_change, _ = self.compute_percent_change_tumor_volume(compute_day)
+        if self.is_complete_response(percent_tumor_volume_change)==True:
+            print(f'% tv change = {percent_tumor_volume_change}, CR')
+            return "CR"
+        elif self.is_partial_response(percent_tumor_volume_change)==True:
+            print(f'% tv change = {percent_tumor_volume_change}, PR')
+            return "PR"
+        elif self.is_stable_disease(percent_tumor_volume_change)==True:
+            print(f'% tv change = {percent_tumor_volume_change}, SD')
+            return "SD"
+        elif self.is_progressive_disease(percent_tumor_volume_change)==True:
+            print(f'% tv change = {percent_tumor_volume_change}, PD')
+            return "PD"
+        else:
+            # No category matched – optional fallback
+            print(f'percent_tumor_volume_change = {percent_tumor_volume_change}')
+            return ""
 
     # Summary
     def summary(self)->str:
@@ -364,6 +464,14 @@ class TumorVolumeStudyClass():
                                                 r"$\log_2(V/V_0)$", f"% Progress/Regress from $V_0$"]
         self.tv_transform_str = "No Transform"
         self.tv_transform_f = self.tv_to_tv
+
+        # Objective Response Definition
+        # "CR":#08306B # Deep Blue, "PR":#2171B5 # Blue, "SD":#BDBDBD # Gray, "PD":#D94801 # Red-Orange
+        self.objective_response_names = {"CR":"Complete Response", "PR":"Partial Response", "SD":"Stable Disease",
+            "PD":"Progressive Disease"}
+        self.objective_response_colors:dict[str,str] = {"CR":"#08306B", "PR":"#2171B5", "SD":"#BDBDBD", "PD":"#D94801"}
+        self.default_response_color = "#CCCCCC"
+        self.objective_response_colors[""] = self.default_response_color
 
     # Transform functions
     def tv_to_tv(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
@@ -879,7 +987,6 @@ class TumorVolumeStudyClass():
             ax_risk.grid(False)
 
         plt.show()
-
     def plot_auc_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
                      control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85,
                      bar_edgecolor="black", show_bar_labels=False, title="AUC by Arm", color_cycle=None,
@@ -1002,7 +1109,293 @@ class TumorVolumeStudyClass():
 
         plt.tight_layout()
         plt.show()
+    def plot_percent_tumor_vol_change_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
+                     control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85,
+                     bar_edgecolor="black", show_bar_labels=False, title="Tumor Volume change (%)", color_cycle=None,
+                     show_axis_labels:bool=True, plot_normalized_tv_change=False, show_legend:bool=True):
+        """
+        Vertical bar plot of AUC values for each time-series.
+        Controls are plotted first, followed by experimental arms.
 
+        Parameters
+        ----------
+        compute_day : int or None
+            Compute AUC up to max_day if provided.
+        sort_descending : bool
+            Sort AUC values within each arm.
+        show_bar_labels : bool
+            If True, display numeric AUC above each bar.
+        control_arms : tuple
+            Arms considered control and plotted first.
+        """
+
+        # -------------------------------------------
+        # 1. COLLECT AUC PER ARM
+        # -------------------------------------------
+        unique_arms = list(set(self.arm_col))
+        vol_change_dict = {}
+
+        for arm in unique_arms:
+            ts_ids = self.study_arms_dict[arm]
+            vol_change_list = []
+
+            for ts_id in ts_ids:
+                ts = self.study_tv_time_dict[ts_id]
+                tv_change_val, normalized_tv_change_val = ts.compute_percent_change_tumor_volume(compute_day=compute_day)
+                if plot_normalized_tv_change == True:
+                    vol_change_list.append((ts_id, normalized_tv_change_val))
+                else:
+                    vol_change_list.append((ts_id, tv_change_val))
+
+            vol_change_list.sort(key=lambda x: x[1], reverse=sort_descending)
+            vol_change_dict[arm] = vol_change_list
+
+        # -------------------------------------------
+        # 2. ARM ORDERING
+        # -------------------------------------------
+        controls = [a for a in unique_arms if a.lower() in control_arms]
+        experimental = [a for a in unique_arms if a not in controls]
+        ordered_arms = controls + experimental
+
+        # -------------------------------------------
+        # 3. COLOR MAP FOR ARMS
+        # -------------------------------------------
+        if color_cycle is None:
+            color_cycle = list(plt.cm.tab10.colors)
+
+        arm_colors = {
+            arm: color_cycle[i % len(color_cycle)]
+            for i, arm in enumerate(ordered_arms)
+        }
+
+        # -------------------------------------------
+        # 4. FLATTEN BAR DATA
+        # -------------------------------------------
+        bar_x_positions = []
+        bar_heights = []
+        bar_colors = []
+        bar_labels = []  # mouse IDs only (no arm)
+
+        idx = 0
+        for arm in ordered_arms:
+            color = arm_colors[arm]
+            for ts_id, tv_change_val in vol_change_dict[arm]:
+                bar_x_positions.append(idx)
+                bar_heights.append(tv_change_val)
+                bar_colors.append(color)
+                bar_labels.append(str(ts_id))  # no arm name
+
+                idx += 1
+
+        # -------------------------------------------
+        # 5. PLOT
+        # -------------------------------------------
+        fig, ax = plt.subplots(figsize=figsize)
+
+        ax.bar(
+            bar_x_positions,
+            bar_heights,
+            color=bar_colors,
+            alpha=bar_alpha,
+            edgecolor=bar_edgecolor
+        )
+
+        # Tick labels (mouse IDs only)
+        if show_axis_labels:
+            ax.set_xticks(bar_x_positions)
+            ax.set_xticklabels(bar_labels, rotation=75, ha='right', fontsize=8)
+        else:
+            ax.set_xticks([])
+            ax.set_xticklabels([])
+
+        # Add labels and titles
+        y_label = "Tumor Volume Change (%)" if not plot_normalized_tv_change else "Normalized Volume Change (%)"
+        ax.set_ylabel(y_label)
+        ax.set_title(title)
+        ax.grid(True, axis='y', alpha=0.3)
+
+        # -------------------------------------------
+        # 6. OPTIONAL: Annotate Bars with AUC Values
+        # -------------------------------------------
+        if show_bar_labels:
+            for x, h in zip(bar_x_positions, bar_heights):
+                ax.text(x, h, f"{h:.1f}", ha='center', va='bottom', fontsize=8)
+
+        # -------------------------------------------
+        # 7. LEGEND FOR ARMS
+        # -------------------------------------------
+        if show_legend:
+            handles = [plt.Line2D([], [], color=arm_colors[a], lw=8)
+                       for a in ordered_arms]
+            ax.legend(handles, ordered_arms, title="Arms", loc="best")
+
+        plt.tight_layout()
+        plt.show()
+
+    def plot_vol_change_as_objective_response_bar(self, compute_day: int | None = None, figsize=(12, 6),
+                    sort_descending=True, control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85,
+                    bar_edgecolor="black", show_bar_labels=False, title="Tumor Volume change (%)", color_cycle=None,
+                    show_axis_labels: bool = True, show_legend: bool = True, y_range:list|None = None):
+
+        # -------------------------------------------------------
+        # 1. Collect volume changes per arm
+        # -------------------------------------------------------
+        unique_arms = list(set(self.arm_col))
+        vol_change_dict = {}
+        response_code_dict = {}
+
+        for arm in unique_arms:
+            ts_ids = self.study_arms_dict[arm]
+            vol_change_list = []
+            resp_code_list = []
+
+            for ts_id in ts_ids:
+                ts = self.study_tv_time_dict[ts_id]
+                tv_change_val, _ = ts.compute_percent_change_tumor_volume(compute_day=compute_day)
+                value = tv_change_val
+
+                # ---- GET OBJECTIVE RESPONSE CATEGORY --------------------
+                # INSERT YOUR LOGIC HERE:
+                response_code = ts.compute_objective_response(compute_day)
+                # response_code must be one of: "CR","PR","SD","PD"
+                # ---------------------------------------------------------
+
+                vol_change_list.append((ts_id, value))
+                resp_code_list.append((ts_id, response_code))
+
+            # sort both lists by the TV change value
+            vol_change_list.sort(key=lambda x: x[1], reverse=sort_descending)
+            # match ordering for response code
+            sorted_resp_list = [(ts_id, next(r for t, r in resp_code_list if t == ts_id))
+                                for ts_id, _ in vol_change_list]
+
+            vol_change_dict[arm] = vol_change_list
+            response_code_dict[arm] = sorted_resp_list
+
+        # -------------------------------------------------------
+        # 2. Arm ordering (controls first)
+        # -------------------------------------------------------
+        controls = [a for a in unique_arms if a.lower() in control_arms]
+        experimental = [a for a in unique_arms if a not in controls]
+        ordered_arms = controls + experimental
+
+        # -------------------------------------------------------
+        # 3. Flatten
+        # -------------------------------------------------------
+        bar_x_positions = []
+        bar_heights = []
+        bar_colors = []
+        bar_labels = []
+        arm_ranges = {}  # for the top subplot: arm name spans
+
+        idx = 0
+        for arm in ordered_arms:
+            start_idx = idx
+
+            # Add space before each arms
+            if idx > 0:
+                idx += 1  # 1 empty bar
+            start_idx = idx
+
+            for (ts_id, tv_val), (_, resp_code) in zip(
+                    vol_change_dict[arm], response_code_dict[arm]):
+                print(f'tv_val: {tv_val} resp_code: ({resp_code})')
+                bar_x_positions.append(idx)
+                bar_heights.append(tv_val)
+                bar_colors.append(self.objective_response_colors[resp_code])
+                bar_labels.append(str(ts_id))
+
+                idx += 1
+
+            arm_ranges[arm] = (start_idx, idx - 1)
+
+        # -------------------------------------------------------
+        # 4. Create figure with 2 subplots (top labels + bars)
+        # -------------------------------------------------------
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot()
+
+        # -------------------------------------------------------
+        # 6. BAR PLOT
+        # -------------------------------------------------------
+        ax.bar(
+            bar_x_positions,
+            bar_heights,
+            color=bar_colors,
+            alpha=bar_alpha,
+            edgecolor=bar_edgecolor
+        )
+
+        if show_axis_labels:
+            ax.set_xticks(bar_x_positions)
+            ax.set_xticklabels(bar_labels, rotation=75, ha='right', fontsize=8)
+        else:
+            ax.set_xticks([])
+
+        y_label = "Tumor Volume Change (%)"
+        ax.set_ylabel(y_label)
+        ax.set_title(title)
+        ax.grid(True, axis='y', alpha=0.3)
+
+        # -------------------------------------------------------
+        # 7. Optional bar labels
+        # -------------------------------------------------------
+        if show_bar_labels:
+            for x, h in zip(bar_x_positions, bar_heights):
+                ax.text(x, h, f"{h:.1f}", ha='center', va='bottom', fontsize=8)
+
+        # -------------------------------------------------------
+        # 8. Legend for objective responses
+        # -------------------------------------------------------
+        if show_legend:
+            handles = [
+                plt.Line2D([], [], color=self.objective_response_colors[key], lw=8)
+                for key in ["CR", "PR", "SD", "PD"]
+            ]
+            labels = [self.objective_response_names[k] for k in ["CR", "PR", "SD", "PD"]]
+
+            ax.legend(handles, labels, title="Objective Response", loc="best")
+
+
+
+        # set y limit
+        # Set range if given
+        if y_range is not None:
+            ax.set_ylim(y_range[0], y_range[1])
+        else:
+            y_range = ax.get_ylim()
+
+        # 9. Draw arm labels centered above each arm block
+        # -------------------------------------------------------
+        for arm, (start, end) in arm_ranges.items():
+            mid = (start + end) / 2
+            ax.text(
+                mid,
+                y_range[1] * 1.02,  # slightly above plot
+                arm,
+                ha='center',
+                va='bottom',
+                fontsize=10,
+                fontweight='normal'
+            )
+
+
+
+        ax.set_ylim(y_range[0], y_range[1] * 1.10)
+
+        # Set layout and show
+        plt.tight_layout()
+        plt.show()
+    def add_objective_response_legend(self, ax):
+        """Add a legend explaining CR/PR/SD/PD colors."""
+        import matplotlib.patches as mpatches
+
+        patches = []
+        for code, full_name in self.objective_response_names.items():
+            color = self.objective_response_colors.get(code, "gray")
+            patches.append(mpatches.Patch(color=color, label=f"{code}: {full_name}"))
+
+        ax.legend(handles=patches, title="Objective Response", loc="best")
 class TumorVolumeExperimentalGroup():
     # Class supports the organiziation, presentation, and analysis of tumor volume experimental groups
     def __init__(self, experimental_group_col:list, study_col:list, study_dict:dict[str, TumorVolumeStudyClass]):
@@ -1059,8 +1452,6 @@ class TumorVolumeExperimentalGroup():
 
 
         pass
-
-
 class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
@@ -1432,7 +1823,7 @@ def main():
             exp_grp_obj.summarize()
 
     # Example 9: CLass AUC
-    if True:
+    if established_test:
         study_keys = tvd_obj.unique_studies
         day = 15
         for study in study_keys:
@@ -1440,6 +1831,27 @@ def main():
             study_obj = tvd_obj.tumor_vol_study_dict[study]
             study_obj.plot_auc_bar(title=title, compute_day=day, plot_normalized_auc = True, show_legend = False,
                                    show_axis_labels=False)
+
+    # Example  10: change in tumor volume
+    if False:
+        study_keys = tvd_obj.unique_studies
+        day = None
+        for study in study_keys:
+            title = f"{study} - Change in Tumor Volume- Day {day}"
+            study_obj = tvd_obj.tumor_vol_study_dict[study]
+            plot_normalized_tv_change = False
+            study_obj.plot_percent_tumor_vol_change_bar(title=title, compute_day=day,
+                plot_normalized_tv_change=plot_normalized_tv_change, show_legend=False, show_axis_labels=False)
+
+    # Example  11: Tumor volume as objective response
+    study_keys = tvd_obj.unique_studies
+    day = None
+    for study in study_keys:
+        title = f"{study} - Tumor Volume Change as Objective Response"
+        study_obj = tvd_obj.tumor_vol_study_dict[study]
+        plot_normalized_tv_change = False
+        study_obj.plot_vol_change_as_objective_response_bar(title=title, compute_day=day,
+            show_legend=True, show_axis_labels=False)
 
 if __name__ == '__main__':
     main()
