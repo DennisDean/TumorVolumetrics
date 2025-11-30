@@ -1223,7 +1223,6 @@ class TumorVolumeStudyClass():
 
         plt.tight_layout()
         plt.show()
-
     def plot_vol_change_as_objective_response_bar(self, compute_day: int | None = None, figsize=(12, 6),
                     sort_descending=True, control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85,
                     bar_edgecolor="black", show_bar_labels=False, title="Tumor Volume change (%)", color_cycle=None,
@@ -1387,31 +1386,30 @@ class TumorVolumeStudyClass():
             patches.append(mpatches.Patch(color=color, label=f"{code}: {full_name}"))
 
         ax.legend(handles=patches, title="Objective Response", loc="best")
-class TumorVolumeExperimentalGroup():
+class TumorVolumeExperimentClass():
     # Class supports the organiziation, presentation, and analysis of tumor volume experimental groups
-    def __init__(self, experimental_group_col:list, study_col:list, study_dict:dict[str, TumorVolumeStudyClass]):
+    def __init__(self, experiment:str, experiment_col:list, study_col:list, study_dict:dict[str, TumorVolumeStudyClass]):
+
+        # Sasve experiment name
+        self.experiment = experiment
 
         # Copy column and dictionary information
-        self.experimental_group_col = experimental_group_col.copy()
+        self.experiment_col = experiment_col.copy()
         self.study_col = study_col.copy()
         self.study_dict = copy.deepcopy(study_dict)
 
-        # Create summary information
-        self.unique_experimental_groups = list(set(self.experimental_group_col))
-        self.unique_experimental_groups.sort()
-
         # Create Experimental Group Dictionary
-        self.experimental_group_dict:dict[str, list[TumorVolumeStudyClass]] = {}
-        for experiment_group in self.unique_experimental_groups:
+        self.experiment_dict:dict[str, list[TumorVolumeStudyClass]] = {}
+        for experiment_group in self.unique_experiments:
             # Get study entries assoicated with experiment
-            study_keys = [s for i, s in enumerate(self.study_col) if experimental_group_col[i] == experiment_group ]
+            study_keys = [s for i, s in enumerate(self.study_col) if experiment_col[i] == experiment_group ]
             study_keys = list(set(study_keys))
 
             # Create reduced study dict
             temp_study_dict = {}
             for study in study_keys:
                 temp_study_dict[study] = self.study_dict[study]
-            self.experimental_group_dict[experiment_group] = temp_study_dict
+            self.experiment_dict[experiment_group] = temp_study_dict
 
     # Summary
     def summarize(self):
@@ -1433,9 +1431,9 @@ class TumorVolumeExperimentalGroup():
                 exp_grp_study_dict[study].summarize()
 
     # Visualization
-    def plot_auc_bar(self, experimental_group_str:str, max_day:int|None):
-        # AUC histogram for each study with arms plotted first followed by controlled data
-        exp_grp_study_dict = self.experimental_group_dict[experimental_group_str]
+    def plot_average_tumor_volume_change_bar(self, experiment_str:str, max_day:int|None):
+        # Plot average tumor volume change for each study in a bar chat
+        exp_grp_study_dict = self.experiment_dict[experimental_group_str]
         study_keys = exp_grp_study_dict.keys()
         study_keys.sort()
 
@@ -1443,6 +1441,7 @@ class TumorVolumeExperimentalGroup():
 
 
         pass
+
 class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
@@ -1455,7 +1454,7 @@ class TumorVolumeDataClass():
         self.weight_units:str|None = None
 
         # data formats
-        self.tmz_col_names:list|None  = ['contributor', 'arms', 'times', 'volume', 'experimental_group',
+        self.tmz_col_names:list|None  = ['contributor', 'arms', 'times', 'volume', 'experiment',
                                          'study', 'id', 'tumor', 'disease_type',
                                          'body_weight', 'matched_controls']
         self.unmatched_control_entry = 'unmatched'
@@ -1568,8 +1567,8 @@ class TumorVolumeDataClass():
         self.num_disease_types = len(unique(self.tmz_data_df['disease_type']))
 
         # Supplemental variables
-        self.unique_experimental_groups = unique(self.tmz_data_df['experimental_group'])
-        self.num_experimental_groups = unique(self.tmz_data_df['experimental_group'])
+        self.unique_experiments = unique(self.tmz_data_df['experiment'])
+        self.num_experiments = unique(self.tmz_data_df['experiment'])
 
         unmatched_str = self.unmatched_control_entry
         unique_matched_controls = unique(self.tmz_data_df['matched_controls'])
@@ -1607,7 +1606,7 @@ class TumorVolumeDataClass():
             # Study variables
             contributor = df[df['id'] == pdx]['contributor'].iloc[0]
             arm = df[df['id'] == pdx]['arms'].iloc[0]
-            study_group = df[df['id'] == pdx]['experimental_group'].iloc[0]
+            study_group = df[df['id'] == pdx]['experiment'].iloc[0]
             study = df[df['id'] == pdx]['study'].iloc[0]
             pdx_id = df[df['id'] == pdx]['id'].iloc[0]
             tumor = df[df['id'] == pdx]['tumor'].iloc[0]
@@ -1651,26 +1650,26 @@ class TumorVolumeDataClass():
         # Prepare experimental group data structure for analysis and visualization
 
         # Check if data is available
-        if self.unique_experimental_groups is None:
+        if self.unique_experiments is None:
             logger.info('Can not generate experimental group dictionary. Load data file first.')
             return
 
         # Create dictionary
         tumor_vol_experimental_group_dict = {}
         df = self.tmz_data_df
-        for experimental_group in self.unique_experimental_groups:
+        for experiment in self.unique_experiments:
             # Get information to create study class
-            experimental_group_col = list(df.loc[df['experimental_group'] == experimental_group, 'experimental_group'].values)
-            study_col = list(df.loc[df['experimental_group'] == experimental_group, 'study'].values)
-            arms_col = list(df.loc[df['experimental_group'] == experimental_group, 'arms'].values)
+            experiment_col = list(df.loc[df['experiment'] == experiment, 'experiment'].values)
+            study_col = list(df.loc[df['experiment'] == experiment, 'study'].values)
+            arms_col = list(df.loc[df['experiment'] == experiment, 'arms'].values)
 
             # Create experimental group class
             data_file_name = self.tmz_data_fn
             study_dict = self.tumor_vol_study_dict
-            tv_experimental_group_obj = TumorVolumeExperimentalGroup(experimental_group_col, study_col, study_dict)
+            tv_experimental_group_obj = TumorVolumeExperimentClass(experiment, experiment_col, study_col, study_dict)
 
             # Store tumor volume experimental group object
-            tumor_vol_experimental_group_dict[experimental_group] = tv_experimental_group_obj
+            tumor_vol_experimental_group_dict[experiment] = tv_experimental_group_obj
 
         # Store study dictionary
         self.tumor_vol_experimental_group_dict = tumor_vol_experimental_group_dict

@@ -76,7 +76,7 @@ CSV files should include these columns:
 
 ## Figure Examples
 
-
+### Time Series Class Figures
 <p align="center">    
 <img src="tumor_volume.png" /><br>
 <b>Figure 1.</b> Example tumor volume plot.
@@ -108,6 +108,7 @@ CSV files should include these columns:
 <b>Figure 6.</b> Average tumor volume curves with standard deviation shown.
 </p>
 
+### Study Class Figures
 
 <p align="center">    
 <img src="kaplan_meier.png" /><br>
@@ -151,6 +152,10 @@ CSV files should include these columns:
 <img src="tumor_volume_auc.png"  /> <br>
 <b>Figure 12.</b> Area under the Tumor Volume Curve.
 </p>
+
+### Experiment Class Figures
+
+** Coming Soon **
 
 License
 This project is licensed under the GNU Affero General Public License v3.0. See the LICENSE.md file for details.
