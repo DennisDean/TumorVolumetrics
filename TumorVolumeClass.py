@@ -1669,109 +1669,134 @@ class TumorVolumeExperimentClass():
         plt.show()
 
         # Class functions
-    def plot_auc_with_controls_bar(self, control_arms=("control", "vehicle", "placebo"),
-            error_metric="std", show_legend=True, show_axis_labels=False, compute_day:int|None=None,
-            title="Mean AUC", figsize=(10, 6)):
+    def plot_auc_with_controls_bar(self, control_arms=("control", "vehicle", "placebo"),error_metric="sem", show_legend=True,
+            show_axis_labels=False, compute_day: int | None = None, title="Average AUC by Study", figsize=(12, 6)):
         """
-        plot AUC with control bars for each study with control arms
+        Plot mean AUC for each study with control vs treatment bars side-by-side.
+        Controls always plotted first.
         """
 
         import numpy as np
         import matplotlib.pyplot as plt
 
-        # Sort studies
         study_keys = sorted(self.study_keys)
 
-        study_means = []
-        study_errors = []
+        # Data holders
         study_labels = []
-        study_colors = []
+        control_means = []
+        control_errors = []
+        treatment_means = []
+        treatment_errors = []
 
+        # Colors
         cmap = plt.get_cmap("tab20")
+        ctrl_color = "#6C757D"  # muted gray for controls
+        trt_color = "#1F77B4"  # blue for treatment groups
 
-        # Build bar data
         for idx, study in enumerate(study_keys):
 
             study_obj = self.experiment_study_dict[study]
-
             arms = study_obj.unique_arms
-            arms_to_plot = [arm for arm in arms if arm.lower() not in control_arms]
 
-            all_changes = []
+            ctrl_values = []
+            trt_values = []
 
-            for arm in arms_to_plot:
-                arm_id_list = study_obj.study_arms_dict[arm]
+            # ----- Split arms -----
+            control_list = [a for a in arms if a.lower() in control_arms]
+            treatment_list = [a for a in arms if a.lower() not in control_arms]
 
-                for ts_id in arm_id_list:
-                    tv_data_obj = study_obj.study_tv_time_dict[ts_id]
-                    tv_auc = tv_data_obj.compute_auc(compute_day)
-                    all_changes.append(tv_auc)
+            # ----- Collect AUC for control -----
+            for arm in control_list:
+                for ts_id in study_obj.study_arms_dict[arm]:
+                    tv = study_obj.study_tv_time_dict[ts_id]
+                    auc = tv.compute_auc(compute_day)
+                    ctrl_values.append(auc)
 
-                print(f'arm = {arm}, arm_auc = {all_changes}')
+            # ----- Collect AUC for treatment -----
+            for arm in treatment_list:
+                for ts_id in study_obj.study_arms_dict[arm]:
+                    tv = study_obj.study_tv_time_dict[ts_id]
+                    auc = tv.compute_auc(compute_day)
+                    trt_values.append(auc)
 
-            if len(all_changes) == 0:
+            # Skip if no data
+            if len(ctrl_values) == 0 and len(trt_values) == 0:
                 continue
 
-            mean_val = np.nanmean(all_changes)
-            if error_metric == "sem":
-                err_val = np.nanstd(all_changes) / np.sqrt(len(all_changes))
-            else:
-                err_val = np.nanstd(all_changes)
-
-            study_means.append(mean_val)
-            study_errors.append(err_val)
             study_labels.append(study)
-            study_colors.append(cmap(idx % 20))
 
-        # ---------------- Plotting ----------------
+            # Compute stats
+            def _err(vals):
+                if error_metric == "sem":
+                    return np.nanstd(vals) / np.sqrt(len(vals))
+                return np.nanstd(vals)
+
+            # Controls (may be empty)
+            if len(ctrl_values) > 0:
+                control_means.append(np.nanmean(ctrl_values))
+                control_errors.append(_err(ctrl_values))
+            else:
+                control_means.append(np.nan)
+                control_errors.append(0)
+
+            # Treatments
+            if len(trt_values) > 0:
+                treatment_means.append(np.nanmean(trt_values))
+                treatment_errors.append(_err(trt_values))
+            else:
+                treatment_means.append(np.nan)
+                treatment_errors.append(0)
+
+        # ---------- PLOTTING ----------
+        n_studies = len(study_labels)
+        x = np.arange(n_studies)
+
+        width = 0.35
+
         fig, ax = plt.subplots(figsize=figsize)
-        x = np.arange(len(study_means))
 
-        bars = ax.bar(
-            x,
-            study_means,
-            yerr=study_errors,
-            color=study_colors,
-            capsize=5,
-            width=0.6,
+        # Control bars (left)
+        bars_ctrl = ax.bar(
+            x - width / 2,
+            control_means,
+            width=width,
+            yerr=control_errors,
+            color=ctrl_color,
             edgecolor="black",
+            capsize=5,
+            label="Control"
+        )
+
+        # Treatment bars (right)
+        bars_trt = ax.bar(
+            x + width / 2,
+            treatment_means,
+            width=width,
+            yerr=treatment_errors,
+            color=trt_color,
+            edgecolor="black",
+            capsize=5,
+            label="Treatment"
         )
 
         ax.axhline(0, color="black", linewidth=1)
 
         # Axis labels
         if show_axis_labels:
-            ax.set_ylabel("% Tumor Volume Change")
+            ax.set_ylabel("AUC")
             ax.set_xlabel("Study")
 
-        if title:
-            ax.set_title(title)
-
-        # Ticks
+        ax.set_title(title)
         ax.set_xticks(x)
         ax.set_xticklabels(study_labels, rotation=45, ha="right")
 
-        # -------- Legend that describes the colors --------
+        # Legend inside plot
         if show_legend:
-            legend_elements = [
-                plt.Line2D(
-                    [0], [0],
-                    marker="s",
-                    markersize=10,
-                    color=color,
-                    linestyle="none",
-                    label=label
-                )
-                for label, color in zip(study_labels, study_colors)
-            ]
-
             ax.legend(
-                handles=legend_elements,
                 loc="upper right",
                 frameon=True,
-                facecolor="white",
                 framealpha=0.8,
-                title="Studies"
+                facecolor="white"
             )
 
         plt.tight_layout()
@@ -2206,9 +2231,13 @@ def main():
     if True:
         experiments = tvd_obj.unique_experiments
         experiments.sort()
+        compute_day = None
+        title = 'Average AUC by Study'
+        if compute_day is not None:
+            title = f'Average AUC by Study ({compute_day})'
         for experiment in experiments:
             tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
-            tvd_experiment_obj.plot_auc_with_controls_bar()
+            tvd_experiment_obj.plot_auc_with_controls_bar(compute_day=compute_day, title=title)
             print(tvd_experiment_obj)
 if __name__ == '__main__':
     main()
