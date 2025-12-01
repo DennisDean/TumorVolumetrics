@@ -182,7 +182,7 @@ class TumorVolumeTimeSeriesClass():
              "PD": "#D94801"}
         self.objective_response_colors[""] = self.default_response_color
 
-        self.CR_THRESH = -90.0
+        self.CR_THRESH = -99.0
         self.PR_THRESH = -30.0
         self.PD_THRESH = 20.0
 
@@ -461,7 +461,12 @@ class TumorVolumeStudyClass():
         # "CR":#08306B # Deep Blue, "PR":#2171B5 # Blue, "SD":#BDBDBD # Gray, "PD":#D94801 # Red-Orange
         self.objective_response_names = {"CR":"Complete Response", "PR":"Partial Response", "SD":"Stable Disease",
             "PD":"Progressive Disease"}
-        self.objective_response_colors:dict[str,str] = {"CR":"#08306B", "PR":"#2171B5", "SD":"#BDBDBD", "PD":"#D94801"}
+        self.objective_response_colors:dict[str,str] = {
+            "CR": "#FECA57", # sunny yellow
+            "PR": "#96CEB4", # mint green
+            "SD": "#00D2D3", # cyan
+            "PD": "#45B7D1"  # sky blue
+        }
         self.default_response_color = "#CCCCCC"
         self.objective_response_colors[""] = self.default_response_color
 
@@ -1411,6 +1416,17 @@ class TumorVolumeExperimentClass():
         for study in study_keys:
             self.experiment_study_dict[study] = study_dict[study]
 
+
+        # Plots
+        self.objective_response_names = {"CR": "Complete Response", "PR": "Partial Response",
+                                         "SD": "Stable Disease", "PD": "Progressive Disease"}
+        self.objective_response_colors = {
+            "CR": "#FECA57", # sunny yellow
+            "PR": "#96CEB4", # mint green
+            "SD": "#00D2D3", # cyan
+            "PD": "#45B7D1"  # sky blue
+        }
+
     # Summary
     def summarize(self):
         # Write summary to log file
@@ -1429,7 +1445,7 @@ class TumorVolumeExperimentClass():
 
     # Visualization
     def plot_average_tumor_volume_change_bar(self, control_arms=("control", "vehicle", "placebo"),
-            error_metric="std", show_legend=True, show_axis_labels=False,
+            error_metric="std", show_legend=True, show_axis_labels=False, compute_day:int|None=None,
             title="Average % Tumor Volume Change by Study", figsize=(10, 6)):
         """
         Plot the average percent tumor volume change for each study.
@@ -1463,8 +1479,8 @@ class TumorVolumeExperimentClass():
 
                 for ts_id in arm_id_list:
                     tv_data_obj = study_obj.study_tv_time_dict[ts_id]
-                    tv_pct_change = tv_data_obj.tv_percent_change(tv_data_obj.tumor_volume)
-                    final_change = tv_pct_change[-1]
+                    tv_pct_change = tv_data_obj.compute_percent_change_tumor_volume(compute_day)
+                    final_change = tv_pct_change
                     all_changes.append(final_change)
 
             if len(all_changes) == 0:
@@ -1534,8 +1550,234 @@ class TumorVolumeExperimentClass():
 
         plt.tight_layout()
         plt.show()
+    def proportion_in_objective_response_classification_bar(self, control_arms=("control", "vehicle", "placebo"),
+            show_legend=True, show_axis_labels=False, compute_day: int | None = None,
+            title="Objective Response Distribution by Study", figsize=(10, 6)):
+        """
+        Create a stacked 100% bar plot showing objective response proportions
+        for each study, with count and percentage inside each bar segment.
+        """
 
-    # Class functions
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        OR_ORDER = ["CR", "PR", "SD", "PD"]
+        OR_COLORS = [self.objective_response_colors[o] for o in OR_ORDER]
+
+        study_keys = sorted(self.study_keys)
+
+        # Holds raw counts per OR code per study
+        study_or_counts = []
+
+        # ---------------- Collect Objective Responses ----------------
+        for study in study_keys:
+            study_obj = self.experiment_study_dict[study]
+
+            arms_to_plot = [
+                arm for arm in study_obj.unique_arms
+                if arm.lower() not in control_arms
+            ]
+
+            resp_counts = {or_code: 0 for or_code in OR_ORDER}
+
+            for arm in arms_to_plot:
+                for ts_id in study_obj.study_arms_dict[arm]:
+                    tv_obj = study_obj.study_tv_time_dict[ts_id]
+                    resp = tv_obj.compute_objective_response(compute_day)
+
+                    if resp in resp_counts:
+                        resp_counts[resp] += 1
+
+            study_or_counts.append(resp_counts)
+
+        # Convert counts → proportions
+        study_or_props = []
+        for count_dict in study_or_counts:
+            total = sum(count_dict.values())
+            if total == 0:
+                study_or_props.append([0, 0, 0, 0])
+            else:
+                study_or_props.append([count_dict[o] / total for o in OR_ORDER])
+
+        study_or_props = np.array(study_or_props)
+        x = np.arange(len(study_keys))
+
+        # ---------------- Plotting ----------------
+        fig, ax = plt.subplots(figsize=figsize)
+
+        bottoms = np.zeros(len(study_keys))
+
+        # Add stacked layers CR, PR, SD, PD
+        for idx, or_code in enumerate(OR_ORDER):
+
+            heights = study_or_props[:, idx]
+            counts = np.array([d[or_code] for d in study_or_counts])
+
+            bars = ax.bar(
+                x,
+                heights,
+                bottom=bottoms,
+                color=OR_COLORS[idx],
+                edgecolor="black",
+                label=self.objective_response_names[or_code],
+            )
+
+            # -------- Add Count + Percentage in Each Segment --------
+            for i, bar in enumerate(bars):
+                count = counts[i]
+                height = bar.get_height()
+                total = sum(study_or_counts[i].values())
+
+                if count > 0 and height > 0 and total > 0:
+                    pct = height * 100
+                    label_text = f"{count} ({pct:.0f}%)"
+
+                    ax.text(
+                        bar.get_x() + bar.get_width() / 2,
+                        bottoms[i] + height / 2,
+                        label_text,
+                        ha="center",
+                        va="center",
+                        fontsize=10,
+                        color="white" if idx in (0, 1, 3) else "black",
+                        fontweight="bold"
+                    )
+
+            bottoms += heights
+
+        # Labels
+        if show_axis_labels:
+            ax.set_ylabel("Proportion of Responses")
+            ax.set_xlabel("Study")
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(study_keys, rotation=45, ha="right")
+
+        if title:
+            ax.set_title(title)
+
+        # ---------------- Legend Outside Plot ----------------
+        if show_legend:
+            ax.legend(
+                title="Objective Responses",
+                loc="center left",
+                bbox_to_anchor=(1.02, 0.5),
+                frameon=True
+            )
+
+        plt.tight_layout()
+        plt.show()
+
+        # Class functions
+    def plot_auc_with_controls_bar(self, control_arms=("control", "vehicle", "placebo"),
+            error_metric="std", show_legend=True, show_axis_labels=False, compute_day:int|None=None,
+            title="Mean AUC", figsize=(10, 6)):
+        """
+        plot AUC with control bars for each study with control arms
+        """
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        # Sort studies
+        study_keys = sorted(self.study_keys)
+
+        study_means = []
+        study_errors = []
+        study_labels = []
+        study_colors = []
+
+        cmap = plt.get_cmap("tab20")
+
+        # Build bar data
+        for idx, study in enumerate(study_keys):
+
+            study_obj = self.experiment_study_dict[study]
+
+            arms = study_obj.unique_arms
+            arms_to_plot = [arm for arm in arms if arm.lower() not in control_arms]
+
+            all_changes = []
+
+            for arm in arms_to_plot:
+                arm_id_list = study_obj.study_arms_dict[arm]
+
+                for ts_id in arm_id_list:
+                    tv_data_obj = study_obj.study_tv_time_dict[ts_id]
+                    tv_auc = tv_data_obj.compute_auc(compute_day)
+                    all_changes.append(tv_auc)
+
+                print(f'arm = {arm}, arm_auc = {all_changes}')
+
+            if len(all_changes) == 0:
+                continue
+
+            mean_val = np.nanmean(all_changes)
+            if error_metric == "sem":
+                err_val = np.nanstd(all_changes) / np.sqrt(len(all_changes))
+            else:
+                err_val = np.nanstd(all_changes)
+
+            study_means.append(mean_val)
+            study_errors.append(err_val)
+            study_labels.append(study)
+            study_colors.append(cmap(idx % 20))
+
+        # ---------------- Plotting ----------------
+        fig, ax = plt.subplots(figsize=figsize)
+        x = np.arange(len(study_means))
+
+        bars = ax.bar(
+            x,
+            study_means,
+            yerr=study_errors,
+            color=study_colors,
+            capsize=5,
+            width=0.6,
+            edgecolor="black",
+        )
+
+        ax.axhline(0, color="black", linewidth=1)
+
+        # Axis labels
+        if show_axis_labels:
+            ax.set_ylabel("% Tumor Volume Change")
+            ax.set_xlabel("Study")
+
+        if title:
+            ax.set_title(title)
+
+        # Ticks
+        ax.set_xticks(x)
+        ax.set_xticklabels(study_labels, rotation=45, ha="right")
+
+        # -------- Legend that describes the colors --------
+        if show_legend:
+            legend_elements = [
+                plt.Line2D(
+                    [0], [0],
+                    marker="s",
+                    markersize=10,
+                    color=color,
+                    linestyle="none",
+                    label=label
+                )
+                for label, color in zip(study_labels, study_colors)
+            ]
+
+            ax.legend(
+                handles=legend_elements,
+                loc="upper right",
+                frameon=True,
+                facecolor="white",
+                framealpha=0.8,
+                title="Studies"
+            )
+
+        plt.tight_layout()
+        plt.show()
+
+    # Python
     def __str__(self):
         return f'Tumor Volume Experiment Class, experiment: {self.experiment}, num of studies = {len(self.study_keys)}, studies = {", ".join(self.study_keys)}'
 class TumorVolumeDataClass():
@@ -1943,7 +2185,7 @@ def main():
                 show_legend=True, show_axis_labels=False)
 
     # Example  12: Average Tumor Volume Change Experiment
-    if True:
+    if established_test:
         experiments = tvd_obj.unique_experiments
         experiments.sort()
         for experiment in experiments:
@@ -1951,5 +2193,22 @@ def main():
             tvd_experiment_obj.plot_average_tumor_volume_change_bar()
             print(tvd_experiment_obj)
 
+    # Example  13: Objective Response by Study
+    if established_test:
+        experiments = tvd_obj.unique_experiments
+        experiments.sort()
+        for experiment in experiments:
+            tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
+            tvd_experiment_obj.proportion_in_objective_response_classification_bar()
+            print(tvd_experiment_obj)
+
+    # Example  14: Plot AUC average with controls
+    if True:
+        experiments = tvd_obj.unique_experiments
+        experiments.sort()
+        for experiment in experiments:
+            tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
+            tvd_experiment_obj.plot_auc_with_controls_bar()
+            print(tvd_experiment_obj)
 if __name__ == '__main__':
     main()
