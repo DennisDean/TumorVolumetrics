@@ -27,9 +27,10 @@ from scipy.stats import sem
 from typing import Optional
 
 # Computation
+import bisect
 import math
 from lifelines import KaplanMeierFitter
-from lifelines.statistics import logrank_test
+from scipy.stats import t
 
 # Visualization
 import matplotlib.pyplot as plt
@@ -210,6 +211,27 @@ class TumorVolumeTimeSeriesClass():
         vo = pct_change[0]
         pct_change = ((pct_change - vo) / vo) * 100
         return pct_change
+
+    # Return
+    def return_log2_change(self, compute_day:int|None = None):
+        t_day = self.time_day
+        compute_day = t_day[-1] if compute_day is None else compute_day
+        compute_day_index = self.get_compute_day_index(t_day, compute_day)
+        log2_change = np.log2(self.tumor_volume[compute_day_index]/self.tumor_volume[0])
+        return log2_change
+    def get_compute_day_index(self, time_day, compute_day):
+        idx = bisect.bisect_right(time_day, compute_day)
+
+        # If compute_day is greater than all days, return last index
+        if idx >= len(time_day):
+            return len(time_day) - 1
+
+        # If exact match exists, return that index
+        if idx > 0 and time_day[idx - 1] == compute_day:
+            return idx - 1
+
+        # Otherwise idx is already the "larger neighbor"
+        return idx
 
     # Compute
     def compute_auc(self, compute_day: int | None = None)->tuple[float,float]:
@@ -1443,6 +1465,33 @@ class TumorVolumeExperimentClass():
         for study in study_keys:
             self.experiment_study_dict[study].summarize()
 
+    # Computation
+    def log2fc_ci(meanA, sdA, nA, meanB, sdB, nB, confidence=0.95):
+        # Fold change
+        fc = meanB / meanA
+        log2fc = np.log2(fc)
+
+        # Standard errors using delta method
+        SEA = sdA / (meanA * np.sqrt(nA))
+        SEB = sdB / (meanB * np.sqrt(nB))
+
+        # Convert to log2 base
+        SEA_log2 = SEA / np.log(2)
+        SEB_log2 = SEB / np.log(2)
+
+        # Combined SE
+        SE_log2fc = np.sqrt(SEA_log2 ** 2 + SEB_log2 ** 2)
+
+        # t-value
+        dof = nA + nB - 2
+        tval = t.ppf((1 + confidence) / 2, dof)
+
+        # CI
+        lower = log2fc - tval * SE_log2fc
+        upper = log2fc + tval * SE_log2fc
+
+        return log2fc, lower, upper
+
     # Visualization
     def plot_average_tumor_volume_change_bar(self, control_arms=("control", "vehicle", "placebo"),
             error_metric="std", show_legend=True, show_axis_labels=False, compute_day:int|None=None,
@@ -1782,8 +1831,12 @@ class TumorVolumeExperimentClass():
         ax.axhline(0, color="black", linewidth=1)
 
         # Axis labels
+        y_label_title = f"AUC with Error Bars ({error_metric.upper()})"
+        if compute_day is not None:
+            y_label_title = f"AUC with Error Bars at Day {compute_day} ({error_metric})"
+        ax.set_ylabel(y_label_title)
+
         if show_axis_labels:
-            ax.set_ylabel("AUC")
             ax.set_xlabel("Study")
 
         ax.set_title(title)
@@ -1798,6 +1851,145 @@ class TumorVolumeExperimentClass():
                 framealpha=0.8,
                 facecolor="white"
             )
+
+        plt.tight_layout()
+        plt.show()
+    def plot_log2fc_points(self, control_arms=("control", "vehicle", "placebo"), show_legend=True, show_axis_labels=True,
+            compute_day=None, title="Log2 Change (Control vs Treatment)", figsize=(12, 6)):
+        """
+        For each study:
+            - Determine the index for compute_day
+            - Compute per-sample log2 change at that index
+            - Compute control vs treatment mean ± SEM
+            - Plot two points (control, treatment) for each study
+        """
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        # ------ helper: find index for compute_day ------
+        def get_index(days, compute_day):
+            if compute_day is None:
+                return len(days) - 1
+
+            days = list(days)
+
+            if compute_day >= days[-1]:
+                return len(days) - 1
+
+            for i, d in enumerate(days):
+                if compute_day <= d:
+                    return i
+
+            return len(days) - 1
+
+        study_keys = sorted(self.study_keys)
+
+        fig, ax = plt.subplots(figsize=figsize)
+
+        x_positions = []
+        x_labels = []
+
+        x_counter = 0
+
+        # Define colors for control and treatment
+        ctrl_color = '#808080'  # gray
+        trt_color = '#1f77b4'  # blue
+
+        for study_idx, study in enumerate(study_keys):
+            study_obj = self.experiment_study_dict[study]
+            arms = study_obj.unique_arms
+
+            control_list = [a for a in arms if a.lower() in control_arms]
+            treatment_list = [a for a in arms if a.lower() not in control_arms]
+
+            ctrl_vals = []
+            trt_vals = []
+
+            # --- collect values from controls ---
+            for arm in control_list:
+                for ts_id in study_obj.study_arms_dict[arm]:
+                    tv = study_obj.study_tv_time_dict[ts_id]
+
+                    idx = get_index(tv.time_day, compute_day)
+                    v0 = tv.tumor_volume[0]
+                    v_end = tv.tumor_volume[idx]
+                    if v0 > 0:
+                        ctrl_vals.append(np.log2(v_end / v0))
+
+            # --- collect values from treatments ---
+            for arm in treatment_list:
+                for ts_id in study_obj.study_arms_dict[arm]:
+                    tv = study_obj.study_tv_time_dict[ts_id]
+
+                    idx = get_index(tv.time_day, compute_day)
+                    v0 = tv.tumor_volume[0]
+                    v_end = tv.tumor_volume[idx]
+                    if v0 > 0:
+                        trt_vals.append(np.log2(v_end / v0))
+
+            if len(ctrl_vals) == 0 or len(trt_vals) == 0:
+                continue
+
+            def sem(x):
+                return np.std(x, ddof=1) / np.sqrt(len(x)) if len(x) > 1 else 0.0
+
+            ctrl_mean = np.mean(ctrl_vals)
+            trt_mean = np.mean(trt_vals)
+
+            ctrl_sem = sem(ctrl_vals)
+            trt_sem = sem(trt_vals)
+
+            # --- plot positions ---
+            ctrl_x = x_counter
+            trt_x = x_counter + 1
+
+            # Store the center position for the label
+            center_x = (ctrl_x + trt_x) / 2
+            x_positions.append(center_x)
+            x_labels.append(study)
+
+            # --- plot control point ---
+            ax.errorbar([ctrl_x],
+                        [ctrl_mean],
+                        yerr=[ctrl_sem],
+                        fmt="o",
+                        markersize=10,
+                        capsize=5,
+                        linewidth=2,
+                        color=ctrl_color,
+                        label='Control' if study_idx == 0 else '')
+
+            # --- plot treatment point ---
+            ax.errorbar([trt_x],
+                        [trt_mean],
+                        yerr=[trt_sem],
+                        fmt="o",
+                        markersize=10,
+                        capsize=5,
+                        linewidth=2,
+                        color=trt_color,
+                        label='Treatment' if study_idx == 0 else '')
+
+            x_counter += 3  # gap between studies
+
+        # Add vertical lines between studies
+        for i in range(len(x_positions) - 1):
+            line_x = x_positions[i] + 1.5
+            ax.axvline(x=line_x, color='black', linestyle='--', linewidth=1, alpha=0.5)
+
+        # Formatting
+        ax.set_xticks(x_positions)
+        ax.set_xticklabels(x_labels, rotation=45, ha="right")
+
+        if show_axis_labels:
+            ax.set_ylabel("log2(Change)")
+
+        if title:
+            ax.set_title(title)
+
+        if show_legend:
+            ax.legend(loc='best')
 
         plt.tight_layout()
         plt.show()
@@ -2228,7 +2420,7 @@ def main():
             print(tvd_experiment_obj)
 
     # Example  14: Plot AUC average with controls
-    if True:
+    if established_test:
         experiments = tvd_obj.unique_experiments
         experiments.sort()
         compute_day = None
@@ -2238,6 +2430,18 @@ def main():
         for experiment in experiments:
             tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
             tvd_experiment_obj.plot_auc_with_controls_bar(compute_day=compute_day, title=title)
-            print(tvd_experiment_obj)
+
+    # Example  15: plot_log2fc_points
+    if True:
+        experiments = tvd_obj.unique_experiments
+        experiments.sort()
+        compute_day = None
+        title = 'Average AUC by Study'
+        if compute_day is not None:
+            title = f'Average AUC by Study ({compute_day})'
+        for experiment in experiments:
+            tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
+            tvd_experiment_obj.plot_log2fc_points(compute_day=compute_day, title=title)
+
 if __name__ == '__main__':
     main()
