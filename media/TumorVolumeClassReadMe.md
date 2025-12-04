@@ -155,8 +155,6 @@ CSV files should include these columns:
 
 ### Experiment Class Figures
 
-
-
 <p align="center">    
 <img src="percent_tumor_volume_change_across_studies.png"  /> <br>
 <b>Figure 13.</b> Percent tumor volume change across studies.
@@ -176,6 +174,11 @@ CSV files should include these columns:
 <p align="center">    
 <img src="average_auc_across_studies.png"  /> <br>
 <b>Figure 16.</b> Average AUC across studies.
+</p>
+
+<p align="center">    
+<img src="TC_ratio_across_studies.png"  /> <br>
+<b>Figure 17.</b> T/C Ratio across studies.
 </p>
 
 License

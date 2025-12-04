@@ -1582,7 +1582,7 @@ class TumorVolumeExperimentClass():
         plt.tight_layout()
         plt.show()
     def plot_tumor_control_ratio_bar(self, control_arms=("control", "vehicle", "placebo"), error_metric="std",
-            show_axis_labels=True, compute_day: int | None = None, title="Average % Tumor Volume Change by Study",
+            show_axis_labels=True, compute_day: int | None = None, title="T/C Ratio (SE) by Study",
             figsize=(10, 6)):
         """
         Plot the average percent tumor volume change for each study.
@@ -1612,27 +1612,51 @@ class TumorVolumeExperimentClass():
             ctrl_arms = [arm for arm in arms if arm.lower() in control_arms]
 
             all_changes = []
+            treatment = []
+            controls = []
 
-            for arm in arms_to_plot:
-                arm_id_list = study_obj.study_arms_dict[arm]
+            # Grab realtive tumor volume for treatments
+            for arm in trtarms:
+                trt_arm_id_list = study_obj.study_arms_dict[arm]
 
-                for ts_id in arm_id_list:
+                for ts_id in trt_arm_id_list:
                     tv_data_obj = study_obj.study_tv_time_dict[ts_id]
-                    tv_pct_change = tv_data_obj.compute_percent_change_tumor_volume(compute_day)
-                    final_change = tv_pct_change
-                    all_changes.append(final_change)
+                    compute_day = compute_day if compute_day is not None else tv_data_obj.time_day[-1]
+                    compute_day_index = tv_data_obj.get_compute_day_index(tv_data_obj.time_day, compute_day)
+                    relative_tumor_volume = tv_data_obj.tumor_volume[compute_day_index]/tv_data_obj.tumor_volume[0]
+                    treatment.append(relative_tumor_volume)
 
-            if len(all_changes) == 0:
+            # Grab relative tumor volume for controls
+            for arm in ctrl_arms:
+                ctrl_arm_id_list = study_obj.study_arms_dict[arm]
+
+                for ts_id in ctrl_arm_id_list:
+                    tv_data_obj = study_obj.study_tv_time_dict[ts_id]
+                    compute_day = compute_day if compute_day is not None else tv_data_obj.time_day[-1]
+                    compute_day_index = tv_data_obj.get_compute_day_index(tv_data_obj.time_day, compute_day)
+                    relative_tumor_volume = tv_data_obj.tumor_volume[compute_day_index]/tv_data_obj.tumor_volume[0]
+                    controls.append(relative_tumor_volume)
+
+            # Calculate means
+            t_mean = np.mean(treatment)
+            t_size = np.size(treatment, axis=0)
+            t_var = np.var(treatment)
+            c_mean = np.mean(controls)
+            c_size = np.size(controls, axis=0)
+            c_var = np.var(controls)
+
+            # Compute ration and standard error
+            tc_ratio = t_mean/c_mean
+            s_err = tc_ratio * np.sqrt(
+                (t_var / (t_mean ** 2 * t_size)) +
+                (c_var / (c_mean ** 2 * c_size)))
+
+            if len(treatment) == 0:
                 continue
 
-            mean_val = np.nanmean(all_changes)
-            if error_metric == "sem":
-                err_val = np.nanstd(all_changes) / np.sqrt(len(all_changes))
-            else:
-                err_val = np.nanstd(all_changes)
 
-            study_means.append(mean_val)
-            study_errors.append(err_val)
+            study_means.append(tc_ratio)
+            study_errors.append(s_err)
             study_labels.append(study)
             study_colors.append('#808080')
 
@@ -1659,7 +1683,7 @@ class TumorVolumeExperimentClass():
 
         # Axis labels
         if show_axis_labels:
-            ax.set_ylabel("% Tumor Volume Change")
+            ax.set_ylabel("T/C Ratio (SE)")
             ax.set_xlabel("Study")
 
         if title:
