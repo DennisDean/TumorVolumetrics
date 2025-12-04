@@ -1494,7 +1494,7 @@ class TumorVolumeExperimentClass():
 
     # Visualization
     def plot_average_tumor_volume_change_bar(self, control_arms=("control", "vehicle", "placebo"),
-            error_metric="std", show_legend=True, show_axis_labels=True, compute_day:int|None=None,
+            error_metric="std", show_axis_labels=True, compute_day:int|None=None,
             title="Average % Tumor Volume Change by Study", figsize=(10, 6)):
         """
         Plot the average percent tumor volume change for each study.
@@ -1544,7 +1544,7 @@ class TumorVolumeExperimentClass():
             study_means.append(mean_val)
             study_errors.append(err_val)
             study_labels.append(study)
-            study_colors.append(cmap(idx % 20))
+            study_colors.append('#808080')
 
         # ---------------- Plotting ----------------
         fig, ax = plt.subplots(figsize=figsize)
@@ -1562,6 +1562,11 @@ class TumorVolumeExperimentClass():
 
         ax.axhline(0, color="black", linewidth=1)
 
+        # Add vertical lines between studies
+        for i in range(len(x) - 1):
+            line_x = x[i] + 0.5
+            ax.axvline(x=line_x, color='black', linestyle='--', linewidth=1, alpha=0.5)
+
         # Axis labels
         if show_axis_labels:
             ax.set_ylabel("% Tumor Volume Change")
@@ -1574,28 +1579,95 @@ class TumorVolumeExperimentClass():
         ax.set_xticks(x)
         ax.set_xticklabels(study_labels, rotation=45, ha="right")
 
-        # -------- Legend that describes the colors --------
-        if show_legend:
-            legend_elements = [
-                plt.Line2D(
-                    [0], [0],
-                    marker="s",
-                    markersize=10,
-                    color=color,
-                    linestyle="none",
-                    label=label
-                )
-                for label, color in zip(study_labels, study_colors)
-            ]
+        plt.tight_layout()
+        plt.show()
+    def plot_tumor_control_ratio_bar(self, control_arms=("control", "vehicle", "placebo"), error_metric="std",
+            show_axis_labels=True, compute_day: int | None = None, title="Average % Tumor Volume Change by Study",
+            figsize=(10, 6)):
+        """
+        Plot the average percent tumor volume change for each study.
+        """
 
-            ax.legend(
-                handles=legend_elements,
-                loc="upper right",
-                frameon=True,
-                facecolor="white",
-                framealpha=0.8,
-                title="Studies"
-            )
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        # Sort studies
+        study_keys = sorted(self.study_keys)
+
+        study_means = []
+        study_errors = []
+        study_labels = []
+        study_colors = []
+
+        cmap = plt.get_cmap("tab20")
+
+        # Build bar data
+        for idx, study in enumerate(study_keys):
+
+            study_obj = self.experiment_study_dict[study]
+
+            arms = study_obj.unique_arms
+            arms_to_plot = [arm for arm in arms if arm.lower() not in control_arms]
+            trtarms = [arm for arm in arms if arm.lower() not in control_arms]
+            ctrl_arms = [arm for arm in arms if arm.lower() in control_arms]
+
+            all_changes = []
+
+            for arm in arms_to_plot:
+                arm_id_list = study_obj.study_arms_dict[arm]
+
+                for ts_id in arm_id_list:
+                    tv_data_obj = study_obj.study_tv_time_dict[ts_id]
+                    tv_pct_change = tv_data_obj.compute_percent_change_tumor_volume(compute_day)
+                    final_change = tv_pct_change
+                    all_changes.append(final_change)
+
+            if len(all_changes) == 0:
+                continue
+
+            mean_val = np.nanmean(all_changes)
+            if error_metric == "sem":
+                err_val = np.nanstd(all_changes) / np.sqrt(len(all_changes))
+            else:
+                err_val = np.nanstd(all_changes)
+
+            study_means.append(mean_val)
+            study_errors.append(err_val)
+            study_labels.append(study)
+            study_colors.append('#808080')
+
+        # ---------------- Plotting ----------------
+        fig, ax = plt.subplots(figsize=figsize)
+        x = np.arange(len(study_means))
+
+        bars = ax.bar(
+            x,
+            study_means,
+            yerr=study_errors,
+            color=study_colors,
+            capsize=5,
+            width=0.6,
+            edgecolor="black",
+        )
+
+        ax.axhline(0, color="black", linewidth=1)
+
+        # Add vertical lines between studies
+        for i in range(len(x) - 1):
+            line_x = x[i] + 0.5
+            ax.axvline(x=line_x, color='black', linestyle='--', linewidth=1, alpha=0.5)
+
+        # Axis labels
+        if show_axis_labels:
+            ax.set_ylabel("% Tumor Volume Change")
+            ax.set_xlabel("Study")
+
+        if title:
+            ax.set_title(title)
+
+        # Ticks
+        ax.set_xticks(x)
+        ax.set_xticklabels(study_labels, rotation=45, ha="right")
 
         plt.tight_layout()
         plt.show()
@@ -2402,7 +2474,7 @@ def main():
                 show_legend=True, show_axis_labels=False)
 
     # Example  12: Average Tumor Volume Change Experiment
-    if True:
+    if established_test:
         experiments = tvd_obj.unique_experiments
         experiments.sort()
         for experiment in experiments:
@@ -2442,6 +2514,15 @@ def main():
         for experiment in experiments:
             tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
             tvd_experiment_obj.plot_log2fc_points(compute_day=compute_day, title=title)
+
+    # Example  16: Tumor volume ratio across experiment
+    if True:
+        experiments = tvd_obj.unique_experiments
+        experiments.sort()
+        for experiment in experiments:
+            tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
+            tvd_experiment_obj.plot_tumor_control_ratio_bar()
+            print(tvd_experiment_obj)
 
 if __name__ == '__main__':
     main()
