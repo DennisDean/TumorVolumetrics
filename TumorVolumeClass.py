@@ -1443,10 +1443,10 @@ class TumorVolumeExperimentClass():
         self.objective_response_names = {"CR": "Complete Response", "PR": "Partial Response",
                                          "SD": "Stable Disease", "PD": "Progressive Disease"}
         self.objective_response_colors = {
-            "CR": "#FECA57", # sunny yellow
-            "PR": "#96CEB4", # mint green
-            "SD": "#00D2D3", # cyan
-            "PD": "#45B7D1"  # sky blue
+            "CR": "#66C2A5",  # teal (best)
+            "PR": "#8DA0CB",  # muted blue (partial)
+            "SD": "#B8B8B8",  # light gray (stable)
+            "PD": "#808080"  # gray (progression)
         }
 
     # Summary
@@ -1494,7 +1494,7 @@ class TumorVolumeExperimentClass():
 
     # Visualization
     def plot_average_tumor_volume_change_bar(self, control_arms=("control", "vehicle", "placebo"),
-            error_metric="std", show_legend=True, show_axis_labels=False, compute_day:int|None=None,
+            error_metric="std", show_legend=True, show_axis_labels=True, compute_day:int|None=None,
             title="Average % Tumor Volume Change by Study", figsize=(10, 6)):
         """
         Plot the average percent tumor volume change for each study.
@@ -2402,7 +2402,7 @@ def main():
                 show_legend=True, show_axis_labels=False)
 
     # Example  12: Average Tumor Volume Change Experiment
-    if established_test:
+    if True:
         experiments = tvd_obj.unique_experiments
         experiments.sort()
         for experiment in experiments:
@@ -2432,7 +2432,7 @@ def main():
             tvd_experiment_obj.plot_auc_with_controls_bar(compute_day=compute_day, title=title)
 
     # Example  15: plot_log2fc_points
-    if True:
+    if established_test:
         experiments = tvd_obj.unique_experiments
         experiments.sort()
         compute_day = None

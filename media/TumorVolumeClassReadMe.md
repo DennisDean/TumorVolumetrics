@@ -155,7 +155,30 @@ CSV files should include these columns:
 
 ### Experiment Class Figures
 
-** Coming Soon **
+
+
+<p align="center">    
+<img src="media/percent_tumor_volume_change_across_studies.png"  /> <br>
+<b>Figure 13.</b> Percent tumor volume change across studies.
+</p>
+
+<p align="center">    
+<img src="media/objective_response_distribution_across_studies.png"  /> <br>
+<b>Figure 14.</b> Log 2 change across studies.
+</p>
+
+
+<p align="center">    
+<img src="media/log2_change_across_studies.png"  /> <br>
+<b>Figure 15.</b> Log 2 change across studies.
+</p>
+
+<p align="center">    
+<img src="media/average_auc_across_studies.png"  /> <br>
+<b>Figure 16.</b> Average AUC across studies.
+</p>
+
+
 
 License
 This project is licensed under the GNU Affero General Public License v3.0. See the LICENSE.md file for details.
