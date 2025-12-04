@@ -178,7 +178,5 @@ CSV files should include these columns:
 <b>Figure 16.</b> Average AUC across studies.
 </p>
 
-
-
 License
 This project is licensed under the GNU Affero General Public License v3.0. See the LICENSE.md file for details.
