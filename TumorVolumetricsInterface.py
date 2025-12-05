@@ -16,17 +16,23 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QGroupBox, QHBoxLayout,
-    QHeaderView, QLabel, QLineEdit, QMainWindow,
-    QMenu, QMenuBar, QPushButton, QSizePolicy,
-    QStatusBar, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-    QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGroupBox,
+    QHBoxLayout, QHeaderView, QLabel, QLayout,
+    QLineEdit, QMainWindow, QMenu, QMenuBar,
+    QPushButton, QSizePolicy, QStatusBar, QTreeWidget,
+    QTreeWidgetItem, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(334, 646)
+        MainWindow.resize(300, 531)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.MinimumExpanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
+        MainWindow.setSizePolicy(sizePolicy)
+        MainWindow.setMinimumSize(QSize(0, 75))
         self.actionOpen = QAction(MainWindow)
         self.actionOpen.setObjectName(u"actionOpen")
         self.actionSave = QAction(MainWindow)
@@ -49,31 +55,37 @@ class Ui_MainWindow(object):
         self.actionAbout.setObjectName(u"actionAbout")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
-        self.centralwidget.setSizePolicy(sizePolicy)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
+        self.centralwidget.setSizePolicy(sizePolicy1)
         self.centralwidget.setMinimumSize(QSize(300, 0))
         self.centralwidget.setMaximumSize(QSize(500, 16777215))
         self.verticalLayout_2 = QVBoxLayout(self.centralwidget)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.groupBox = QGroupBox(self.centralwidget)
-        self.groupBox.setObjectName(u"groupBox")
-        self.verticalLayout_3 = QVBoxLayout(self.groupBox)
+        self.verticalLayout.setSizeConstraint(QLayout.SetMinimumSize)
+        self.groupBox_load = QGroupBox(self.centralwidget)
+        self.groupBox_load.setObjectName(u"groupBox_load")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.groupBox_load.sizePolicy().hasHeightForWidth())
+        self.groupBox_load.setSizePolicy(sizePolicy2)
+        self.verticalLayout_3 = QVBoxLayout(self.groupBox_load)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.lineEdit_load_file_path = QLineEdit(self.groupBox)
+        self.lineEdit_load_file_path = QLineEdit(self.groupBox_load)
         self.lineEdit_load_file_path.setObjectName(u"lineEdit_load_file_path")
         self.lineEdit_load_file_path.setMinimumSize(QSize(0, 25))
         self.lineEdit_load_file_path.setMaximumSize(QSize(16777215, 25))
 
         self.horizontalLayout_2.addWidget(self.lineEdit_load_file_path)
 
-        self.pushButton_load_select_file = QPushButton(self.groupBox)
+        self.pushButton_load_select_file = QPushButton(self.groupBox_load)
         self.pushButton_load_select_file.setObjectName(u"pushButton_load_select_file")
         self.pushButton_load_select_file.setMinimumSize(QSize(25, 25))
         self.pushButton_load_select_file.setMaximumSize(QSize(25, 25))
@@ -85,24 +97,24 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.label = QLabel(self.groupBox)
+        self.label = QLabel(self.groupBox_load)
         self.label.setObjectName(u"label")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
-        self.label.setSizePolicy(sizePolicy1)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_3.addWidget(self.label)
 
-        self.pushButton = QPushButton(self.groupBox)
+        self.pushButton = QPushButton(self.groupBox_load)
         self.pushButton.setObjectName(u"pushButton")
         self.pushButton.setMinimumSize(QSize(75, 25))
         self.pushButton.setMaximumSize(QSize(75, 25))
 
         self.horizontalLayout_3.addWidget(self.pushButton)
 
-        self.pushButton_load_saveas = QPushButton(self.groupBox)
+        self.pushButton_load_saveas = QPushButton(self.groupBox_load)
         self.pushButton_load_saveas.setObjectName(u"pushButton_load_saveas")
         self.pushButton_load_saveas.setMinimumSize(QSize(75, 25))
         self.pushButton_load_saveas.setMaximumSize(QSize(75, 25))
@@ -113,32 +125,58 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addLayout(self.horizontalLayout_3)
 
 
-        self.verticalLayout.addWidget(self.groupBox)
+        self.verticalLayout.addWidget(self.groupBox_load, 0, Qt.AlignTop)
 
 
         self.verticalLayout_2.addLayout(self.verticalLayout)
 
-        self.groupBox_3 = QGroupBox(self.centralwidget)
-        self.groupBox_3.setObjectName(u"groupBox_3")
-        self.verticalLayout_5 = QVBoxLayout(self.groupBox_3)
+        self.verticalLayout_show = QVBoxLayout()
+        self.verticalLayout_show.setObjectName(u"verticalLayout_show")
+        self.groupBox_show = QGroupBox(self.centralwidget)
+        self.groupBox_show.setObjectName(u"groupBox_show")
+        self.verticalLayout_5 = QVBoxLayout(self.groupBox_show)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.label_5 = QLabel(self.groupBox_show)
+        self.label_5.setObjectName(u"label_5")
+        self.label_5.setMinimumSize(QSize(85, 25))
+        self.label_5.setMaximumSize(QSize(85, 25))
+
+        self.horizontalLayout.addWidget(self.label_5)
+
+        self.comboBox = QComboBox(self.groupBox_show)
+        self.comboBox.setObjectName(u"comboBox")
+
+        self.horizontalLayout.addWidget(self.comboBox)
+
+        self.pushButton_2 = QPushButton(self.groupBox_show)
+        self.pushButton_2.setObjectName(u"pushButton_2")
+        self.pushButton_2.setMinimumSize(QSize(25, 25))
+        self.pushButton_2.setMaximumSize(QSize(25, 25))
+
+        self.horizontalLayout.addWidget(self.pushButton_2)
+
+
+        self.verticalLayout_5.addLayout(self.horizontalLayout)
+
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.label_2 = QLabel(self.groupBox_3)
+        self.label_2 = QLabel(self.groupBox_show)
         self.label_2.setObjectName(u"label_2")
         self.label_2.setMinimumSize(QSize(85, 25))
         self.label_2.setMaximumSize(QSize(85, 25))
 
         self.horizontalLayout_4.addWidget(self.label_2)
 
-        self.comboBox_show_experiment = QComboBox(self.groupBox_3)
+        self.comboBox_show_experiment = QComboBox(self.groupBox_show)
         self.comboBox_show_experiment.setObjectName(u"comboBox_show_experiment")
         self.comboBox_show_experiment.setMinimumSize(QSize(0, 25))
         self.comboBox_show_experiment.setMaximumSize(QSize(16777215, 25))
 
         self.horizontalLayout_4.addWidget(self.comboBox_show_experiment)
 
-        self.pushButton_show_experiment = QPushButton(self.groupBox_3)
+        self.pushButton_show_experiment = QPushButton(self.groupBox_show)
         self.pushButton_show_experiment.setObjectName(u"pushButton_show_experiment")
         self.pushButton_show_experiment.setMinimumSize(QSize(25, 25))
         self.pushButton_show_experiment.setMaximumSize(QSize(25, 25))
@@ -150,21 +188,21 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        self.label_3 = QLabel(self.groupBox_3)
+        self.label_3 = QLabel(self.groupBox_show)
         self.label_3.setObjectName(u"label_3")
         self.label_3.setMinimumSize(QSize(85, 25))
         self.label_3.setMaximumSize(QSize(85, 25))
 
         self.horizontalLayout_5.addWidget(self.label_3)
 
-        self.comboBox_show_study = QComboBox(self.groupBox_3)
+        self.comboBox_show_study = QComboBox(self.groupBox_show)
         self.comboBox_show_study.setObjectName(u"comboBox_show_study")
         self.comboBox_show_study.setMinimumSize(QSize(0, 25))
         self.comboBox_show_study.setMaximumSize(QSize(16777215, 25))
 
         self.horizontalLayout_5.addWidget(self.comboBox_show_study)
 
-        self.pushButton_show_study = QPushButton(self.groupBox_3)
+        self.pushButton_show_study = QPushButton(self.groupBox_show)
         self.pushButton_show_study.setObjectName(u"pushButton_show_study")
         self.pushButton_show_study.setMinimumSize(QSize(25, 25))
         self.pushButton_show_study.setMaximumSize(QSize(25, 25))
@@ -176,21 +214,21 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_6 = QHBoxLayout()
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.label_4 = QLabel(self.groupBox_3)
+        self.label_4 = QLabel(self.groupBox_show)
         self.label_4.setObjectName(u"label_4")
         self.label_4.setMinimumSize(QSize(85, 25))
         self.label_4.setMaximumSize(QSize(85, 25))
 
         self.horizontalLayout_6.addWidget(self.label_4)
 
-        self.comboBox_show_curves = QComboBox(self.groupBox_3)
+        self.comboBox_show_curves = QComboBox(self.groupBox_show)
         self.comboBox_show_curves.setObjectName(u"comboBox_show_curves")
         self.comboBox_show_curves.setMinimumSize(QSize(0, 25))
         self.comboBox_show_curves.setMaximumSize(QSize(16777215, 25))
 
         self.horizontalLayout_6.addWidget(self.comboBox_show_curves)
 
-        self.pushButton_show_curves = QPushButton(self.groupBox_3)
+        self.pushButton_show_curves = QPushButton(self.groupBox_show)
         self.pushButton_show_curves.setObjectName(u"pushButton_show_curves")
         self.pushButton_show_curves.setMinimumSize(QSize(25, 25))
         self.pushButton_show_curves.setMaximumSize(QSize(25, 25))
@@ -200,14 +238,37 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_5.addLayout(self.horizontalLayout_6)
 
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.label_6 = QLabel(self.groupBox_show)
+        self.label_6.setObjectName(u"label_6")
 
-        self.verticalLayout_2.addWidget(self.groupBox_3)
+        self.horizontalLayout_7.addWidget(self.label_6)
 
-        self.groupBox_2 = QGroupBox(self.centralwidget)
-        self.groupBox_2.setObjectName(u"groupBox_2")
-        self.verticalLayout_4 = QVBoxLayout(self.groupBox_2)
+        self.checkBox = QCheckBox(self.groupBox_show)
+        self.checkBox.setObjectName(u"checkBox")
+        self.checkBox.setMinimumSize(QSize(95, 25))
+        self.checkBox.setMaximumSize(QSize(95, 25))
+        self.checkBox.setLayoutDirection(Qt.RightToLeft)
+
+        self.horizontalLayout_7.addWidget(self.checkBox)
+
+
+        self.verticalLayout_5.addLayout(self.horizontalLayout_7)
+
+
+        self.verticalLayout_show.addWidget(self.groupBox_show)
+
+
+        self.verticalLayout_2.addLayout(self.verticalLayout_show)
+
+        self.verticalLayout_navigate = QVBoxLayout()
+        self.verticalLayout_navigate.setObjectName(u"verticalLayout_navigate")
+        self.groupBox_navigate = QGroupBox(self.centralwidget)
+        self.groupBox_navigate.setObjectName(u"groupBox_navigate")
+        self.verticalLayout_4 = QVBoxLayout(self.groupBox_navigate)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.treeWidget_navigate_file = QTreeWidget(self.groupBox_2)
+        self.treeWidget_navigate_file = QTreeWidget(self.groupBox_navigate)
         __qtreewidgetitem = QTreeWidgetItem()
         __qtreewidgetitem.setText(0, u"1");
         self.treeWidget_navigate_file.setHeaderItem(__qtreewidgetitem)
@@ -216,12 +277,32 @@ class Ui_MainWindow(object):
         self.verticalLayout_4.addWidget(self.treeWidget_navigate_file)
 
 
-        self.verticalLayout_2.addWidget(self.groupBox_2)
+        self.verticalLayout_navigate.addWidget(self.groupBox_navigate)
+
+
+        self.verticalLayout_2.addLayout(self.verticalLayout_navigate)
+
+        self.horizontalLayout_spacer = QHBoxLayout()
+        self.horizontalLayout_spacer.setObjectName(u"horizontalLayout_spacer")
+        self.label_bottom_seperator = QLabel(self.centralwidget)
+        self.label_bottom_seperator.setObjectName(u"label_bottom_seperator")
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.label_bottom_seperator.sizePolicy().hasHeightForWidth())
+        self.label_bottom_seperator.setSizePolicy(sizePolicy4)
+        self.label_bottom_seperator.setMinimumSize(QSize(100, 0))
+        self.label_bottom_seperator.setMaximumSize(QSize(100, 16777215))
+
+        self.horizontalLayout_spacer.addWidget(self.label_bottom_seperator)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_spacer)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 334, 23))
+        self.menubar.setGeometry(QRect(0, 0, 300, 23))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         self.menuView = QMenu(self.menubar)
@@ -267,19 +348,24 @@ class Ui_MainWindow(object):
         self.actionTumor_Volume_Extended.setText(QCoreApplication.translate("MainWindow", u"Tumor Volume Extended", None))
         self.actionTumor_Volume_XML.setText(QCoreApplication.translate("MainWindow", u"Tumor Volume XML", None))
         self.actionAbout.setText(QCoreApplication.translate("MainWindow", u"About", None))
-        self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Load Tumor Volume File", None))
+        self.groupBox_load.setTitle(QCoreApplication.translate("MainWindow", u"Load Tumor Volume File", None))
         self.pushButton_load_select_file.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.label.setText("")
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Show", None))
         self.pushButton_load_saveas.setText(QCoreApplication.translate("MainWindow", u"Save", None))
-        self.groupBox_3.setTitle(QCoreApplication.translate("MainWindow", u"Show", None))
+        self.groupBox_show.setTitle(QCoreApplication.translate("MainWindow", u"Show", None))
+        self.label_5.setText(QCoreApplication.translate("MainWindow", u"Contributor", None))
+        self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Experiment", None))
         self.pushButton_show_experiment.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"Study", None))
         self.pushButton_show_study.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Curves", None))
         self.pushButton_show_curves.setText(QCoreApplication.translate("MainWindow", u"...", None))
-        self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"Navigate", None))
+        self.label_6.setText("")
+        self.checkBox.setText(QCoreApplication.translate("MainWindow", u"Show All", None))
+        self.groupBox_navigate.setTitle(QCoreApplication.translate("MainWindow", u"Navigate", None))
+        self.label_bottom_seperator.setText("")
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", u"View", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", u"Help", None))

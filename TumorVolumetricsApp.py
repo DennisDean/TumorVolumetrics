@@ -79,12 +79,35 @@ https://www.gnu.org/licenses/agpl-3.0.html for full terms.
 
 # PySide Support
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import QApplication, QMainWindow, QGroupBox
 from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtCore import Qt
 
 # Import your Ui_MainWindow from the generated module
 from TumorVolumetricsInterface import Ui_MainWindow
+
+# Utilities
+def set_layout_visible(layout, visible: bool):
+    """
+    Recursively set visibility for all widgets in a layout and its nested layouts.
+
+    Args:
+        layout: QLayout object to process
+        visible: Boolean indicating whether to show (True) or hide (False) widgets
+    """
+    for i in range(layout.count()):
+        item = layout.itemAt(i)
+
+        # Check if the item is a widget
+        widget = item.widget()
+        if widget:
+            widget.setVisible(visible)
+
+        # Check if the item is a nested layout
+        nested_layout = item.layout()
+        if nested_layout:
+            # Recursively process the nested layout
+            set_layout_visible(nested_layout, visible)
 
 # Application
 class MainApp(QMainWindow):
@@ -108,6 +131,16 @@ class MainApp(QMainWindow):
             geo = screen.availableGeometry()
             # Position window at the top-left of that screen
             self.move(geo.topLeft())
+
+        # Turn off show and navigate groups
+        set_layout_visible(self.ui.verticalLayout_navigate, False)
+        set_layout_visible(self.ui.verticalLayout_show, False)
+        set_layout_visible(self.ui.horizontalLayout_spacer, False)
+
+        # Resize window
+        self.adjustSize()
+
+    # Buttons
 
 
 # Start Application
