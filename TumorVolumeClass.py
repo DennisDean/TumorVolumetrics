@@ -31,6 +31,7 @@ import bisect
 import math
 from lifelines import KaplanMeierFitter
 from scipy.stats import t
+from scipy.stats import ttest_ind
 
 # Visualization
 import matplotlib.pyplot as plt
@@ -2001,6 +2002,8 @@ class TumorVolumeExperimentClass():
 
             ctrl_vals = []
             trt_vals = []
+            ctrl_vals_2 = []
+            trt_vals_2 = []
 
             # --- collect values from controls ---
             for arm in control_list:
@@ -2012,6 +2015,7 @@ class TumorVolumeExperimentClass():
                     v_end = tv.tumor_volume[idx]
                     if v0 > 0:
                         ctrl_vals.append(np.log2(v_end / v0))
+                        ctrl_vals_2.append(v_end / v0)
 
             # --- collect values from treatments ---
             for arm in treatment_list:
@@ -2023,12 +2027,17 @@ class TumorVolumeExperimentClass():
                     v_end = tv.tumor_volume[idx]
                     if v0 > 0:
                         trt_vals.append(np.log2(v_end / v0))
+                        trt_vals_2.append(v_end / v0)
 
             if len(ctrl_vals) == 0 or len(trt_vals) == 0:
                 continue
 
             def sem(x):
                 return np.std(x, ddof=1) / np.sqrt(len(x)) if len(x) > 1 else 0.0
+
+            # Compute a two-sample t-test
+            t_stat, p_value = ttest_ind(trt_vals_2, ctrl_vals_2, equal_var = False)
+            logger.info(f'Study = {study}, tstat = {t_stat}, p_value = {p_value}')
 
             ctrl_mean = np.mean(ctrl_vals)
             trt_mean = np.mean(trt_vals)
@@ -2528,7 +2537,7 @@ def main():
             tvd_experiment_obj.plot_auc_with_controls_bar(compute_day=compute_day, title=title)
 
     # Example  15: plot_log2fc_points
-    if established_test:
+    if True:
         experiments = tvd_obj.unique_experiments
         experiments.sort()
         compute_day = None
@@ -2540,7 +2549,7 @@ def main():
             tvd_experiment_obj.plot_log2fc_points(compute_day=compute_day, title=title)
 
     # Example  16: Tumor volume ratio across experiment
-    if True:
+    if established_test:
         experiments = tvd_obj.unique_experiments
         experiments.sort()
         for experiment in experiments:
