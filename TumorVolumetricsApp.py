@@ -77,14 +77,21 @@ https://www.gnu.org/licenses/agpl-3.0.html for full terms.
 # ToDo: Save as XML file format
 #
 
-# PySide Support
+# System Support
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QGroupBox
+from logging_config import logger
+__all__ = ['logger']
+
+# PySide Support
+from PySide6.QtWidgets import QApplication, QFileDialog, QMainWindow, QTreeWidgetItem
 from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtCore import Qt
 
 # Import your Ui_MainWindow from the generated module
 from TumorVolumetricsInterface import Ui_MainWindow
+
+# Tumor Volume Classes
+from TumorVolumeClass import TumorVolumeDataClass
 
 # Utilities
 def set_layout_visible(layout, visible: bool):
@@ -140,14 +147,93 @@ class MainApp(QMainWindow):
         # Resize window
         self.adjustSize()
 
-    # Buttons
+        # Define variables
+        self.tumor_volume_file_path:str|None = None
+        self.tumor_volume_data_obj:TumorVolumeDataClass|None = None
+
+        self.unique_contributors:list[str]|None = None
+        self.unique_experiments:list[str]|None = None
+        self.unique_studies:list[str]|None = None
+        self.unique_arms:list[str]|None = None
+        self.unique_time_series:list[str]|None = None
+
+        # Buttons
+        self.ui.pushButton_load_select_file.clicked.connect(self.pushbutton_load_csv_file)
+
+    # Button
+    def pushbutton_load_csv_file(self):
+        # Respond to user file request
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select a Tumor Volume File",
+            "",  # starting directory
+            "All Files (*);;CSV Files (*.csv)"  # file filters
+        )
+
+        # Process file selection outputs
+        if file_path:
+            self.ui.lineEdit_load_file_path.setText(file_path)
+            logger.info(f"Selected file: {file_path}")
+        else:
+            logger.info(f"File selection canceled by user.")
+            return
+
+        # Set file name to gobal varaibles
+        self.tumor_volume_file_path = file_path
+
+        # Turn off show and navigate groups
+        set_layout_visible(self.ui.verticalLayout_navigate, True)
+        set_layout_visible(self.ui.verticalLayout_show, True)
+        set_layout_visible(self.ui.horizontalLayout_spacer, True)
+        self.adjustSize()
+
+        # Load File
+        self.tumor_volume_data_obj = TumorVolumeDataClass()
+        self.tumor_volume_data_obj.load_tmz_csv(file_path)
+
+        # Get unique entries from Tumor Volume Data Class
+        self.unique_contributors = self.tumor_volume_data_obj.unique_contributors
+        self.unique_diseases = self.tumor_volume_data_obj.unique_disease_types
+        self.unique_experiments = self.tumor_volume_data_obj.unique_experiments
+        self.unique_studies = self.tumor_volume_data_obj.unique_studies
+        self.unique_arms = self.tumor_volume_data_obj.unique_arms
+        self.unique_time_series = self.tumor_volume_data_obj.unique_pdx_ids
+
+        # Populate comboboxes
+        self.ui.comboBox_show_contributor.addItems(self.unique_contributors)
+        self.ui.comboBox_show_disease.addItems(self.unique_diseases)
+        self.ui.comboBox_show_experiment.addItems(self.unique_experiments)
+        self.ui.comboBox_show_study.addItems(self.unique_studies)
+        self.ui.comboBox_show_arms.addItems(self.unique_arms)
+        self.ui.comboBox_show_curves.addItems(self.unique_time_series)
+
+        # Set Tree
+        self.populate_interface_tree()
+    def populate_interface_tree(self):
+        # Get ui interface tree
+        ui_tree = self.ui.treeWidget_navigate_file
+
+        # Set tree header level
+        ui_tree.setHeaderHidden(True)
+
+        # Populate tree widget to enable interactive views
+        ui_tree = self.ui.treeWidget_navigate_file
+        ui_tree.addTopLevelItem(QTreeWidgetItem(['Contibutors']))
+        ui_tree.addTopLevelItem(QTreeWidgetItem(['Disease']))
+        ui_tree.addTopLevelItem(QTreeWidgetItem(['Experiments']))
+
+
 
 
 # Start Application
 def main():
+    # Starting Application
     app = QApplication(sys.argv)
     window = MainApp()
     window.show()
     app.exec()
+
+    # Initialize logger
+    logger.info('Starting TumorVolumetrics.')
 if __name__ == "__main__":
     main()  # -*- coding: utf-8 -*-

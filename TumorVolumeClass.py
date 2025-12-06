@@ -20,6 +20,9 @@ import os
 import re
 from pathlib import Path
 
+#
+from logging_config import logger
+
 # Data
 import pandas as pd
 import numpy as np
@@ -2142,8 +2145,8 @@ class TumorVolumeDataClass():
         self.num_disease_types:int|None
 
         # Add on columns
-        self.unique_experimental_groups:list[str]|None
-        self.num_experimental_groups:int|none
+        self.unique_experiments:list[str]|None
+        self.num_experiments:int|none
         self.unique_matched_controls:list|None
         self.num_matched_controls:int|None
         self.num_unmatched:int|None
@@ -2333,6 +2336,11 @@ class TumorVolumeDataClass():
 
         # Store study dictionary
         self.tumor_vol_experiment_dict = tumor_vol_experiment_dict
+
+        # Store Summary
+        self.unique_experiments = list(tumor_vol_experiment_dict.keys())
+        self.unique_experiments.sort()
+        self.num_experiments = len(self.unique_experiments)
 
     # Command line summary
     def write_file_summary_text(self):
