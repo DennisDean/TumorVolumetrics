@@ -18,9 +18,9 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGroupBox,
     QHBoxLayout, QHeaderView, QLabel, QLayout,
-    QLineEdit, QMainWindow, QMenu, QMenuBar,
-    QPushButton, QSizePolicy, QStatusBar, QTreeWidget,
-    QTreeWidgetItem, QVBoxLayout, QWidget)
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QSizePolicy, QStatusBar, QTreeWidget, QTreeWidgetItem,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -76,25 +76,6 @@ class Ui_MainWindow(object):
         self.groupBox_load.setSizePolicy(sizePolicy2)
         self.verticalLayout_3 = QVBoxLayout(self.groupBox_load)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.lineEdit_load_file_path = QLineEdit(self.groupBox_load)
-        self.lineEdit_load_file_path.setObjectName(u"lineEdit_load_file_path")
-        self.lineEdit_load_file_path.setMinimumSize(QSize(0, 25))
-        self.lineEdit_load_file_path.setMaximumSize(QSize(16777215, 25))
-
-        self.horizontalLayout_2.addWidget(self.lineEdit_load_file_path)
-
-        self.pushButton_load_select_file = QPushButton(self.groupBox_load)
-        self.pushButton_load_select_file.setObjectName(u"pushButton_load_select_file")
-        self.pushButton_load_select_file.setMinimumSize(QSize(25, 25))
-        self.pushButton_load_select_file.setMaximumSize(QSize(25, 25))
-
-        self.horizontalLayout_2.addWidget(self.pushButton_load_select_file)
-
-
-        self.verticalLayout_3.addLayout(self.horizontalLayout_2)
-
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.label = QLabel(self.groupBox_load)
@@ -106,6 +87,20 @@ class Ui_MainWindow(object):
         self.label.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_3.addWidget(self.label)
+
+        self.pushButton_load_select_file = QPushButton(self.groupBox_load)
+        self.pushButton_load_select_file.setObjectName(u"pushButton_load_select_file")
+        self.pushButton_load_select_file.setMinimumSize(QSize(75, 25))
+        self.pushButton_load_select_file.setMaximumSize(QSize(75, 25))
+
+        self.horizontalLayout_3.addWidget(self.pushButton_load_select_file, 0, Qt.AlignLeft)
+
+        self.label_9 = QLabel(self.groupBox_load)
+        self.label_9.setObjectName(u"label_9")
+        sizePolicy1.setHeightForWidth(self.label_9.sizePolicy().hasHeightForWidth())
+        self.label_9.setSizePolicy(sizePolicy1)
+
+        self.horizontalLayout_3.addWidget(self.label_9)
 
         self.pushButton = QPushButton(self.groupBox_load)
         self.pushButton.setObjectName(u"pushButton")
@@ -411,8 +406,9 @@ class Ui_MainWindow(object):
         self.actionTumor_Volume_XML.setText(QCoreApplication.translate("MainWindow", u"Tumor Volume XML", None))
         self.actionAbout.setText(QCoreApplication.translate("MainWindow", u"About", None))
         self.groupBox_load.setTitle(QCoreApplication.translate("MainWindow", u"Load Tumor Volume File", None))
-        self.pushButton_load_select_file.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.label.setText("")
+        self.pushButton_load_select_file.setText(QCoreApplication.translate("MainWindow", u"File", None))
+        self.label_9.setText("")
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Show", None))
         self.pushButton_load_saveas.setText(QCoreApplication.translate("MainWindow", u"Save", None))
         self.groupBox_show.setTitle(QCoreApplication.translate("MainWindow", u"Show", None))

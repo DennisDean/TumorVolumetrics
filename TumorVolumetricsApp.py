@@ -78,6 +78,7 @@ https://www.gnu.org/licenses/agpl-3.0.html for full terms.
 #
 
 # System Support
+import os
 import sys
 from logging_config import logger
 __all__ = ['logger']
@@ -172,7 +173,9 @@ class MainApp(QMainWindow):
 
         # Process file selection outputs
         if file_path:
-            self.ui.lineEdit_load_file_path.setText(file_path)
+            # Set status bar
+            fn = os.path.basename(file_path)
+            self.statusBar().showMessage(fn)
             logger.info(f"Selected file: {file_path}")
         else:
             logger.info(f"File selection canceled by user.")
@@ -209,6 +212,7 @@ class MainApp(QMainWindow):
 
         # Set Tree
         self.populate_interface_tree()
+
     def populate_interface_tree(self):
         # Get ui interface tree
         ui_tree = self.ui.treeWidget_navigate_file
