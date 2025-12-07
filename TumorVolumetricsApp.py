@@ -93,6 +93,7 @@ from TumorVolumetricsInterface import Ui_MainWindow
 
 # Tumor Volume Classes
 from TumorVolumeClass import TumorVolumeDataClass
+from TumorVolumeFileViewClass import TumorVolumeFileWindow
 
 # Utilities
 def set_layout_visible(layout, visible: bool):
@@ -160,6 +161,11 @@ class MainApp(QMainWindow):
 
         # Buttons
         self.ui.pushButton_load_select_file.clicked.connect(self.pushbutton_load_csv_file)
+        self.ui.pushButton_load_show_file.clicked.connect(self.pushbutton_show_csv_file)
+
+        # Store file Information
+        self.tv_file_path:str|None = None
+        self.tv_fn:str|None = None
 
     # Button
     def pushbutton_load_csv_file(self):
@@ -177,6 +183,10 @@ class MainApp(QMainWindow):
             fn = os.path.basename(file_path)
             self.statusBar().showMessage(fn)
             logger.info(f"Selected file: {file_path}")
+
+            # Store information
+            self.tv_file_path = file_path
+            self.tv_fn = fn
         else:
             logger.info(f"File selection canceled by user.")
             return
@@ -202,7 +212,15 @@ class MainApp(QMainWindow):
         self.unique_arms = self.tumor_volume_data_obj.unique_arms
         self.unique_time_series = self.tumor_volume_data_obj.unique_pdx_ids
 
+        # Clear Boxes
+        c_boxes = [ self.ui.comboBox_show_contributor, self.ui.comboBox_show_disease,
+                    self.ui.comboBox_show_experiment, self.ui.comboBox_show_study,
+                    self.ui.comboBox_show_arms, self.ui.comboBox_show_curves]
+        for cbox in c_boxes:
+            cbox.clear()
+
         # Populate comboboxes
+        self.ui.comboBox_show_contributor.clear()
         self.ui.comboBox_show_contributor.addItems(self.unique_contributors)
         self.ui.comboBox_show_disease.addItems(self.unique_diseases)
         self.ui.comboBox_show_experiment.addItems(self.unique_experiments)
@@ -212,7 +230,6 @@ class MainApp(QMainWindow):
 
         # Set Tree
         self.populate_interface_tree()
-
     def populate_interface_tree(self):
         # Get ui interface tree
         ui_tree = self.ui.treeWidget_navigate_file
@@ -222,12 +239,15 @@ class MainApp(QMainWindow):
 
         # Populate tree widget to enable interactive views
         ui_tree = self.ui.treeWidget_navigate_file
+        ui_tree.clear()
         ui_tree.addTopLevelItem(QTreeWidgetItem(['Contibutors']))
         ui_tree.addTopLevelItem(QTreeWidgetItem(['Disease']))
         ui_tree.addTopLevelItem(QTreeWidgetItem(['Experiments']))
+    def pushbutton_show_csv_file(self):
+        logger.info(f'Displaying the selected file: {self.tumor_volume_file_path}')
 
-
-
+        self.tumor_volume_file_window = TumorVolumeFileWindow()
+        self.tumor_volume_file_window.open_file_window(self.tv_fn, self.tumor_volume_data_obj)
 
 # Start Application
 def main():
