@@ -159,9 +159,19 @@ class MainApp(QMainWindow):
         self.unique_arms:list[str]|None = None
         self.unique_time_series:list[str]|None = None
 
-        # Buttons
+        # Load Buttons
         self.ui.pushButton_load_select_file.clicked.connect(self.pushbutton_load_csv_file)
         self.ui.pushButton_load_show_file.clicked.connect(self.pushbutton_show_csv_file)
+        self.ui.pushButton_load_saveas.clicked.connect(self.pushbutton_show_csv_file)
+
+        # Show Buttons
+        self.ui.pushButton_show_contributor.clicked.connect(self.pushbutton_show_csv_file)
+        self.ui.pushButton_show_disease.clicked.connect(self.pushbutton_show_csv_file)
+        self.ui.pushButton_show_experiment.clicked.connect(self.pushbutton_show_csv_file)
+        self.ui.pushButton_show_study.clicked.connect(self.pushbutton_show_csv_file)
+        self.ui.pushButton_show_arm.clicked.connect(self.pushbutton_show_csv_file)
+        self.ui.pushButton_show_curves.clicked.connect(self.pushbutton_show_csv_file)
+
 
         # Store file Information
         self.tv_file_path:str|None = None
@@ -169,6 +179,8 @@ class MainApp(QMainWindow):
         self.tumor_volume_file_window:TumorVolumeFileWindow|None = None
 
         # Button
+
+    # Major Commands
     def pushbutton_load_csv_file(self):
         # Respond to user file request
         file_path, _ = QFileDialog.getOpenFileName(
