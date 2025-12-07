@@ -75,8 +75,25 @@ class TumorVolumeFileWindow(QMainWindow):
         print("TABLE:", table)
         print(table.size())
 
+    def populate_data(self, tv_file_name, tv_data_obj):
+        """Populate the window with data"""
+        self.tv_file_name = tv_file_name
+        self.tv_data_obj = tv_data_obj
+        self.tv_data_df = tv_data_obj.tmz_data_df
+
+        # Populate Table
+        self.load_dataframe_into_table(
+            self.ui.tableWidget_tv_file_table,
+            tv_data_obj.tmz_data_df
+        )
+
+        # Set status
+        self.statusBar().showMessage(tv_file_name)
+
         # Set headers
-        table.setHorizontalHeaderLabels(df.columns.astype(str).tolist())
+        df = tv_data_obj.tmz_data_df
+        table = self.ui.tableWidget_tv_file_table
+        self.ui.tableWidget_tv_file_table.setHorizontalHeaderLabels(df.columns.astype(str).tolist())
 
         # Populate table
         print(len(df.index), len(df.columns))

@@ -166,8 +166,9 @@ class MainApp(QMainWindow):
         # Store file Information
         self.tv_file_path:str|None = None
         self.tv_fn:str|None = None
+        self.tumor_volume_file_window:TumorVolumeFileWindow|None = None
 
-    # Button
+        # Button
     def pushbutton_load_csv_file(self):
         # Respond to user file request
         file_path, _ = QFileDialog.getOpenFileName(
@@ -246,8 +247,14 @@ class MainApp(QMainWindow):
     def pushbutton_show_csv_file(self):
         logger.info(f'Displaying the selected file: {self.tumor_volume_file_path}')
 
-        self.tumor_volume_file_window = TumorVolumeFileWindow()
-        self.tumor_volume_file_window.open_file_window(self.tv_fn, self.tumor_volume_data_obj)
+        if self.tumor_volume_file_window is None:
+            self.tumor_volume_file_window= TumorVolumeFileWindow(parent=self)
+
+        # Let the window populate itself
+        self.tumor_volume_file_window.populate_data(self.tv_fn, self.tumor_volume_data_obj)
+        self.tumor_volume_file_window.show()
+        self.tumor_volume_file_window.raise_()
+        self.tumor_volume_file_window.activateWindow()
 
 # Start Application
 def main():
