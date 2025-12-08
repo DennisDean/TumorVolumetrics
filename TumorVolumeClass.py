@@ -26,6 +26,9 @@ from logging_config import logger
 # Data
 import pandas as pd
 import numpy as np
+import uuid
+import xml.etree.ElementTree as ET
+
 from scipy.stats import sem
 from typing import Optional
 
@@ -2156,7 +2159,7 @@ class TumorVolumeDataClass():
         self.tumor_vol_study_dict:dict[str:TumorVolumeStudyClass|None] = None
         self.tumor_vol_experiment_dict:dict[str,TumorVolumeExperimentClass|None] = None
 
-    # File loading
+    # File loading and saving
     def load_tmz_csv(self, fn, volume_units='mm^3', weight_units='mg'):
         try:
             df = pd.read_csv(fn)
@@ -2204,6 +2207,208 @@ class TumorVolumeDataClass():
 
 
         return column_names_check_out, missing_column_names, columns_not_included
+
+    # XML Support
+    # Helper: safe text getter
+    def _text_or_none(self, elem):
+        return elem.text if elem is not None else None
+    def xml_to_dataframe(self, xml_path: str) -> pd.DataFrame:
+        """
+        Parse an XML file following the XSD structure and return a DataFrame
+        with one row per Measurement. Columns include:
+          contributor, contributor_id, disease_type, disease_id,
+          experiment_id, experiment_description, study_id, study_name,
+          arm_id, arm_name, matched_controls,
+          curve_id, subject_id, tumor_id, body_weight, age, sex,
+          time, time_unit, volume, volume_unit, matched_control_refs (semicolon separated)
+        """
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        rows = []
+
+        # Build dictionaries for contributor/disease names by id
+        contributors = {}
+        for contrib in root.findall(".//Contributors/Contributor"):
+            cid = contrib.get("id")
+            name = _text_or_none(contrib.find("Name"))
+            contributors[cid] = {"name": name}
+            # collect disease types
+            dtypes = {}
+            dt_parent = contrib.find("DiseaseTypes")
+            if dt_parent is not None:
+                for dt in dt_parent.findall("DiseaseType"):
+                    dt_id = dt.get("id")
+                    dt_name = dt.text
+                    dtypes[dt_id] = dt_name
+            contributors[cid]["diseases"] = dtypes
+
+        # Iterate experiments
+        for exp in root.findall(".//Experiments/Experiment"):
+            exp_id = exp.get("id")
+            contrib_ref = exp.findtext("ContributorRef")
+            disease_ref = exp.findtext("DiseaseTypeRef")
+            description = _text_or_none(exp.find("Description"))
+
+            for study in exp.findall(".//Study"):
+                study_id = study.get("id")
+                study_name = _text_or_none(study.find("Name"))
+
+                for arm in study.findall(".//Arm"):
+                    arm_id = arm.get("id")
+                    arm_name = _text_or_none(arm.find("Name"))
+                    matched_controls_text = _text_or_none(arm.find("MatchedControls"))
+                    matched_controls = None
+                    if matched_controls_text is not None:
+                        matched_controls = matched_controls_text.lower() in ("true", "1", "yes")
+
+                    for curve in arm.findall(".//TumorVolumeCurve"):
+                        curve_id = curve.get("id")
+                        subject_id = _text_or_none(curve.find("SubjectID"))
+                        tumor_id = _text_or_none(curve.find("TumorID"))
+
+                        # Demographics
+                        body_weight = None
+                        age = None
+                        sex = None
+                        dem = curve.find("Demographics")
+                        if dem is not None:
+                            bw = dem.find("BodyWeight")
+                            if bw is not None and bw.text:
+                                body_weight = bw.text
+                            a = dem.find("Age")
+                            if a is not None and a.text:
+                                age = a.text
+                            s = dem.find("Sex")
+                            if s is not None:
+                                sex = s.text
+
+                        # matched control refs
+                        matched_refs = []
+                        mcrefs = curve.find("MatchedControlRefs")
+                        if mcrefs is not None:
+                            for cref in mcrefs.findall("CurveRef"):
+                                matched_refs.append(cref.text)
+
+                        # Measurements: one row per measurement
+                        for meas in curve.findall(".//Measurement"):
+                            time_elem = meas.find("Time")
+                            volume_elem = meas.find("Volume")
+                            time_val = _text_or_none(time_elem)
+                            time_unit = time_elem.get("unit") if time_elem is not None else None
+                            vol_val = _text_or_none(volume_elem)
+                            vol_unit = volume_elem.get("unit") if volume_elem is not None else None
+
+                            row = {
+                                "contributor_id": contrib_ref,
+                                "contributor": contributors.get(contrib_ref, {}).get("name"),
+                                "disease_id": disease_ref,
+                                "disease_type": contributors.get(contrib_ref, {}).get("diseases", {}).get(disease_ref),
+                                "experiment_id": exp_id,
+                                "experiment_description": description,
+                                "study_id": study_id,
+                                "study_name": study_name,
+                                "arm_id": arm_id,
+                                "arm_name": arm_name,
+                                "matched_controls": matched_controls,
+                                "curve_id": curve_id,
+                                "subject_id": subject_id,
+                                "tumor_id": tumor_id,
+                                "body_weight": body_weight,
+                                "age": age,
+                                "sex": sex,
+                                "time": time_val,
+                                "time_unit": time_unit,
+                                "volume": vol_val,
+                                "volume_unit": vol_unit,
+                                "matched_control_refs": ";".join(matched_refs) if matched_refs else None
+                            }
+                            rows.append(row)
+
+        df = pd.DataFrame(rows)
+        return df
+    def _ensure_id(self, prefix: str, maybe_id):
+        """Return existing id or create a stable id if missing"""
+        if maybe_id:
+            return str(maybe_id)
+        return f"{prefix}_{uuid.uuid4().hex[:8]}"
+    def dataframe_to_xml(self, df: pd.DataFrame, file_path: str):
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError("df must be a pandas DataFrame")
+
+        root = ET.Element("TumorVolumeData")
+
+        # ----------------------------
+        # Contributors Section
+        # ----------------------------
+        contributors_el = ET.SubElement(root, "Contributors")
+
+        for (contributor, disease), d1 in df.groupby(["contributor", "disease_type"], dropna=False):
+            cont_el = ET.SubElement(contributors_el, "Contributor", name=str(contributor))
+
+            disease_el = ET.SubElement(cont_el, "Disease", type=str(disease))
+
+            # unique experiment refs
+            experiments = sorted(d1["experiment"].dropna().unique())
+            for exp_name in experiments:
+                ET.SubElement(disease_el, "ExperimentRef").text = str(exp_name)
+
+        # ----------------------------
+        # Experiments Section
+        # ----------------------------
+        experiments_el = ET.SubElement(root, "Experiments")
+
+        for exp_name, d_exp in df.groupby("experiment", dropna=False):
+            exp_el = ET.SubElement(experiments_el, "Experiment", name=str(exp_name))
+
+            for study_name, d_study in d_exp.groupby("study", dropna=False):
+                study_el = ET.SubElement(exp_el, "Study", name=str(study_name))
+
+                for arm_name, d_arm in d_study.groupby("arms", dropna=False):
+                    arm_el = ET.SubElement(study_el, "Arm", name=str(arm_name))
+
+                    for tumor_name, d_tumor in d_arm.groupby("tumor", dropna=False):
+                        tumor_el = ET.SubElement(arm_el, "Tumor", name=str(tumor_name))
+
+                        for animal_id, d_id in d_tumor.groupby("id", dropna=False):
+                            id_el = ET.SubElement(tumor_el, "ID", name=str(animal_id))
+
+                            # timepoints under ID
+                            for _, row in d_id.iterrows():
+                                t_el = ET.SubElement(id_el, "Timepoint", time=str(row["times"]))
+
+                                ET.SubElement(t_el, "Volume").text = str(row.get("volume", ""))
+                                ET.SubElement(t_el, "BodyWeight").text = str(row.get("body_weight", ""))
+
+        tree = ET.ElementTree(root)
+        tree.write(file_path, encoding="utf-8", xml_declaration=True)
+    def validate_xml(self, xml_path: str, xsd_path: str) -> bool:
+        """
+        Optional: validate using lxml if available. Returns True if valid, False otherwise.
+        Prints errors if validation fails or lxml not installed.
+        """
+        try:
+            from lxml import etree
+        except Exception:
+            print("lxml is not installed. Install it (pip install lxml) to perform XSD validation.")
+            return False
+
+        xml_doc = etree.parse(xml_path)
+        with open(xsd_path, "rb") as fh:
+            schema_doc = etree.parse(fh)
+        schema = etree.XMLSchema(schema_doc)
+        valid = schema.validate(xml_doc)
+        if not valid:
+            print("Validation errors:")
+            for err in schema.error_log:
+                print(err.message)
+        return valid
+    def dataframe_to_csv(self, df: pd.DataFrame, csv_path: str, index=False):
+        """
+        Write DataFrame to CSV. Example columns are the ones produced by xml_to_dataframe.
+        """
+        os.makedirs(os.path.dirname(csv_path) or ".", exist_ok=True)
+        df.to_csv(csv_path, index=index)
 
     # Generate internal structures: summarize, create time sereies
     def summarize_data_frame(self):
@@ -2408,10 +2613,10 @@ class TumorVolumeDataClass():
 def main():
     # Test Flag
     testing_in_process = False
-    established_test = False
+    established_test = True
 
     # test data
-    test_data_tmz = Path("public_data") / "consensus" / "PVA_with_study_group.csv"
+    test_data_tmz = Path("public_data") / "consensus" / "PVA_with_study_group.tv.csv"
 
     # Example 1: Create data structures
     tvd_obj = TumorVolumeDataClass()
@@ -2521,7 +2726,6 @@ def main():
         for experiment in experiments:
             tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
             tvd_experiment_obj.plot_average_tumor_volume_change_bar()
-            print(tvd_experiment_obj)
 
     # Example  13: Objective Response by Study
     if established_test:
@@ -2530,7 +2734,6 @@ def main():
         for experiment in experiments:
             tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
             tvd_experiment_obj.proportion_in_objective_response_classification_bar()
-            print(tvd_experiment_obj)
 
     # Example  14: Plot AUC average with controls
     if established_test:
@@ -2545,7 +2748,7 @@ def main():
             tvd_experiment_obj.plot_auc_with_controls_bar(compute_day=compute_day, title=title)
 
     # Example  15: plot_log2fc_points
-    if True:
+    if established_test:
         experiments = tvd_obj.unique_experiments
         experiments.sort()
         compute_day = None
@@ -2563,7 +2766,6 @@ def main():
         for experiment in experiments:
             tvd_experiment_obj = tvd_obj.tumor_vol_experiment_dict[experiment]
             tvd_experiment_obj.plot_tumor_control_ratio_bar()
-            print(tvd_experiment_obj)
 
 if __name__ == '__main__':
     main()

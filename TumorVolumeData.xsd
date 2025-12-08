@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+    <!-- ========================= -->
+    <!-- Root Element              -->
+    <!-- ========================= -->
+    <xs:element name="TumorVolumeData">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Contributors" type="ContributorsType"/>
+                <xs:element name="Experiments" type="ExperimentsType"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- ========================= -->
+    <!-- Contributors Section      -->
+    <!-- ========================= -->
+    <xs:complexType name="ContributorsType">
+        <xs:sequence>
+            <xs:element name="Contributor" type="ContributorType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ContributorType">
+        <xs:sequence>
+            <xs:element name="Disease" type="DiseaseType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="DiseaseType">
+        <xs:sequence>
+            <xs:element name="ExperimentRef" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="type" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <!-- ========================= -->
+    <!-- Experiments Section       -->
+    <!-- ========================= -->
+    <xs:complexType name="Ex

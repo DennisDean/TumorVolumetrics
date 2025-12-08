@@ -59,32 +59,31 @@ https://www.gnu.org/licenses/agpl-3.0.html for full terms.
 
 # To Do List
 # Visualize
-# ToDo: Create and launch main window
 # ToDo: Create and launch experiment window
 # ToDo: Create and launch study window
 # ToDo: Create and launch curve viewer
 # ToDo: Create and launch data viewer
 # Main Window
-# ToDO: Select and load file buttong
-# ToDo: Show and display file
-# ToDo: Save csv as an XML file
 # ToDo: Populate Experiment, Study, and Curves combo boxes
 # ToDo: Populate tree with file contents
 # ToDo: Load Experiment Window
 # ToDo: Load study window
 # ToDo: Load curves
 # Data Format
-# ToDo: Save as XML file format
+# ToDo: Open an XML file format
 #
 
 # System Support
 import os
 import sys
+
+from fontTools.ufoLib import deprecatedFontInfoAttributesVersion2
+
 from logging_config import logger
 __all__ = ['logger']
 
 # PySide Support
-from PySide6.QtWidgets import QApplication, QFileDialog, QMainWindow, QTreeWidgetItem
+from PySide6.QtWidgets import QApplication, QFileDialog, QMainWindow, QTreeWidgetItem, QMessageBox
 from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtCore import Qt
 
@@ -94,6 +93,7 @@ from TumorVolumetricsInterface import Ui_MainWindow
 # Tumor Volume Classes
 from TumorVolumeClass import TumorVolumeDataClass
 from TumorVolumeFileViewClass import TumorVolumeFileWindow
+from TumorVolumeExperimentViewClass import TumorVolumeExperimentWindow
 
 # Utilities
 def set_layout_visible(layout, visible: bool):
@@ -162,21 +162,21 @@ class MainApp(QMainWindow):
         # Load Buttons
         self.ui.pushButton_load_select_file.clicked.connect(self.pushbutton_load_csv_file)
         self.ui.pushButton_load_show_file.clicked.connect(self.pushbutton_show_csv_file)
-        self.ui.pushButton_load_saveas.clicked.connect(self.pushbutton_show_csv_file)
+        self.ui.pushButton_load_saveas.clicked.connect(self.save_xml_with_dialog)
 
         # Show Buttons
         self.ui.pushButton_show_contributor.clicked.connect(self.pushbutton_show_csv_file)
         self.ui.pushButton_show_disease.clicked.connect(self.pushbutton_show_csv_file)
-        self.ui.pushButton_show_experiment.clicked.connect(self.pushbutton_show_csv_file)
+        self.ui.pushButton_show_experiment.clicked.connect(self.pushbutton_show_experiment_viewer)
         self.ui.pushButton_show_study.clicked.connect(self.pushbutton_show_csv_file)
         self.ui.pushButton_show_arm.clicked.connect(self.pushbutton_show_csv_file)
         self.ui.pushButton_show_curves.clicked.connect(self.pushbutton_show_csv_file)
-
 
         # Store file Information
         self.tv_file_path:str|None = None
         self.tv_fn:str|None = None
         self.tumor_volume_file_window:TumorVolumeFileWindow|None = None
+        self.tumor_volume_experiment_window:TumorVolumeExperimentViewClass|None = None
 
         # Button
 
@@ -267,6 +267,56 @@ class MainApp(QMainWindow):
         self.tumor_volume_file_window.show()
         self.tumor_volume_file_window.raise_()
         self.tumor_volume_file_window.activateWindow()
+    def save_xml_with_dialog(self, parent=None):
+        """
+        Opens a file-save dialog and writes XML content to the selected file.
+
+        Parameters
+        ----------
+        parent : QWidget or None
+            Parent widget for the dialog.
+        xml_text : str
+            The XML text to write to the file.
+        """
+
+        # Open save dialog
+        file_path, _ = QFileDialog.getSaveFileName(
+            parent=self,
+            caption="Save XML File",
+            dir="",
+            filter="XML Files (*.xml)"
+        )
+
+        # If user canceled
+        if not file_path:
+            return None
+
+        # Ensure filename ends with .xml
+        if not file_path.lower().endswith(".xml"):
+            file_path += ".xml"
+
+
+        df = self.tumor_volume_data_obj.tmz_data_df
+        self.tumor_volume_data_obj.dataframe_to_xml(df, file_path)
+
+        try:
+            self.tumor_volume_data_obj.dataframe_to_xml(self.tumor_volume_data_obj.tmz_data_df.copy(), file_path)
+
+        except Exception as e:
+            QMessageBox.critical(parent, "Error", f"Could not save file:\n{e}")
+            return None
+
+    # Data viewers
+    def pushbutton_show_experiment_viewer(self):
+        logger.info(f'Displaying tumor volume experiment viewer: {self.tumor_volume_file_path}')
+
+        if self.tumor_volume_experiment_window is None:
+            self.tumor_volume_experiment_window = TumorVolumeExperimentWindow(self.tumor_volume_data_obj)
+
+        # Let the window populate itself
+        self.tumor_volume_experiment_window.show()
+        self.tumor_volume_experiment_window.raise_()
+        self.tumor_volume_experiment_window.activateWindow()
 
 # Start Application
 def main():
