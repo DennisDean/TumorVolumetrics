@@ -124,8 +124,8 @@ class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
-        self.setWindowTitle("Tumor Volumetrics")
         self.ui.setupUi(self)
+        self.setWindowTitle("Tumor Volumetrics")
 
         # Position window at upper left corner
         self.move(0, 0)

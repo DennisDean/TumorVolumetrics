@@ -294,13 +294,13 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_7.addWidget(self.label_6)
 
-        self.checkBox = QCheckBox(self.groupBox_show)
-        self.checkBox.setObjectName(u"checkBox")
-        self.checkBox.setMinimumSize(QSize(95, 25))
-        self.checkBox.setMaximumSize(QSize(95, 25))
-        self.checkBox.setLayoutDirection(Qt.RightToLeft)
+        self.checkBox_show_show_all = QCheckBox(self.groupBox_show)
+        self.checkBox_show_show_all.setObjectName(u"checkBox_show_show_all")
+        self.checkBox_show_show_all.setMinimumSize(QSize(95, 25))
+        self.checkBox_show_show_all.setMaximumSize(QSize(95, 25))
+        self.checkBox_show_show_all.setLayoutDirection(Qt.RightToLeft)
 
-        self.horizontalLayout_7.addWidget(self.checkBox)
+        self.horizontalLayout_7.addWidget(self.checkBox_show_show_all)
 
 
         self.verticalLayout_5.addLayout(self.horizontalLayout_7)
@@ -398,7 +398,7 @@ class Ui_MainWindow(object):
         self.actionTumor_Volume_XML.setText(QCoreApplication.translate("MainWindow", u"Tumor Volume XML", None))
         self.actionAbout.setText(QCoreApplication.translate("MainWindow", u"About", None))
         self.groupBox_load.setTitle(QCoreApplication.translate("MainWindow", u"Load Tumor Volume File", None))
-        self.pushButton_load_select_file.setText(QCoreApplication.translate("MainWindow", u"File", None))
+        self.pushButton_load_select_file.setText(QCoreApplication.translate("MainWindow", u"Open", None))
         self.label_9.setText("")
         self.pushButton_load_show_file.setText(QCoreApplication.translate("MainWindow", u"Show", None))
         self.pushButton_load_saveas.setText(QCoreApplication.translate("MainWindow", u"Save", None))
@@ -416,8 +416,8 @@ class Ui_MainWindow(object):
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"TV Curves", None))
         self.pushButton_show_curves.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.label_6.setText("")
-        self.checkBox.setText(QCoreApplication.translate("MainWindow", u"Show All", None))
-        self.groupBox_navigate.setTitle(QCoreApplication.translate("MainWindow", u"Navigate", None))
+        self.checkBox_show_show_all.setText(QCoreApplication.translate("MainWindow", u"Show All", None))
+        self.groupBox_navigate.setTitle(QCoreApplication.translate("MainWindow", u"XML View (In Progress)", None))
         self.label_bottom_seperator.setText("")
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", u"View", None))

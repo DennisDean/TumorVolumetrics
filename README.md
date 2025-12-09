@@ -17,6 +17,34 @@ This repository is under active development and does not yet represent a stable 
 - Creattion of tumor volume experiment objects
 - Graphic user interface for interactively visualizing and analyuzing tumor volume data
 
+## Main Interface
+### Load tumor volume file grouping
+Load tumor volume file group include file  and data viewing commands. The key feature of the data file is that 
+each row contains measurements at a single time point. The included test file includes additional 
+information that will facilitate interactive data plotting. 
+
+- The Open button enables selection and loading of a tumor volume csv file as described in publications listed below. T
+- The Show Button opens a table that contains the CSV file. Simple functions such as copying are enabled. Future versions will enable smart sorting, checking, and validating. 
+- The Save button saves the CSV file as an XML file with a schema that includes Contributors and experiments as a root node. 
+
+Including an XML format is an exercise in developing an extensible format that can include additional information required for custom examples. For example, the internal functions includes options for specifying units explicitly. Mouse strain and additional information about the tumor could be included.
+
+<p align="center">    
+<img src="media/tumor_volumetrics_main_interface.png" /><br>
+<b>Figure 1.</b> Simplified interface enables rapid access and visualization.
+</p>
+
+### Show grouping
+The show grouping include a simplified way to select and display a specific component of the data files. The grouping includes combo boxes to select contributor, disease, experiment, study, arms, and sepcific tumor volume time series. Currently, selecting the associated push button results in displaying the CSV file. 
+
+The ability to plot experiments is underdevelopment.
+
+<p align="center">    
+<img src="media/tumor_voumetrics_file_screen.png" /><br>
+<b>Figure 2.</b> Simplified interface enables rapid access and visualization.
+</p>
+
+
 ## Figure Examples
 
 <p align="center">    
@@ -38,6 +66,10 @@ This repository is under active development and does not yet represent a stable 
 <img src="media/tumor_volume_change_as_objective_response.png" /><br>
 <b>Figure.</b> Change in tumor volume plotted as objectiv response.
 </p>
+
+## Motivation
+
+*The Tumor Volume Analysis Suite provides a consistent, fast, and user-friendly interface for the most common oncology data analyses. It removes friction in loading data, exploring experiments, and generating publication-ready visualizations. By standardizing common plots and making them easy to export and customize, the tool reduces wasted effort across research groups and frees time to focus on new methods and deeper scientific insight.*
 
 ## Roadmap
 
