@@ -233,7 +233,6 @@ class TumorVolumeFileWindow(QMainWindow):
         self.ui.tableWidget_tv_file_table.setHorizontalHeaderLabels(df.columns.astype(str).tolist())
 
         # Populate table
-        print(len(df.index), len(df.columns))
         for row in range(len(df.index)):
             for col in range(len(df.columns)):
                 value = str(df.iat[row, col])

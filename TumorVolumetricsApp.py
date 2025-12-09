@@ -243,30 +243,7 @@ class MainApp(QMainWindow):
 
         # Set Tree
         self.populate_interface_tree()
-    def populate_interface_tree(self):
-        # Get ui interface tree
-        ui_tree = self.ui.treeWidget_navigate_file
 
-        # Set tree header level
-        ui_tree.setHeaderHidden(True)
-
-        # Populate tree widget to enable interactive views
-        ui_tree = self.ui.treeWidget_navigate_file
-        ui_tree.clear()
-        ui_tree.addTopLevelItem(QTreeWidgetItem(['Contibutors']))
-        ui_tree.addTopLevelItem(QTreeWidgetItem(['Disease']))
-        ui_tree.addTopLevelItem(QTreeWidgetItem(['Experiments']))
-    def pushbutton_show_csv_file(self):
-        logger.info(f'Displaying the selected file: {self.tumor_volume_file_path}')
-
-        if self.tumor_volume_file_window is None:
-            self.tumor_volume_file_window= TumorVolumeFileWindow(parent=self)
-
-        # Let the window populate itself
-        self.tumor_volume_file_window.populate_data(self.tv_fn, self.tumor_volume_data_obj)
-        self.tumor_volume_file_window.show()
-        self.tumor_volume_file_window.raise_()
-        self.tumor_volume_file_window.activateWindow()
     def save_xml_with_dialog(self, parent=None):
         """
         Opens a file-save dialog and writes XML content to the selected file.
@@ -305,8 +282,32 @@ class MainApp(QMainWindow):
         except Exception as e:
             QMessageBox.critical(parent, "Error", f"Could not save file:\n{e}")
             return None
+    def populate_interface_tree(self):
+        # Get ui interface tree
+        ui_tree = self.ui.treeWidget_navigate_file
+
+        # Set tree header level
+        ui_tree.setHeaderHidden(True)
+
+        # Populate tree widget to enable interactive views
+        ui_tree = self.ui.treeWidget_navigate_file
+        ui_tree.clear()
+        ui_tree.addTopLevelItem(QTreeWidgetItem(['Contibutors']))
+        ui_tree.addTopLevelItem(QTreeWidgetItem(['Disease']))
+        ui_tree.addTopLevelItem(QTreeWidgetItem(['Experiments']))
 
     # Data viewers
+    def pushbutton_show_csv_file(self):
+        logger.info(f'Displaying the selected file: {self.tumor_volume_file_path}')
+
+        if self.tumor_volume_file_window is None:
+            self.tumor_volume_file_window= TumorVolumeFileWindow(parent=self)
+
+        # Let the window populate itself
+        self.tumor_volume_file_window.populate_data(self.tv_fn, self.tumor_volume_data_obj)
+        self.tumor_volume_file_window.show()
+        self.tumor_volume_file_window.raise_()
+        self.tumor_volume_file_window.activateWindow()
     def pushbutton_show_experiment_viewer(self):
         logger.info(f'Displaying tumor volume experiment viewer: {self.tumor_volume_file_path}')
 
