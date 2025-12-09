@@ -1,93 +1,128 @@
 # Tumor Volumetrics
 
-**Tumor Volumetrics** is an early-stage Python application for loading, validating, analyzing, summarizing, and visualizing tumor volume time series data.
-The repository currently includes the foundations of a data access layer and specialized classes for working with tumor growth measurements.
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)]()
+[![Status](https://img.shields.io/badge/Status-Early%20Development-orange.svg)]()
+[![License](https://img.shields.io/badge/License-AGPL--3.0-green.svg)]()
+[![GUI](https://img.shields.io/badge/Interface-PySide6-lightgrey.svg)]()
 
-The motivation is to have a framwork for quickly integrating new advance methods for use on existing data sets. We expect the python code will enable statsitician and engineers to quickly test and deploy methods under development.
+**Tumor Volumetrics** is an early-stage Python application for loading, validating, analyzing, summarizing, and visualizing tumor volume time-series data.  
+The repository includes the foundations of a data access layer and specialized classes for working with preclinical tumor growth measurements.
 
-The first component under development is the *[TumorVolumeTimeSeriesClass](media/TumorVolumeClassReadMe.md)*, which enables users to verify their data, inspect metadata, and generate basic plots of tumor volume and optional weight over time. As the project matures, additional modules for data QC, normalization, group-level summaries, and interactive visualization will be added.
+The motivation is to provide a framework for **quickly integrating new analytical methods** and applying them to existing data. The Python implementation is intended to help **biologists, statisticians, and engineers** rapidly test, refine, and deploy methods during study evaluation.
 
-This repository is under active development and does not yet represent a stable API. More features, documentation, and examples will follow.
+This repository is under active development and does not yet represent a stable API.
 
-## Features (in progress)
-
-- Load tumor volume datasets from CSV files
-- Creation of individual tumor time-series objects
-- Creation of tumor volume study objects
-- Creattion of tumor volume experiment objects
-- Graphic user interface for interactively visualizing and analyuzing tumor volume data
+---
 
 ## Main Interface
-### Load tumor volume file grouping
-Load tumor volume file group include file  and data viewing commands. The key feature of the data file is that 
-each row contains measurements at a single time point. The included test file includes additional 
-information that will facilitate interactive data plotting. 
 
-- The Open button enables selection and loading of a tumor volume csv file as described in publications listed below. T
-- The Show Button opens a table that contains the CSV file. Simple functions such as copying are enabled. Future versions will enable smart sorting, checking, and validating. 
-- The Save button saves the CSV file as an XML file with a schema that includes Contributors and experiments as a root node. 
+### Tumor Volume Classes
 
-Including an XML format is an exercise in developing an extensible format that can include additional information required for custom examples. For example, the internal functions includes options for specifying units explicitly. Mouse strain and additional information about the tumor could be included.
+The core component under development is the *[TumorVolumeTimeSeriesClass](media/TumorVolumeClassReadMe.md)*, which supports data verification, metadata inspection, summaries, and basic tumor-volume plots. The file includes the following class structures:
+
+- **Tumor Volume Data Class**  
+  Loads tumor volume time-series data from CSV. Includes utilities for logging summaries and input checks.
+
+- **Tumor Volume Experiment Class**  
+  Groups studies by experiment, enabling cross-study visualization and comparisons.
+
+- **Tumor Volume Study Class**  
+  Organizes data at the study level. Supports summaries, group-level plots, and metadata inspection.
+
+- **Tumor Volume Time Series Class**  
+  Focused on individual mouse-level series with basic plotting, QC, and summaries.
+
+A design requirement for all classes is flexibility: they support **command-line use, interactive workflows, and GUI-driven analysis**.
+
+---
+
+## Load Tumor Volume File Grouping
+
+The file-loading panel includes commands for file access, viewing, and export. Each row of the CSV represents a **single time point** for a specific animal. The test file includes additional fields to support interactive plotting.
+
+Key actions:
+
+- **Open** – Select and load a tumor volume CSV following published conventions.  
+- **Show** – Display the entire CSV in a table widget (sorting, copying, and basic inspection supported; validation tools planned).  
+- **Save** – Export the CSV as XML following the provided [XML schema](TumorVolumeData.xsd), which defines `Contributors` and `Experiments` as root elements.
+
+The XML format is intentionally extensible. For example, units, mouse strain, and tumor-specific details can be included for downstream or custom analyses.
 
 <p align="center">    
 <img src="media/tumor_volumetrics_main_interface.png" /><br>
 <b>Figure 1.</b> Simplified interface enables rapid access and visualization.
 </p>
 
-### Show grouping
-The show grouping include a simplified way to select and display a specific component of the data files. The grouping includes combo boxes to select contributor, disease, experiment, study, arms, and sepcific tumor volume time series. Currently, selecting the associated push button results in displaying the CSV file. 
+---
 
-The ability to plot experiments is underdevelopment.
+## Show Grouping
+
+The *Show* panel provides quick navigation of loaded data using combo boxes for selecting contributor, disease, experiment, study, arm, and individual time series. Currently, selecting and displaying an item reveals the underlying CSV rows. Interactive plotting tools for experiments and subgroups are under active development.
 
 <p align="center">    
 <img src="media/tumor_voumetrics_file_screen.png" /><br>
-<b>Figure 2.</b> Simplified interface enables rapid access and visualization.
+<b>Figure 2.</b> File selection and inspection interface.</b>
 </p>
 
+---
 
 ## Figure Examples
 
 <p align="center">    
 <img src="media/spider_with_weights.png" /><br>
-<b>Figure.</b> Tumor volume spider plots with weights shown as a subplot.
+<b>Figure 3.</b> Tumor volume spider plots with weights.
 </p>
 
 <p align="center">    
 <img src="media/tumor_volume_average_with_std.png" /><br>
-<b>Figure.</b> Average tumor volume curves with standard deviation shown.
+<b>Figure 4.</b> Average tumor volume curves with standard deviation.
 </p>
 
 <p align="center">    
 <img src="media/kaplan_meier_with_at_risk_plot_table.png" /> <br>
-<b>Figure.</b> Event Free Kaplan Meier curve with at risk shown.
+<b>Figure 5.</b> Event-free Kaplan–Meier curve with at-risk table.
 </p>
 
 <p align="center">    
 <img src="media/tumor_volume_change_as_objective_response.png" /><br>
-<b>Figure.</b> Change in tumor volume plotted as objectiv response.
+<b>Figure 6.</b> Change in tumor volume plotted as objective response.
 </p>
+
+---
 
 ## Motivation
 
-*The Tumor Volume Analysis Suite provides a consistent, fast, and user-friendly interface for the most common oncology data analyses. It removes friction in loading data, exploring experiments, and generating publication-ready visualizations. By standardizing common plots and making them easy to export and customize, the tool reduces wasted effort across research groups and frees time to focus on new methods and deeper scientific insight.*
+*The Tumor Volume Analysis Suite provides a consistent, efficient, and user-friendly interface for common oncology data analyses. It minimizes friction in loading datasets, exploring experiments, and generating publication-ready visualizations. By standardizing commonly used plots and simplifying figure generation, the tool saves time across research teams and frees effort for scientific interpretation and method development.*
+
+---
+
+## Features in Progress
+
+- Interactive experiment‐level viewer with plotting and export  
+- Extensible XML schema for metadata-rich saving of tumor volume datasets  
+- Enhanced CSV validation and interactive sorting tools  
+- Expanded plotting options for arms, studies, and experiments  
+
+---
 
 ## Roadmap
 
-The plan is to create a PySide6 interface that will allow for interactive review of analysis of tumor volume data. Interactive analysis will support a range of researchers during the data collection, analysis, and publishing stages. The application will include the most common starting analysis. We expect it will be stratight forward for those with appropraite experience to add less commonly used figures and analytsis. 
+The long-term plan is to build a comprehensive PySide6 application that supports biologists, analysts, and engineers throughout **data collection, QC, exploration, analysis, and manuscript preparation**.
 
-The starting point will use existing flat file formats. We expect to develop an XML format that will allow for additiona information to be included such as location of the genomics data. 
+Key goals:
 
-A major feature of the application will be the ability to export publication quality features and to reapidly configures figure properties. We expect supporting figure foramting will enable a wide range of users to customize figures according to group standards. 
+- Common preclinical oncology analyses available interactively  
+- Simple extension points for advanced or lab-specific plots  
+- XML format supporting metadata such as genomic file locations  
+- Rapid export of publication-quality figures with configurable settings  
+- Support for expanded visualization aesthetics and statistical summaries  
+- Built-in QC tools for raw tumor volume data
 
-Future updates will include:
-- Expanded plotting aesthetics
-- Quality control checks for raw data
-- Enhanced statistical summaries
-- Interactive visualization tools
+Optional collaboration will be considered once the application stabilizes.
 
-Optional collaboration once the application is fully developed
+---
 
 ## License
 
-This project is [licensed](LICENSE.md) under the GNU Affero General Public License v3.0.
-See the LICENSE.md file for details.
+This project is licensed under the **GNU Affero General Public License v3.0**.  
+See the [LICENSE.md](LICENSE.md) file for details.
