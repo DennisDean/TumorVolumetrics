@@ -52,13 +52,38 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.setWindowTitle("Tumor Volume File")
 
         # Show plotting configuration layout
-        self.ui.actionPlot_Configuration.triggered.connect(self.toggle_graph_configuration)
+        self.ui.actionPlot_Configuration.triggered.connect(self.toggle_graph_configuration_group)
         set_layout_visible(self.ui.verticalLayout_visual_graph_settings, True)
 
+        # Save data object
+        self.tv_data_obj = tv_data_obj
+
+        # Get Experiments
+        self.experiments = tv_data_obj.unique_experiments
+        self.ui.comboBox_configuration_experiments.addItems(self.experiments)
+
+        # Set configurations
+        self.initial_configuration = '4'
+        self.plot_config_to_index = lambda x: int(x)-1
+        self.num_of_plot_option_list = ['1','2','3','4']
+        self.plot_graphicview_list = [self.ui.graphicsView_visual_top_left,   self.ui.graphicsView_visual_top_right,
+                                      self.ui.graphicsView_visual_bottom_left, self.ui.graphicsView_visual_bottom_right]
+        self.graphic_view_plot_dict = {'1':[True, False, False, False], '2':[True, True, False, False],
+                                       '3':[True, True, True, False],    '4':[True, True, True, True]}
+        self.ui.comboBox_configuration_num_of_plots.addItems(self.num_of_plot_option_list)
+        self.ui.comboBox_configuration_num_of_plots.setCurrentIndex(self.plot_config_to_index(self.initial_configuration))
+        self.ui.comboBox_configuration_num_of_plots.currentTextChanged.connect(self.toggle_plot_graphics_view)
+
+
     # Utilities
-    def toggle_graph_configuration(self):
+    def toggle_graph_configuration_group(self):
         toggled_boolean =  not self.ui.groupBox_plot_configurations.isVisible()
         configuration_layout = self.ui.verticalLayout_visual_graph_settings
         set_layout_visible(configuration_layout, toggled_boolean)
+    def toggle_plot_graphics_view(self, new_text):
+        configuration_text = new_text
+        graphic_view_boolean_settings = self.graphic_view_plot_dict[configuration_text]
+        for (gv, gv_visible) in zip(self.plot_graphicview_list, graphic_view_boolean_settings):
+            gv.setVisible(gv_visible)
 
 

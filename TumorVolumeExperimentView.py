@@ -89,12 +89,12 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.label_2, 0, Qt.AlignHCenter)
 
-        self.comboBox_control_experiments = QComboBox(self.groupBox_plot_configurations)
-        self.comboBox_control_experiments.setObjectName(u"comboBox_control_experiments")
-        self.comboBox_control_experiments.setMinimumSize(QSize(170, 0))
-        self.comboBox_control_experiments.setMaximumSize(QSize(170, 16777215))
+        self.comboBox_configuration_experiments = QComboBox(self.groupBox_plot_configurations)
+        self.comboBox_configuration_experiments.setObjectName(u"comboBox_configuration_experiments")
+        self.comboBox_configuration_experiments.setMinimumSize(QSize(170, 0))
+        self.comboBox_configuration_experiments.setMaximumSize(QSize(170, 16777215))
 
-        self.verticalLayout_3.addWidget(self.comboBox_control_experiments, 0, Qt.AlignHCenter)
+        self.verticalLayout_3.addWidget(self.comboBox_configuration_experiments, 0, Qt.AlignHCenter)
 
         self.label_11 = QLabel(self.groupBox_plot_configurations)
         self.label_11.setObjectName(u"label_11")
@@ -115,12 +115,12 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.label_5, 0, Qt.AlignTop)
 
-        self.comboBox_2 = QComboBox(self.groupBox_plot_configurations)
-        self.comboBox_2.setObjectName(u"comboBox_2")
-        self.comboBox_2.setMinimumSize(QSize(0, 25))
-        self.comboBox_2.setMaximumSize(QSize(16777215, 25))
+        self.comboBox_configuration_num_of_plots = QComboBox(self.groupBox_plot_configurations)
+        self.comboBox_configuration_num_of_plots.setObjectName(u"comboBox_configuration_num_of_plots")
+        self.comboBox_configuration_num_of_plots.setMinimumSize(QSize(0, 25))
+        self.comboBox_configuration_num_of_plots.setMaximumSize(QSize(16777215, 25))
 
-        self.horizontalLayout.addWidget(self.comboBox_2, 0, Qt.AlignTop)
+        self.horizontalLayout.addWidget(self.comboBox_configuration_num_of_plots, 0, Qt.AlignTop)
 
 
         self.verticalLayout_3.addLayout(self.horizontalLayout)
