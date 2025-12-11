@@ -74,6 +74,34 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.comboBox_configuration_num_of_plots.setCurrentIndex(self.plot_config_to_index(self.initial_configuration))
         self.ui.comboBox_configuration_num_of_plots.currentTextChanged.connect(self.toggle_plot_graphics_view)
 
+        # Setup plotting
+        self.plot_types: list|None = None
+        self.plot_select_comboBox: list|None = None
+        self.plotting_functions: list|None = None
+        self.initialize_plotting()
+
+    # Initialize
+    def initialize_plotting(self):
+        # Setup plotting
+        self.plot_types = ["Avg_TV_Change_Bar", "TV_Control_Bar", "Objective_Response_Bar",
+                           "AUC_with_Control_Bar", "Log2_Fold_Change_w_Error"]
+        self.plot_select_comboBox = [self.ui.comboBox_configuration_plot_upper_left,
+                                     self.ui.comboBox_configuration_plot_upper_right,
+                                     self.ui.comboBox_configuration_plot_lower_left,
+                                     self.ui.comboBox_configuration_plot_lower_right]
+        self.plotting_functions = ["plot_average_tumor_volume_change_bar",
+                                   "plot_tumor_control_ratio_bar",
+                                   "proportion_in_objective_response_classification_bar",
+                                   "plot_auc_with_controls_bar",
+                                   "plot_log2fc_points"]
+        for idx, cbox in enumerate(self.plot_select_comboBox):
+            cbox.addItems(self.plot_types)
+            cbox.setCurrentIndex(idx)
+
+        # Draw plots
+        self.draw_figure_group()
+
+
 
     # Utilities
     def toggle_graph_configuration_group(self):
@@ -85,5 +113,16 @@ class TumorVolumeExperimentWindow(QMainWindow):
         graphic_view_boolean_settings = self.graphic_view_plot_dict[configuration_text]
         for (gv, gv_visible) in zip(self.plot_graphicview_list, graphic_view_boolean_settings):
             gv.setVisible(gv_visible)
+
+    # Plot figure
+    def draw_figure_group(self):
+        # Get plot settings
+        experiment_id = self.ui.comboBox_configuration_experiments.currentText()
+        num_figures = int(self.ui.comboBox_configuration_num_of_plots.currentText())
+        experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_id]
+        for idx in range(num_figures):
+            graph_id = self.plot_select_comboBox[idx]
+            experiment_obj.plot_log2fc_points()
+
 
 

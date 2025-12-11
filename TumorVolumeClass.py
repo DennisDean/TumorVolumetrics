@@ -11,7 +11,11 @@
 
 # To Do
 
+
 # Import modules
+
+# Setup Log file
+from logging_config import logger
 
 # Utilities
 import copy
@@ -19,9 +23,7 @@ import logging
 import os
 import re
 from pathlib import Path
-
-#
-from logging_config import logger
+from typing import Optional
 
 # Data
 import pandas as pd
@@ -29,33 +31,31 @@ import numpy as np
 import uuid
 import xml.etree.ElementTree as ET
 
-from scipy.stats import sem
-from typing import Optional
-
 # Computation
 import bisect
 import math
 from lifelines import KaplanMeierFitter
+from scipy.stats import sem
 from scipy.stats import t
 from scipy.stats import ttest_ind
 
 # Visualization
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+
+# GUI
+from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
 
 
 # Set up logger
 # Create logs directory if it does not exist
 os.makedirs("logs", exist_ok=True)
 log_file = os.path.join("logs", "app.log")
-logging.basicConfig(
-    level=logging.INFO,                  # Set level: DEBUG, INFO, WARNING, ERROR, CRITICAL
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=[
         logging.FileHandler(log_file),   # Log to file
         logging.StreamHandler()          # Log to console
-    ]
-)
-
+    ])
 logger = logging.getLogger(__name__)
 
 # Utility
@@ -1455,6 +1455,8 @@ class TumorVolumeExperimentClass():
             "SD": "#B8B8B8",  # light gray (stable)
             "PD": "#808080"  # gray (progression)
         }
+        self.plot_types = ("Avg_TV_Change_Bar", "TV_Control_Bar", "Objective_Response_Bar",
+                           "AUC_with_Control_Bar", "Log2_Fold_Change_w_Error")
 
     # Summary
     def summarize(self):
@@ -1502,9 +1504,31 @@ class TumorVolumeExperimentClass():
     # Visualization
     def plot_average_tumor_volume_change_bar(self, control_arms=("control", "vehicle", "placebo"),
             error_metric="std", show_axis_labels=True, compute_day:int|None=None,
-            title="Average % Tumor Volume Change by Study", figsize=(10, 6)):
+            title="Average % Tumor Volume Change by Study", figsize=(10, 6), parent_widget=None):
         """
         Plot the average percent tumor volume change for each study.
+
+        Creates a bar chart showing mean tumor volume changes across studies with error bars.
+        Can be embedded in a Qt widget or displayed as a standalone matplotlib figure.
+
+        Args:
+            control_arms: Tuple of arm names to exclude (case-insensitive).
+            error_metric: Error bar type - "std" for standard deviation or "sem" for standard error.
+            show_axis_labels: Whether to display axis labels. Defaults to True.
+            compute_day: Optional specific day for computing percent change. Defaults to None (final day).
+            title: Plot title. Set to None to hide. Defaults to "Average % Tumor Volume Change by Study".
+            figsize: Figure size as (width, height) in inches. Defaults to (10, 6).
+            parent_widget: Optional Qt widget to embed the plot. If provided, renders as
+                          a FigureCanvas within this widget. If None, creates standalone
+                          matplotlib figure. Defaults to None.
+
+        Returns:
+            tuple: (fig, ax) - matplotlib Figure and Axes objects for the plot.
+                Returns None if no studies have data to plot.
+
+        Side Effects (when parent_widget is provided):
+            - Sets self.current_tumor_volume_canvas to FigureCanvas
+            - Replaces parent_widget's layout contents
         """
 
         import numpy as np
