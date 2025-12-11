@@ -1887,7 +1887,7 @@ class TumorVolumeExperimentClass():
 
         return fig, ax
     def proportion_in_objective_response_classification_bar(self, control_arms=("control", "vehicle", "placebo"),
-            show_legend=True, show_axis_labels=False, compute_day: int | None = None,
+            show_legend=False, show_axis_labels=False, compute_day: int | None = None,
             title="Objective Response Distribution by Study", figsize=(10, 6), parent_widget=None):
         """
         Create a stacked 100% bar plot showing objective response proportions
@@ -2005,7 +2005,7 @@ class TumorVolumeExperimentClass():
 
                 if count > 0 and height > 0 and total > 0:
                     pct = height * 100
-                    label_text = f"{count} ({pct:.0f}%)"
+                    label_text = f"{or_code}\n\n{count} ({pct:.0f}%)"
 
                     ax.text(
                         bar.get_x() + bar.get_width() / 2,

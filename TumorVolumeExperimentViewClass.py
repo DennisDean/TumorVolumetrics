@@ -102,6 +102,15 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Draw plots
         self.draw_figure_group()
 
+        # Connect combobox change to figure update
+        for cbox in self.plot_select_comboBox:
+            cbox.currentTextChanged.connect(self.update_experiment_view)
+
+    # Update Figure
+    def update_experiment_view(self):
+        # Respond to figure comboBox change
+        self.draw_figure_group()
+
     # Utilities
     def toggle_graph_configuration_group(self):
         toggled_boolean =  not self.ui.groupBox_plot_configurations.isVisible()
@@ -113,7 +122,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         for (gv, gv_visible) in zip(self.plot_graphicview_list, graphic_view_boolean_settings):
             gv.setVisible(gv_visible)
 
-    # Plot figure
+    # Plot Figure
     def draw_figure_group(self):
         # Get plot settings
         experiment_id = self.ui.comboBox_configuration_experiments.currentText()
@@ -121,11 +130,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
         experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_id]
         for idx in range(num_figures):
             selected_plot = self.plot_select_comboBox[idx].currentText()
-            print(f'selected_plot = {selected_plot}')
             plot_name = self.plotting_function_dict[selected_plot]
-            print(f'plot_name = {plot_name}')
             graphic_view = self.experiment_graphics_views[idx]
-            print(f'graphic_view = {graphic_view}')
             experiment_obj.plot_to_widget_by_name(plot_name, graphic_view)
 
 
