@@ -243,7 +243,6 @@ class MainApp(QMainWindow):
 
         # Set Tree
         self.populate_interface_tree()
-
     def save_xml_with_dialog(self, parent=None):
         """
         Opens a file-save dialog and writes XML content to the selected file.

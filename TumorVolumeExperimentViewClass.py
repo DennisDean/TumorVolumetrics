@@ -4,9 +4,12 @@
 import logging
 logger = logging.getLogger(__name__)
 
+# Extend Existing Class
+from FigureGraphicsViewClass import FigureGraphicsView
+
 # Import
-from PySide6.QtWidgets import (QMainWindow, QTableWidget, QTableWidgetItem,
-                              QAbstractItemView, QHeaderView, QMenu, QApplication)
+from PySide6.QtWidgets import (QMainWindow, QTableWidget, QTableWidgetItem, QGraphicsView,
+                              QAbstractItemView, QHeaderView, QMenu, QApplication, QSizePolicy)
 from PySide6.QtCore import Qt
 
 # Data
@@ -43,6 +46,7 @@ def set_layout_visible(layout, visible: bool):
 
 # GUI Class
 class TumorVolumeExperimentWindow(QMainWindow):
+    # Intitialize
     def __init__(self, tv_data_obj:TumorVolumeDataClass , parent=None):
         super().__init__(parent)
 
@@ -74,6 +78,13 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.comboBox_configuration_num_of_plots.setCurrentIndex(self.plot_config_to_index(self.initial_configuration))
         self.ui.comboBox_configuration_num_of_plots.currentTextChanged.connect(self.toggle_plot_graphics_view)
 
+        # Overide Graphic View to Support Context Menus (Right Click)
+        self.graphicsView_visual_top_left: QGraphicsView | None = None
+        self.graphicsView_visual_top_right: QGraphicsView | None = None
+        self.graphicsView_visual_bottom_left: QGraphicsView | None = None
+        self.graphicsView_visual_bottom_right: QGraphicsView | None = None
+        self.add_context_menu_support_to_graphic_view()
+
         # Setup plotting
         self.plot_types: list|None = None
         self.plot_select_comboBox: list|None = None
@@ -81,7 +92,43 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.experiment_graphics_views: list|None = None
         self.initialize_plotting()
 
-    # Initialize
+    # Inititialize Utilities
+    def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
+        # Capture the original geometry and size policy
+        old_height = old_graphic_view.height()
+        old_policy = old_graphic_view.sizePolicy()
+
+        # Create the new graphics view
+        new_graphic_view = FigureGraphicsView(self)
+
+        # Apply the same size policy and fixed height
+        new_graphic_view.setSizePolicy(old_policy)
+        if old_policy.verticalPolicy() == QSizePolicy.Policy.Fixed:
+            new_graphic_view.setFixedHeight(old_height)
+        else:
+            # Maintain the same min/max height if not fixed
+            new_graphic_view.setMinimumHeight(old_graphic_view.minimumHeight())
+            new_graphic_view.setMaximumHeight(old_graphic_view.maximumHeight())
+
+        # Replace in the parent layout
+        layout = old_graphic_view.parent().layout()
+        layout.replaceWidget(old_graphic_view, new_graphic_view)
+        old_graphic_view.deleteLater()
+
+        # Match geometry explicitly to prevent layout recalculation from resizing it
+        new_graphic_view.setGeometry(old_graphic_view.geometry())
+
+        return new_graphic_view
+    def add_context_menu_support_to_graphic_view(self):
+        # Collect Graphic Views to change
+        self.original_graphics_views = [self.ui.graphicsView_visual_top_left, self.ui.graphicsView_visual_top_right,
+            self.ui.graphicsView_visual_bottom_left, self.ui.graphicsView_visual_bottom_right]
+        self.graphic_views = [self.graphicsView_visual_top_left, self.graphicsView_visual_top_right,
+            self.graphicsView_visual_bottom_left, self.graphicsView_visual_bottom_right]
+
+        # Copy graphicView parameters to upgraded graphic view
+        for o_gv, gv in zip(self.original_graphics_views, self.graphic_views):
+            gv = self.replace_designer_graphic_view_with_custom(o_gv)
     def initialize_plotting(self):
         # Setup plotting
         self.plot_types = ["Avg_TV_Change_Bar", "TV_Control_Bar", "Objective_Response_Bar",
@@ -91,8 +138,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.plotting_function_dict = {"Avg_TV_Change_Bar":"plot_average_tumor_volume_change_bar", "TV_Control_Bar":"plot_tumor_control_ratio_bar",
                             "Objective_Response_Bar":"proportion_in_objective_response_classification_bar", "AUC_with_Control_Bar":"plot_auc_with_controls_bar",
                             "Log2_Fold_Change_w_Error":"plot_log2fc_points"}
-        self.experiment_graphics_views = [self.ui.graphicsView_visual_top_left, self.ui.graphicsView_visual_top_right,
-                            self.ui.graphicsView_visual_bottom_left, self.ui.graphicsView_visual_bottom_right]
+        self.experiment_graphics_views = [self.graphicsView_visual_top_left, self.graphicsView_visual_top_right,
+                            self.graphicsView_visual_bottom_left, self.graphicsView_visual_bottom_right]
 
         # Initialize selection comboBoxes
         for idx, cbox in enumerate(self.plot_select_comboBox):
