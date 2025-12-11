@@ -1502,8 +1502,38 @@ class TumorVolumeExperimentClass():
         return log2fc, lower, upper
 
     # Visualization
+    def plot_to_widget_by_name(self, plot_name, parent_widget, **plot_kwargs):
+        """
+        Call a plotting function by name and render to a widget.
+
+        Args:
+            plot_name: String name of the plotting method
+            parent_widget: Qt widget to embed the plot
+            **plot_kwargs: Any keyword arguments to pass to the plotting function
+
+        Returns:
+            Result from the plotting function (typically (fig, ax) tuple)
+
+        Example:
+            # Call by string name
+            experiment_obj.plot_to_widget_by_name(
+                "plot_average_tumor_volume_change_bar",
+                graphic_view,
+                error_metric="sem"
+            )
+        """
+        # Get the method by name
+        plot_function = getattr(self, plot_name, None)
+
+        if plot_function is None:
+            raise ValueError(f"Plot function '{plot_name}' not found")
+
+        if not callable(plot_function):
+            raise ValueError(f"'{plot_name}' is not a callable method")
+
+        return plot_function(parent_widget=parent_widget, **plot_kwargs)
     def plot_average_tumor_volume_change_bar(self, control_arms=("control", "vehicle", "placebo"),
-            error_metric="std", show_axis_labels=True, compute_day:int|None=None,
+            error_metric="std", show_axis_labels=True, compute_day: int | None = None,
             title="Average % Tumor Volume Change by Study", figsize=(10, 6), parent_widget=None):
         """
         Plot the average percent tumor volume change for each study.
@@ -1530,9 +1560,14 @@ class TumorVolumeExperimentClass():
             - Sets self.current_tumor_volume_canvas to FigureCanvas
             - Replaces parent_widget's layout contents
         """
-
         import numpy as np
-        import matplotlib.pyplot as plt
+
+        if parent_widget:
+            from matplotlib.backends.backend_qt5agg import FigureCanvas
+            from matplotlib.figure import Figure
+            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
+        else:
+            import matplotlib.pyplot as plt
 
         # Sort studies
         study_keys = sorted(self.study_keys)
@@ -1542,11 +1577,8 @@ class TumorVolumeExperimentClass():
         study_labels = []
         study_colors = []
 
-        cmap = plt.get_cmap("tab20")
-
         # Build bar data
         for idx, study in enumerate(study_keys):
-
             study_obj = self.experiment_study_dict[study]
 
             arms = study_obj.unique_arms
@@ -1577,8 +1609,20 @@ class TumorVolumeExperimentClass():
             study_labels.append(study)
             study_colors.append('#808080')
 
+        # Check if we have data to plot
+        if len(study_means) == 0:
+            logger.info("No studies with data to plot")
+            return None
+
         # ---------------- Plotting ----------------
-        fig, ax = plt.subplots(figsize=figsize)
+        if parent_widget:
+            # Create matplotlib Figure (not pyplot)
+            fig = Figure(figsize=figsize)
+            ax = fig.add_subplot(111)
+        else:
+            # Use pyplot for standalone
+            fig, ax = plt.subplots(figsize=figsize)
+
         x = np.arange(len(study_means))
 
         bars = ax.bar(
@@ -1610,17 +1654,84 @@ class TumorVolumeExperimentClass():
         ax.set_xticks(x)
         ax.set_xticklabels(study_labels, rotation=45, ha="right")
 
-        plt.tight_layout()
-        plt.show()
-    def plot_tumor_control_ratio_bar(self, control_arms=("control", "vehicle", "placebo"), error_metric="std",
-            show_axis_labels=True, compute_day: int | None = None, title="T/C Ratio (SE) by Study",
-            figsize=(10, 6)):
-        """
-        Plot the average percent tumor volume change for each study.
-        """
+        # fig.tight_layout()
 
+        # Handle widget integration
+        if parent_widget:
+            # Create a new Figure Canvas
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.updateGeometry()
+            canvas.setStyleSheet("background-color: white;")  # Qt background
+
+            # Store canvas reference
+            self.current_tumor_volume_canvas = canvas
+
+            # Clear existing layout
+            existing_layout = parent_widget.layout()
+            if existing_layout:
+                while existing_layout.count():
+                    item = existing_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                existing_layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(existing_layout)
+
+            existing_layout.setContentsMargins(0, 0, 0, 0)
+            existing_layout.addWidget(canvas)
+
+            # Ensure proper sizing
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+            # Draw the canvas
+            canvas.draw()
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+        else:
+            # Show plot in standalone mode
+            plt.show()
+
+        return fig, ax
+    def plot_tumor_control_ratio_bar(self, control_arms=("control", "vehicle", "placebo"), error_metric="std", show_axis_labels=True,
+            compute_day: int | None = None, title="T/C Ratio (SE) by Study", figsize=(10, 6), parent_widget=None):
+        """
+        Plot the T/C (Treatment/Control) ratio for each study with standard error.
+
+        Creates a bar chart showing the ratio of mean treatment tumor volume to mean control
+        tumor volume, with error bars calculated using the delta method. Can be embedded in
+        a Qt widget or displayed as a standalone matplotlib figure.
+
+        Args:
+            control_arms: Tuple of arm names to treat as controls (case-insensitive).
+            error_metric: Error bar type - currently only "std" supported (uses SE calculation).
+            show_axis_labels: Whether to display axis labels. Defaults to True.
+            compute_day: Optional specific day for computing ratio. Defaults to None (final day).
+            title: Plot title. Set to None to hide. Defaults to "T/C Ratio (SE) by Study".
+            figsize: Figure size as (width, height) in inches. Defaults to (10, 6).
+            parent_widget: Optional Qt widget to embed the plot. If provided, renders as
+                          a FigureCanvas within this widget. If None, creates standalone
+                          matplotlib figure. Defaults to None.
+
+        Returns:
+            tuple: (fig, ax) - matplotlib Figure and Axes objects for the plot.
+                Returns None if no studies have data to plot.
+
+        Side Effects (when parent_widget is provided):
+            - Sets self.current_tumor_control_ratio_canvas to FigureCanvas
+            - Replaces parent_widget's layout contents
+        """
         import numpy as np
-        import matplotlib.pyplot as plt
+
+        if parent_widget:
+            from matplotlib.backends.backend_qt5agg import FigureCanvas
+            from matplotlib.figure import Figure
+            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
+        else:
+            import matplotlib.pyplot as plt
 
         # Sort studies
         study_keys = sorted(self.study_keys)
@@ -1629,8 +1740,6 @@ class TumorVolumeExperimentClass():
         study_errors = []
         study_labels = []
         study_colors = []
-
-        cmap = plt.get_cmap("tab20")
 
         # Build bar data
         for idx, study in enumerate(study_keys):
@@ -1646,15 +1755,15 @@ class TumorVolumeExperimentClass():
             treatment = []
             controls = []
 
-            # Grab realtive tumor volume for treatments
+            # Grab relative tumor volume for treatments
             for arm in trtarms:
                 trt_arm_id_list = study_obj.study_arms_dict[arm]
 
                 for ts_id in trt_arm_id_list:
                     tv_data_obj = study_obj.study_tv_time_dict[ts_id]
-                    compute_day = compute_day if compute_day is not None else tv_data_obj.time_day[-1]
-                    compute_day_index = tv_data_obj.get_compute_day_index(tv_data_obj.time_day, compute_day)
-                    relative_tumor_volume = tv_data_obj.tumor_volume[compute_day_index]/tv_data_obj.tumor_volume[0]
+                    compute_day_val = compute_day if compute_day is not None else tv_data_obj.time_day[-1]
+                    compute_day_index = tv_data_obj.get_compute_day_index(tv_data_obj.time_day, compute_day_val)
+                    relative_tumor_volume = tv_data_obj.tumor_volume[compute_day_index] / tv_data_obj.tumor_volume[0]
                     treatment.append(relative_tumor_volume)
 
             # Grab relative tumor volume for controls
@@ -1663,9 +1772,9 @@ class TumorVolumeExperimentClass():
 
                 for ts_id in ctrl_arm_id_list:
                     tv_data_obj = study_obj.study_tv_time_dict[ts_id]
-                    compute_day = compute_day if compute_day is not None else tv_data_obj.time_day[-1]
-                    compute_day_index = tv_data_obj.get_compute_day_index(tv_data_obj.time_day, compute_day)
-                    relative_tumor_volume = tv_data_obj.tumor_volume[compute_day_index]/tv_data_obj.tumor_volume[0]
+                    compute_day_val = compute_day if compute_day is not None else tv_data_obj.time_day[-1]
+                    compute_day_index = tv_data_obj.get_compute_day_index(tv_data_obj.time_day, compute_day_val)
+                    relative_tumor_volume = tv_data_obj.tumor_volume[compute_day_index] / tv_data_obj.tumor_volume[0]
                     controls.append(relative_tumor_volume)
 
             # Calculate means
@@ -1676,8 +1785,8 @@ class TumorVolumeExperimentClass():
             c_size = np.size(controls, axis=0)
             c_var = np.var(controls)
 
-            # Compute ration and standard error
-            tc_ratio = t_mean/c_mean
+            # Compute ratio and standard error
+            tc_ratio = t_mean / c_mean
             s_err = tc_ratio * np.sqrt(
                 (t_var / (t_mean ** 2 * t_size)) +
                 (c_var / (c_mean ** 2 * c_size)))
@@ -1685,14 +1794,25 @@ class TumorVolumeExperimentClass():
             if len(treatment) == 0:
                 continue
 
-
             study_means.append(tc_ratio)
             study_errors.append(s_err)
             study_labels.append(study)
             study_colors.append('#808080')
 
+        # Check if we have data to plot
+        if len(study_means) == 0:
+            logger.info("No studies with data to plot")
+            return None
+
         # ---------------- Plotting ----------------
-        fig, ax = plt.subplots(figsize=figsize)
+        if parent_widget:
+            # Create matplotlib Figure (not pyplot)
+            fig = Figure(figsize=figsize)
+            ax = fig.add_subplot(111)
+        else:
+            # Use pyplot for standalone
+            fig, ax = plt.subplots(figsize=figsize)
+
         x = np.arange(len(study_means))
 
         bars = ax.bar(
@@ -1724,18 +1844,91 @@ class TumorVolumeExperimentClass():
         ax.set_xticks(x)
         ax.set_xticklabels(study_labels, rotation=45, ha="right")
 
-        plt.tight_layout()
-        plt.show()
+        # fig.tight_layout()
+
+        # Handle widget integration
+        if parent_widget:
+            # Create a new Figure Canvas
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.updateGeometry()
+            canvas.setStyleSheet("background-color: white;")  # Qt background
+
+            # Store canvas reference
+            self.current_tumor_control_ratio_canvas = canvas
+
+            # Clear existing layout
+            existing_layout = parent_widget.layout()
+            if existing_layout:
+                while existing_layout.count():
+                    item = existing_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                existing_layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(existing_layout)
+
+            existing_layout.setContentsMargins(0, 0, 0, 0)
+            existing_layout.addWidget(canvas)
+
+            # Ensure proper sizing
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+            # Draw the canvas
+            canvas.draw()
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+        else:
+            # Show plot in standalone mode
+            plt.show()
+
+        return fig, ax
     def proportion_in_objective_response_classification_bar(self, control_arms=("control", "vehicle", "placebo"),
             show_legend=True, show_axis_labels=False, compute_day: int | None = None,
-            title="Objective Response Distribution by Study", figsize=(10, 6)):
+            title="Objective Response Distribution by Study", figsize=(10, 6), parent_widget=None):
         """
         Create a stacked 100% bar plot showing objective response proportions
         for each study, with count and percentage inside each bar segment.
-        """
 
+        Creates a stacked bar chart showing the distribution of objective responses (CR, PR, SD, PD)
+        across studies. Each bar segment displays both the count and percentage. Can be embedded in
+        a Qt widget or displayed as a standalone matplotlib figure.
+
+        Args:
+            control_arms: Tuple of arm names to exclude (case-insensitive).
+            show_legend: Whether to display the legend. Defaults to True.
+            show_axis_labels: Whether to display axis labels. Defaults to False.
+            compute_day: Optional specific day for computing objective response. Defaults to None (final day).
+            title: Plot title. Set to None to hide. Defaults to "Objective Response Distribution by Study".
+            figsize: Figure size as (width, height) in inches. Defaults to (10, 6).
+            parent_widget: Optional Qt widget to embed the plot. If provided, renders as
+                          a FigureCanvas within this widget. If None, creates standalone
+                          matplotlib figure. Defaults to None.
+
+        Returns:
+            tuple: (fig, ax) - matplotlib Figure and Axes objects for the plot.
+
+        Side Effects (when parent_widget is provided):
+            - Sets self.current_objective_response_canvas to FigureCanvas
+            - Replaces parent_widget's layout contents
+
+        Notes:
+            - Response order: CR (Complete Response), PR (Partial Response),
+              SD (Stable Disease), PD (Progressive Disease)
+            - Each segment shows "count (percentage%)"
+            - Colors are pulled from self.objective_response_colors
+        """
         import numpy as np
-        import matplotlib.pyplot as plt
+
+        if parent_widget:
+            from matplotlib.backends.backend_qt5agg import FigureCanvas
+            from matplotlib.figure import Figure
+            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
+        else:
+            import matplotlib.pyplot as plt
 
         OR_ORDER = ["CR", "PR", "SD", "PD"]
         OR_COLORS = [self.objective_response_colors[o] for o in OR_ORDER]
@@ -1779,7 +1972,13 @@ class TumorVolumeExperimentClass():
         x = np.arange(len(study_keys))
 
         # ---------------- Plotting ----------------
-        fig, ax = plt.subplots(figsize=figsize)
+        if parent_widget:
+            # Create matplotlib Figure (not pyplot)
+            fig = Figure(figsize=figsize)
+            ax = fig.add_subplot(111)
+        else:
+            # Use pyplot for standalone
+            fig, ax = plt.subplots(figsize=figsize)
 
         bottoms = np.zeros(len(study_keys))
 
@@ -1841,98 +2040,148 @@ class TumorVolumeExperimentClass():
                 frameon=True
             )
 
-        plt.tight_layout()
-        plt.show()
+        # fig.tight_layout()
 
-        # Class functions
-    def plot_auc_with_controls_bar(self, control_arms=("control", "vehicle", "placebo"),error_metric="sem", show_legend=True,
-            show_axis_labels=False, compute_day: int | None = None, title="Average AUC by Study", figsize=(12, 6)):
+        # Handle widget integration
+        if parent_widget:
+            # Create a new Figure Canvas
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.updateGeometry()
+            canvas.setStyleSheet("background-color: white;")  # Qt background
+
+            # Store canvas reference
+            self.current_objective_response_canvas = canvas
+
+            # Clear existing layout
+            existing_layout = parent_widget.layout()
+            if existing_layout:
+                while existing_layout.count():
+                    item = existing_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                existing_layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(existing_layout)
+
+            existing_layout.setContentsMargins(0, 0, 0, 0)
+            existing_layout.addWidget(canvas)
+
+            # Ensure proper sizing
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+            # Draw the canvas
+            canvas.draw()
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+        else:
+            # Show plot in standalone mode
+            plt.show()
+
+        return fig, ax
+    def plot_auc_with_controls_bar(self, control_arms=("control", "vehicle", "placebo"), error_metric="sem",
+            show_legend=True, show_axis_labels=False, compute_day: int | None = None, title="Average AUC by Study",
+            figsize=(12, 6), parent_widget=None):
         """
-        Plot mean AUC for each study with control vs treatment bars side-by-side.
-        Controls always plotted first.
+        Plot mean AUC for each study with control vs treatment bars.
+        If parent_widget is provided, embeds the plot in a Qt widget
+        using a FigureCanvas. Otherwise uses matplotlib standalone mode.
         """
 
-        import numpy as np
-        import matplotlib.pyplot as plt
+        # ---------------------------------------------------------
+        #  Handle Qt vs standalone
+        # ---------------------------------------------------------
+        if parent_widget:
+            from matplotlib.backends.backend_qt5agg import FigureCanvas
+            from matplotlib.figure import Figure
+            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
+        else:
+            import matplotlib.pyplot as plt
 
         study_keys = sorted(self.study_keys)
 
-        # Data holders
         study_labels = []
         control_means = []
         control_errors = []
         treatment_means = []
         treatment_errors = []
 
-        # Colors
-        cmap = plt.get_cmap("tab20")
-        ctrl_color = "#6C757D"  # muted gray for controls
-        trt_color = "#1F77B4"  # blue for treatment groups
+        ctrl_color = "#6C757D"
+        trt_color = "#1F77B4"
 
-        for idx, study in enumerate(study_keys):
-
+        # ---------------------------------------------------------
+        #   COLLECT DATA
+        # ---------------------------------------------------------
+        for study in study_keys:
             study_obj = self.experiment_study_dict[study]
             arms = study_obj.unique_arms
 
-            ctrl_values = []
-            trt_values = []
-
-            # ----- Split arms -----
             control_list = [a for a in arms if a.lower() in control_arms]
             treatment_list = [a for a in arms if a.lower() not in control_arms]
 
-            # ----- Collect AUC for control -----
+            ctrl_vals = []
+            trt_vals = []
+
+            # Controls
             for arm in control_list:
                 for ts_id in study_obj.study_arms_dict[arm]:
                     tv = study_obj.study_tv_time_dict[ts_id]
                     auc = tv.compute_auc(compute_day)
-                    ctrl_values.append(auc)
+                    ctrl_vals.append(auc)
 
-            # ----- Collect AUC for treatment -----
+            # Treatments
             for arm in treatment_list:
                 for ts_id in study_obj.study_arms_dict[arm]:
                     tv = study_obj.study_tv_time_dict[ts_id]
                     auc = tv.compute_auc(compute_day)
-                    trt_values.append(auc)
+                    trt_vals.append(auc)
 
-            # Skip if no data
-            if len(ctrl_values) == 0 and len(trt_values) == 0:
+            if len(ctrl_vals) == 0 and len(trt_vals) == 0:
                 continue
 
             study_labels.append(study)
 
-            # Compute stats
+            # Error helper
             def _err(vals):
                 if error_metric == "sem":
                     return np.nanstd(vals) / np.sqrt(len(vals))
                 return np.nanstd(vals)
 
-            # Controls (may be empty)
-            if len(ctrl_values) > 0:
-                control_means.append(np.nanmean(ctrl_values))
-                control_errors.append(_err(ctrl_values))
-            else:
-                control_means.append(np.nan)
-                control_errors.append(0)
+            # Control
+            control_means.append(np.nanmean(ctrl_vals) if len(ctrl_vals) > 0 else np.nan)
+            control_errors.append(_err(ctrl_vals) if len(ctrl_vals) > 0 else 0)
 
-            # Treatments
-            if len(trt_values) > 0:
-                treatment_means.append(np.nanmean(trt_values))
-                treatment_errors.append(_err(trt_values))
-            else:
-                treatment_means.append(np.nan)
-                treatment_errors.append(0)
+            # Treatment
+            treatment_means.append(np.nanmean(trt_vals) if len(trt_vals) > 0 else np.nan)
+            treatment_errors.append(_err(trt_vals) if len(trt_vals) > 0 else 0)
 
-        # ---------- PLOTTING ----------
+        # ---------------------------------------------------------
+        #   NO DATA TO PLOT
+        # ---------------------------------------------------------
+        if len(study_labels) == 0:
+            print("No AUC data available to plot")
+            return None
+
+        # ---------------------------------------------------------
+        #   CREATE FIGURE
+        # ---------------------------------------------------------
+        if parent_widget:
+            fig = Figure(figsize=figsize)
+            ax = fig.add_subplot(111)
+        else:
+            fig, ax = plt.subplots(figsize=figsize)
+
+        # ---------------------------------------------------------
+        #   PLOT
+        # ---------------------------------------------------------
         n_studies = len(study_labels)
         x = np.arange(n_studies)
-
         width = 0.35
 
-        fig, ax = plt.subplots(figsize=figsize)
-
-        # Control bars (left)
-        bars_ctrl = ax.bar(
+        ax.bar(
             x - width / 2,
             control_means,
             width=width,
@@ -1943,8 +2192,7 @@ class TumorVolumeExperimentClass():
             label="Control"
         )
 
-        # Treatment bars (right)
-        bars_trt = ax.bar(
+        ax.bar(
             x + width / 2,
             treatment_means,
             width=width,
@@ -1957,69 +2205,108 @@ class TumorVolumeExperimentClass():
 
         ax.axhline(0, color="black", linewidth=1)
 
-        # Axis labels
-        y_label_title = f"AUC with Error Bars ({error_metric.upper()})"
+        # Labels
+        y_label_title = f"AUC ({error_metric.upper()})"
         if compute_day is not None:
-            y_label_title = f"AUC with Error Bars at Day {compute_day} ({error_metric})"
+            y_label_title = f"AUC at Day {compute_day} ({error_metric.upper()})"
         ax.set_ylabel(y_label_title)
 
         if show_axis_labels:
             ax.set_xlabel("Study")
 
-        ax.set_title(title)
+        if title:
+            ax.set_title(title)
+
         ax.set_xticks(x)
         ax.set_xticklabels(study_labels, rotation=45, ha="right")
 
-        # Legend inside plot
         if show_legend:
-            ax.legend(
-                loc="upper right",
-                frameon=True,
-                framealpha=0.8,
-                facecolor="white"
-            )
+            ax.legend(loc="upper right", frameon=True, framealpha=0.8)
 
-        plt.tight_layout()
-        plt.show()
+        # fig.tight_layout()
+
+        # ---------------------------------------------------------
+        #   EMBED IN QT (IF REQUESTED)
+        # ---------------------------------------------------------
+        if parent_widget:
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.updateGeometry()
+            canvas.setStyleSheet("background-color: white;")
+
+            # Store reference so you can save the figure later
+            self.current_auc_canvas = canvas
+
+            # Clear the existing layout
+            existing_layout = parent_widget.layout()
+            if existing_layout:
+                while existing_layout.count():
+                    item = existing_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                existing_layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(existing_layout)
+
+            existing_layout.setContentsMargins(0, 0, 0, 0)
+            existing_layout.addWidget(canvas)
+
+            canvas.draw()
+
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+
+        else:
+            import matplotlib.pyplot as plt
+            plt.show()
+
+        return fig, ax
     def plot_log2fc_points(self, control_arms=("control", "vehicle", "placebo"), show_legend=True, show_axis_labels=True,
-            compute_day=None, title="Log2 Change (Control vs Treatment)", figsize=(12, 6)):
+            compute_day=None, title="Log2 Change (Control vs Treatment)", figsize=(12, 6), parent_widget=None):
         """
-        For each study:
-            - Determine the index for compute_day
-            - Compute per-sample log2 change at that index
-            - Compute control vs treatment mean ± SEM
-            - Plot two points (control, treatment) for each study
+        Plot log2-fold change at compute_day for control vs treatment arms.
+        Supports Qt embedding via parent_widget or standalone matplotlib display.
         """
 
         import numpy as np
-        import matplotlib.pyplot as plt
+        from scipy.stats import ttest_ind
 
-        # ------ helper: find index for compute_day ------
+        # ----------------------------
+        # Handle Qt vs standalone
+        # ----------------------------
+        if parent_widget:
+            from matplotlib.backends.backend_qt5agg import FigureCanvas
+            from matplotlib.figure import Figure
+            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
+        else:
+            import matplotlib.pyplot as plt
+
+        # ----- helper: find index for compute_day -----
         def get_index(days, compute_day):
             if compute_day is None:
                 return len(days) - 1
-
             days = list(days)
-
             if compute_day >= days[-1]:
                 return len(days) - 1
-
             for i, d in enumerate(days):
                 if compute_day <= d:
                     return i
-
             return len(days) - 1
 
         study_keys = sorted(self.study_keys)
 
-        fig, ax = plt.subplots(figsize=figsize)
+        # Create figure
+        if parent_widget:
+            fig = Figure(figsize=figsize)
+            ax = fig.add_subplot(111)
+        else:
+            fig, ax = plt.subplots(figsize=figsize)
 
         x_positions = []
         x_labels = []
-
         x_counter = 0
 
-        # Define colors for control and treatment
         ctrl_color = '#808080'  # gray
         trt_color = '#1f77b4'  # blue
 
@@ -2032,32 +2319,30 @@ class TumorVolumeExperimentClass():
 
             ctrl_vals = []
             trt_vals = []
-            ctrl_vals_2 = []
-            trt_vals_2 = []
+            ctrl_vals_raw = []
+            trt_vals_raw = []
 
-            # --- collect values from controls ---
+            # ---- collect controls ----
             for arm in control_list:
                 for ts_id in study_obj.study_arms_dict[arm]:
                     tv = study_obj.study_tv_time_dict[ts_id]
-
                     idx = get_index(tv.time_day, compute_day)
                     v0 = tv.tumor_volume[0]
                     v_end = tv.tumor_volume[idx]
                     if v0 > 0:
                         ctrl_vals.append(np.log2(v_end / v0))
-                        ctrl_vals_2.append(v_end / v0)
+                        ctrl_vals_raw.append(v_end / v0)
 
-            # --- collect values from treatments ---
+            # ---- collect treatment ----
             for arm in treatment_list:
                 for ts_id in study_obj.study_arms_dict[arm]:
                     tv = study_obj.study_tv_time_dict[ts_id]
-
                     idx = get_index(tv.time_day, compute_day)
                     v0 = tv.tumor_volume[0]
                     v_end = tv.tumor_volume[idx]
                     if v0 > 0:
                         trt_vals.append(np.log2(v_end / v0))
-                        trt_vals_2.append(v_end / v0)
+                        trt_vals_raw.append(v_end / v0)
 
             if len(ctrl_vals) == 0 or len(trt_vals) == 0:
                 continue
@@ -2065,50 +2350,50 @@ class TumorVolumeExperimentClass():
             def sem(x):
                 return np.std(x, ddof=1) / np.sqrt(len(x)) if len(x) > 1 else 0.0
 
-            # Compute a two-sample t-test
-            t_stat, p_value = ttest_ind(trt_vals_2, ctrl_vals_2, equal_var = False)
-            logger.info(f'Study = {study}, tstat = {t_stat}, p_value = {p_value}')
+            # t-test
+            t_stat, p_value = ttest_ind(trt_vals_raw, ctrl_vals_raw, equal_var=False)
+            logger.info(f"Study={study}, t-stat={t_stat}, p-value={p_value}")
 
             ctrl_mean = np.mean(ctrl_vals)
             trt_mean = np.mean(trt_vals)
-
             ctrl_sem = sem(ctrl_vals)
             trt_sem = sem(trt_vals)
 
-            # --- plot positions ---
+            # Plot positions
             ctrl_x = x_counter
             trt_x = x_counter + 1
-
-            # Store the center position for the label
             center_x = (ctrl_x + trt_x) / 2
+
             x_positions.append(center_x)
             x_labels.append(study)
 
-            # --- plot control point ---
-            ax.errorbar([ctrl_x],
-                        [ctrl_mean],
-                        yerr=[ctrl_sem],
-                        fmt="o",
-                        markersize=10,
-                        capsize=5,
-                        linewidth=2,
-                        color=ctrl_color,
-                        label='Control' if study_idx == 0 else '')
+            # Plot control
+            ax.errorbar(
+                [ctrl_x], [ctrl_mean],
+                yerr=[ctrl_sem],
+                fmt="o",
+                markersize=10,
+                capsize=5,
+                linewidth=2,
+                color=ctrl_color,
+                label='Control' if study_idx == 0 else ''
+            )
 
-            # --- plot treatment point ---
-            ax.errorbar([trt_x],
-                        [trt_mean],
-                        yerr=[trt_sem],
-                        fmt="o",
-                        markersize=10,
-                        capsize=5,
-                        linewidth=2,
-                        color=trt_color,
-                        label='Treatment' if study_idx == 0 else '')
+            # Plot treatment
+            ax.errorbar(
+                [trt_x], [trt_mean],
+                yerr=[trt_sem],
+                fmt="o",
+                markersize=10,
+                capsize=5,
+                linewidth=2,
+                color=trt_color,
+                label='Treatment' if study_idx == 0 else ''
+            )
 
-            x_counter += 3  # gap between studies
+            x_counter += 3  # spacing
 
-        # Add vertical lines between studies
+        # Vertical separators
         for i in range(len(x_positions) - 1):
             line_x = x_positions[i] + 1.5
             ax.axvline(x=line_x, color='black', linestyle='--', linewidth=1, alpha=0.5)
@@ -2126,8 +2411,45 @@ class TumorVolumeExperimentClass():
         if show_legend:
             ax.legend(loc='best')
 
-        plt.tight_layout()
-        plt.show()
+        #fig.tight_layout()
+
+        # ---------------------------------------------------------
+        #   EMBED IN QT (IF REQUESTED)
+        # ---------------------------------------------------------
+        if parent_widget:
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.updateGeometry()
+            canvas.setStyleSheet("background-color: white;")
+
+            # Store reference
+            self.current_log2fc_canvas = canvas
+
+            layout = parent_widget.layout()
+            if layout:
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(layout)
+
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(canvas)
+
+            canvas.draw()
+
+            # Attach for saving/export
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+
+        else:
+            import matplotlib.pyplot as plt
+            plt.show()
+
+        return fig, ax
 
     # Python
     def __str__(self):

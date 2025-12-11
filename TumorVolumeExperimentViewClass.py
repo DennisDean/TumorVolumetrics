@@ -78,6 +78,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.plot_types: list|None = None
         self.plot_select_comboBox: list|None = None
         self.plotting_functions: list|None = None
+        self.experiment_graphics_views: list|None = None
         self.initialize_plotting()
 
     # Initialize
@@ -85,23 +86,21 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Setup plotting
         self.plot_types = ["Avg_TV_Change_Bar", "TV_Control_Bar", "Objective_Response_Bar",
                            "AUC_with_Control_Bar", "Log2_Fold_Change_w_Error"]
-        self.plot_select_comboBox = [self.ui.comboBox_configuration_plot_upper_left,
-                                     self.ui.comboBox_configuration_plot_upper_right,
-                                     self.ui.comboBox_configuration_plot_lower_left,
-                                     self.ui.comboBox_configuration_plot_lower_right]
-        self.plotting_functions = ["plot_average_tumor_volume_change_bar",
-                                   "plot_tumor_control_ratio_bar",
-                                   "proportion_in_objective_response_classification_bar",
-                                   "plot_auc_with_controls_bar",
-                                   "plot_log2fc_points"]
+        self.plot_select_comboBox = [self.ui.comboBox_configuration_plot_upper_left, self.ui.comboBox_configuration_plot_upper_right,
+                            self.ui.comboBox_configuration_plot_lower_left, self.ui.comboBox_configuration_plot_lower_right]
+        self.plotting_function_dict = {"Avg_TV_Change_Bar":"plot_average_tumor_volume_change_bar", "TV_Control_Bar":"plot_tumor_control_ratio_bar",
+                            "Objective_Response_Bar":"proportion_in_objective_response_classification_bar", "AUC_with_Control_Bar":"plot_auc_with_controls_bar",
+                            "Log2_Fold_Change_w_Error":"plot_log2fc_points"}
+        self.experiment_graphics_views = [self.ui.graphicsView_visual_top_left, self.ui.graphicsView_visual_top_right,
+                            self.ui.graphicsView_visual_bottom_left, self.ui.graphicsView_visual_bottom_right]
+
+        # Initialize selection comboBoxes
         for idx, cbox in enumerate(self.plot_select_comboBox):
             cbox.addItems(self.plot_types)
             cbox.setCurrentIndex(idx)
 
         # Draw plots
         self.draw_figure_group()
-
-
 
     # Utilities
     def toggle_graph_configuration_group(self):
@@ -121,8 +120,13 @@ class TumorVolumeExperimentWindow(QMainWindow):
         num_figures = int(self.ui.comboBox_configuration_num_of_plots.currentText())
         experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_id]
         for idx in range(num_figures):
-            graph_id = self.plot_select_comboBox[idx]
-            experiment_obj.plot_log2fc_points()
+            selected_plot = self.plot_select_comboBox[idx].currentText()
+            print(f'selected_plot = {selected_plot}')
+            plot_name = self.plotting_function_dict[selected_plot]
+            print(f'plot_name = {plot_name}')
+            graphic_view = self.experiment_graphics_views[idx]
+            print(f'graphic_view = {graphic_view}')
+            experiment_obj.plot_to_widget_by_name(plot_name, graphic_view)
 
 
 
