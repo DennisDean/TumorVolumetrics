@@ -8,12 +8,7 @@ logger = logging.getLogger(__name__)
 from FigureGraphicsViewClass import FigureGraphicsView
 
 # Import
-from PySide6.QtWidgets import (QMainWindow, QTableWidget, QTableWidgetItem, QGraphicsView,
-                              QAbstractItemView, QHeaderView, QMenu, QApplication, QSizePolicy)
-from PySide6.QtCore import Qt
-
-# Data
-import pandas as pd
+from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy
 
 # Tumor volume classes
 from TumorVolumeClass import TumorVolumeDataClass
@@ -70,10 +65,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.initial_configuration = '4'
         self.plot_config_to_index = lambda x: int(x)-1
         self.num_of_plot_option_list = ['1','2','3','4']
-        self.plot_graphicview_list = [self.ui.graphicsView_visual_top_left,   self.ui.graphicsView_visual_top_right,
-                                      self.ui.graphicsView_visual_bottom_left, self.ui.graphicsView_visual_bottom_right]
         self.graphic_view_plot_dict = {'1':[True, False, False, False], '2':[True, True, False, False],
-                                       '3':[True, True, True, False],    '4':[True, True, True, True]}
+                                       '3':[True, True, True, False],   '4':[True, True, True, True]}
         self.ui.comboBox_configuration_num_of_plots.addItems(self.num_of_plot_option_list)
         self.ui.comboBox_configuration_num_of_plots.setCurrentIndex(self.plot_config_to_index(self.initial_configuration))
         self.ui.comboBox_configuration_num_of_plots.currentTextChanged.connect(self.toggle_plot_graphics_view)
@@ -83,12 +76,13 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.graphicsView_visual_top_right: QGraphicsView | None = None
         self.graphicsView_visual_bottom_left: QGraphicsView | None = None
         self.graphicsView_visual_bottom_right: QGraphicsView | None = None
+        self.original_graphics_views: QGraphicsView | None = None
         self.add_context_menu_support_to_graphic_view()
 
         # Setup plotting
-        self.plot_types: list|None = None
-        self.plot_select_comboBox: list|None = None
-        self.plotting_functions: list|None = None
+        self.plot_types:                list|None = None
+        self.plot_select_comboBox:      list|None = None
+        self.plotting_functions:        list|None = None
         self.experiment_graphics_views: list|None = None
         self.initialize_plotting()
 
@@ -99,7 +93,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
         old_policy = old_graphic_view.sizePolicy()
 
         # Create the new graphics view
-        new_graphic_view = FigureGraphicsView(self)
+        gv_name = old_graphic_view.objectName()
+        new_graphic_view = FigureGraphicsView(self, graphic_view_name = gv_name)
 
         # Apply the same size policy and fixed height
         new_graphic_view.setSizePolicy(old_policy)
@@ -121,14 +116,13 @@ class TumorVolumeExperimentWindow(QMainWindow):
         return new_graphic_view
     def add_context_menu_support_to_graphic_view(self):
         # Collect Graphic Views to change
-        self.original_graphics_views = [self.ui.graphicsView_visual_top_left, self.ui.graphicsView_visual_top_right,
-            self.ui.graphicsView_visual_bottom_left, self.ui.graphicsView_visual_bottom_right]
+        self.graphicsView_visual_top_left = self.replace_designer_graphic_view_with_custom(self.ui.graphicsView_visual_top_left)
+        self.graphicsView_visual_top_right = self.replace_designer_graphic_view_with_custom(self.ui.graphicsView_visual_top_right)
+        self.graphicsView_visual_bottom_left = self.replace_designer_graphic_view_with_custom(self.ui.graphicsView_visual_bottom_left)
+        self.graphicsView_visual_bottom_right = self.replace_designer_graphic_view_with_custom(self.ui.graphicsView_visual_bottom_right)
+
         self.graphic_views = [self.graphicsView_visual_top_left, self.graphicsView_visual_top_right,
             self.graphicsView_visual_bottom_left, self.graphicsView_visual_bottom_right]
-
-        # Copy graphicView parameters to upgraded graphic view
-        for o_gv, gv in zip(self.original_graphics_views, self.graphic_views):
-            gv = self.replace_designer_graphic_view_with_custom(o_gv)
     def initialize_plotting(self):
         # Setup plotting
         self.plot_types = ["Avg_TV_Change_Bar", "TV_Control_Bar", "Objective_Response_Bar",
@@ -138,8 +132,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.plotting_function_dict = {"Avg_TV_Change_Bar":"plot_average_tumor_volume_change_bar", "TV_Control_Bar":"plot_tumor_control_ratio_bar",
                             "Objective_Response_Bar":"proportion_in_objective_response_classification_bar", "AUC_with_Control_Bar":"plot_auc_with_controls_bar",
                             "Log2_Fold_Change_w_Error":"plot_log2fc_points"}
-        self.experiment_graphics_views = [self.graphicsView_visual_top_left, self.graphicsView_visual_top_right,
-                            self.graphicsView_visual_bottom_left, self.graphicsView_visual_bottom_right]
 
         # Initialize selection comboBoxes
         for idx, cbox in enumerate(self.plot_select_comboBox):
@@ -160,13 +152,15 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
     # Utilities
     def toggle_graph_configuration_group(self):
+        # Add/remove plot selection parmaeters
         toggled_boolean =  not self.ui.groupBox_plot_configurations.isVisible()
         configuration_layout = self.ui.verticalLayout_visual_graph_settings
         set_layout_visible(configuration_layout, toggled_boolean)
     def toggle_plot_graphics_view(self, new_text):
+        # Reconfigure display to include number of graphic views displayed
         configuration_text = new_text
         graphic_view_boolean_settings = self.graphic_view_plot_dict[configuration_text]
-        for (gv, gv_visible) in zip(self.plot_graphicview_list, graphic_view_boolean_settings):
+        for (gv, gv_visible) in zip(self.graphic_views, graphic_view_boolean_settings):
             gv.setVisible(gv_visible)
 
     # Plot Figure
@@ -178,7 +172,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         for idx in range(num_figures):
             selected_plot = self.plot_select_comboBox[idx].currentText()
             plot_name = self.plotting_function_dict[selected_plot]
-            graphic_view = self.experiment_graphics_views[idx]
+            graphic_view = self.graphic_views[idx]
             experiment_obj.plot_to_widget_by_name(plot_name, graphic_view)
 
 
