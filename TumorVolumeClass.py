@@ -37,15 +37,13 @@ import math
 from lifelines import KaplanMeierFitter
 from scipy.stats import sem
 from scipy.stats import t
-from scipy.stats import ttest_ind
 
 # Visualization
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 # GUI
-from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
+from PySide6.QtCore import Qt
 
 
 # Set up logger
@@ -1501,7 +1499,7 @@ class TumorVolumeExperimentClass():
 
         return log2fc, lower, upper
 
-    # Visualization
+    # Visualization Utilities
     def plot_to_widget_by_name(self, plot_name, parent_widget, **plot_kwargs):
         """
         Call a plotting function by name and render to a widget.
@@ -1532,6 +1530,8 @@ class TumorVolumeExperimentClass():
             raise ValueError(f"'{plot_name}' is not a callable method")
 
         return plot_function(parent_widget=parent_widget, **plot_kwargs)
+
+    # Plotting Functions
     def plot_average_tumor_volume_change_bar(self, control_arms=("control", "vehicle", "placebo"),
             error_metric="std", show_axis_labels=True, compute_day: int | None = None,
             title="Average % Tumor Volume Change by Study", figsize=(10, 6), parent_widget=None):
@@ -1664,6 +1664,14 @@ class TumorVolumeExperimentClass():
             canvas.updateGeometry()
             canvas.setStyleSheet("background-color: white;")  # Qt background
 
+            # Enable right-click menu
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+
             # Store canvas reference
             self.current_tumor_volume_canvas = canvas
 
@@ -1687,10 +1695,6 @@ class TumorVolumeExperimentClass():
 
             # Draw the canvas
             canvas.draw()
-
-            # Assign figure to parent_widget so save dialog knows what to save
-            parent_widget.figure = fig
-            parent_widget.canvas_item = canvas
         else:
             # Show plot in standalone mode
             plt.show()
@@ -1854,6 +1858,14 @@ class TumorVolumeExperimentClass():
             canvas.updateGeometry()
             canvas.setStyleSheet("background-color: white;")  # Qt background
 
+            # Enable right-click menu
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+
             # Store canvas reference
             self.current_tumor_control_ratio_canvas = canvas
 
@@ -1877,10 +1889,6 @@ class TumorVolumeExperimentClass():
 
             # Draw the canvas
             canvas.draw()
-
-            # Assign figure to parent_widget so save dialog knows what to save
-            parent_widget.figure = fig
-            parent_widget.canvas_item = canvas
         else:
             # Show plot in standalone mode
             plt.show()
@@ -2050,6 +2058,14 @@ class TumorVolumeExperimentClass():
             canvas.updateGeometry()
             canvas.setStyleSheet("background-color: white;")  # Qt background
 
+            # Enable right-click menu
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+
             # Store canvas reference
             self.current_objective_response_canvas = canvas
 
@@ -2073,10 +2089,6 @@ class TumorVolumeExperimentClass():
 
             # Draw the canvas
             canvas.draw()
-
-            # Assign figure to parent_widget so save dialog knows what to save
-            parent_widget.figure = fig
-            parent_widget.canvas_item = canvas
         else:
             # Show plot in standalone mode
             plt.show()
@@ -2234,6 +2246,14 @@ class TumorVolumeExperimentClass():
             canvas.updateGeometry()
             canvas.setStyleSheet("background-color: white;")
 
+            # Enable right-click menu
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+
             # Store reference so you can save the figure later
             self.current_auc_canvas = canvas
 
@@ -2253,10 +2273,6 @@ class TumorVolumeExperimentClass():
             existing_layout.addWidget(canvas)
 
             canvas.draw()
-
-            parent_widget.figure = fig
-            parent_widget.canvas_item = canvas
-
         else:
             import matplotlib.pyplot as plt
             plt.show()
@@ -2422,6 +2438,14 @@ class TumorVolumeExperimentClass():
             canvas.updateGeometry()
             canvas.setStyleSheet("background-color: white;")
 
+            # Enable right-click menu
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+
             # Store reference
             self.current_log2fc_canvas = canvas
 
@@ -2440,10 +2464,6 @@ class TumorVolumeExperimentClass():
             layout.addWidget(canvas)
 
             canvas.draw()
-
-            # Attach for saving/export
-            parent_widget.figure = fig
-            parent_widget.canvas_item = canvas
 
         else:
             import matplotlib.pyplot as plt
