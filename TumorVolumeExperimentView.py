@@ -73,13 +73,70 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_visual_graph_settings = QVBoxLayout()
         self.verticalLayout_visual_graph_settings.setObjectName(u"verticalLayout_visual_graph_settings")
-        self.groupBox_plot_configurations = QGroupBox(self.centralwidget)
-        self.groupBox_plot_configurations.setObjectName(u"groupBox_plot_configurations")
+        self.groupBox_plot_style_sheet = QGroupBox(self.centralwidget)
+        self.groupBox_plot_style_sheet.setObjectName(u"groupBox_plot_style_sheet")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.groupBox_plot_style_sheet.sizePolicy().hasHeightForWidth())
+        self.groupBox_plot_style_sheet.setSizePolicy(sizePolicy)
+        self.groupBox_plot_style_sheet.setCheckable(True)
+        self.verticalLayout_5 = QVBoxLayout(self.groupBox_plot_style_sheet)
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.label = QLabel(self.groupBox_plot_style_sheet)
+        self.label.setObjectName(u"label")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy1)
+        self.label.setMinimumSize(QSize(0, 25))
+        self.label.setMaximumSize(QSize(16777215, 25))
+        self.label.setAlignment(Qt.AlignCenter)
+
+        self.verticalLayout_5.addWidget(self.label, 0, Qt.AlignHCenter)
+
+        self.comboBox_plot_style_sheet = QComboBox(self.groupBox_plot_style_sheet)
+        self.comboBox_plot_style_sheet.setObjectName(u"comboBox_plot_style_sheet")
+        sizePolicy.setHeightForWidth(self.comboBox_plot_style_sheet.sizePolicy().hasHeightForWidth())
+        self.comboBox_plot_style_sheet.setSizePolicy(sizePolicy)
+        self.comboBox_plot_style_sheet.setMinimumSize(QSize(170, 0))
+        self.comboBox_plot_style_sheet.setMaximumSize(QSize(16777215, 16777215))
+
+        self.verticalLayout_5.addWidget(self.comboBox_plot_style_sheet)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.label_4 = QLabel(self.groupBox_plot_style_sheet)
+        self.label_4.setObjectName(u"label_4")
+        sizePolicy1.setHeightForWidth(self.label_4.sizePolicy().hasHeightForWidth())
+        self.label_4.setSizePolicy(sizePolicy1)
+        self.label_4.setMinimumSize(QSize(50, 0))
+        self.label_4.setMaximumSize(QSize(50, 16777215))
+
+        self.horizontalLayout_6.addWidget(self.label_4)
+
+        self.comboBox_plot_style_modify = QComboBox(self.groupBox_plot_style_sheet)
+        self.comboBox_plot_style_modify.setObjectName(u"comboBox_plot_style_modify")
+        sizePolicy.setHeightForWidth(self.comboBox_plot_style_modify.sizePolicy().hasHeightForWidth())
+        self.comboBox_plot_style_modify.setSizePolicy(sizePolicy)
+        self.comboBox_plot_style_modify.setMinimumSize(QSize(110, 0))
+        self.comboBox_plot_style_modify.setMaximumSize(QSize(16777215, 16777215))
+
+        self.horizontalLayout_6.addWidget(self.comboBox_plot_style_modify)
+
+
+        self.verticalLayout_5.addLayout(self.horizontalLayout_6)
+
+
+        self.verticalLayout_visual_graph_settings.addWidget(self.groupBox_plot_style_sheet)
+
+        self.groupBox_plot_configurations = QGroupBox(self.centralwidget)
+        self.groupBox_plot_configurations.setObjectName(u"groupBox_plot_configurations")
         sizePolicy.setHeightForWidth(self.groupBox_plot_configurations.sizePolicy().hasHeightForWidth())
         self.groupBox_plot_configurations.setSizePolicy(sizePolicy)
+        self.groupBox_plot_configurations.setCheckable(True)
+        self.groupBox_plot_configurations.setChecked(True)
         self.verticalLayout_3 = QVBoxLayout(self.groupBox_plot_configurations)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.label_2 = QLabel(self.groupBox_plot_configurations)
@@ -150,9 +207,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.label_7 = QLabel(self.groupBox_plot_configurations)
         self.label_7.setObjectName(u"label_7")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.label_7.sizePolicy().hasHeightForWidth())
         self.label_7.setSizePolicy(sizePolicy1)
         self.label_7.setMinimumSize(QSize(15, 25))
@@ -207,7 +261,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addLayout(self.horizontalLayout_5)
 
 
-        self.verticalLayout_visual_graph_settings.addWidget(self.groupBox_plot_configurations, 0, Qt.AlignTop)
+        self.verticalLayout_visual_graph_settings.addWidget(self.groupBox_plot_configurations)
 
         self.label_10 = QLabel(self.centralwidget)
         self.label_10.setObjectName(u"label_10")
@@ -245,6 +299,9 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.actionPlot_Configuration.setText(QCoreApplication.translate("MainWindow", u"Plot Configuration", None))
+        self.groupBox_plot_style_sheet.setTitle(QCoreApplication.translate("MainWindow", u"Plot Style Sheet", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Style", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Modify", None))
         self.groupBox_plot_configurations.setTitle(QCoreApplication.translate("MainWindow", u"Plot Configuration", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Experiment", None))
         self.label_11.setText("")

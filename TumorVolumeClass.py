@@ -10,7 +10,7 @@
 #
 
 # To Do
-
+#TODO: Enable matplotlib figure garbage collection
 
 # Import modules
 
