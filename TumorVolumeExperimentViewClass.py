@@ -61,7 +61,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.experiments = tv_data_obj.unique_experiments
         self.ui.comboBox_configuration_experiments.addItems(self.experiments)
 
-        # Set configurations
+        # Set plot configurations
         self.initial_configuration = '4'
         self.plot_config_to_index = lambda x: int(x)-1
         self.num_of_plot_option_list = ['1','2','3','4']
@@ -85,6 +85,18 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.plotting_functions:        list|None = None
         self.experiment_graphics_views: list|None = None
         self.initialize_plotting()
+
+        # Initialize style sheet
+        self.matplotlib_style_sheets_options = [    "Solarize_Light2",      "bmh",              "classic",
+            "dark_background",   "fast",            "fivethirtyeight",      "ggplot",           "grayscale",
+            "seaborn",           "seaborn-bright",  "seaborn-colorblind",   "seaborn-dark",     "seaborn-dark-palette",
+            "seaborn-darkgrid",  "seaborn-deep",    "seaborn-muted",        "seaborn-notebook", "seaborn-paper",
+            "seaborn-pastel",    "seaborn-poster",  "seaborn-talk",         "seaborn-ticks",    "seaborn-white",
+            "seaborn-whitegrid", "tableau-colorblind10" ]
+        self.scienceplots_style_sheets = ["Science Base",   "Nature",  "Nature + Grid",
+            "IEEE", "IEEE + Grid", "Science", "Science + Grid"]
+        self.scienceplots_color_palletes = ["bright", "vibrant", "muted", "retro", "high-vis", "high-contrast"]
+        self.initialize_matplotlib_style_sheets()
 
     # Inititialize Utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
@@ -144,6 +156,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Connect combobox change to figure update
         for cbox in self.plot_select_comboBox:
             cbox.currentTextChanged.connect(self.update_experiment_view)
+    def initialize_matplotlib_style_sheets(self):
+        pass
 
     # Update Figure
     def update_experiment_view(self):
