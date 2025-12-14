@@ -96,17 +96,53 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_5.addWidget(self.label, 0, Qt.AlignHCenter)
 
-        self.comboBox_plot_style_sheet = QComboBox(self.groupBox_plot_style_sheet)
-        self.comboBox_plot_style_sheet.setObjectName(u"comboBox_plot_style_sheet")
-        sizePolicy.setHeightForWidth(self.comboBox_plot_style_sheet.sizePolicy().hasHeightForWidth())
-        self.comboBox_plot_style_sheet.setSizePolicy(sizePolicy)
-        self.comboBox_plot_style_sheet.setMinimumSize(QSize(170, 0))
-        self.comboBox_plot_style_sheet.setMaximumSize(QSize(16777215, 16777215))
+        self.comboBox_plot_style_module = QComboBox(self.groupBox_plot_style_sheet)
+        self.comboBox_plot_style_module.setObjectName(u"comboBox_plot_style_module")
+        sizePolicy.setHeightForWidth(self.comboBox_plot_style_module.sizePolicy().hasHeightForWidth())
+        self.comboBox_plot_style_module.setSizePolicy(sizePolicy)
+        self.comboBox_plot_style_module.setMinimumSize(QSize(170, 0))
+        self.comboBox_plot_style_module.setMaximumSize(QSize(16777215, 16777215))
 
-        self.verticalLayout_5.addWidget(self.comboBox_plot_style_sheet)
+        self.verticalLayout_5.addWidget(self.comboBox_plot_style_module)
 
-        self.horizontalLayout_6 = QHBoxLayout()
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.verticalLayout_plot_scienceplot_options = QVBoxLayout()
+        self.verticalLayout_plot_scienceplot_options.setObjectName(u"verticalLayout_plot_scienceplot_options")
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.label_3 = QLabel(self.groupBox_plot_style_sheet)
+        self.label_3.setObjectName(u"label_3")
+        self.label_3.setMinimumSize(QSize(50, 0))
+        self.label_3.setMaximumSize(QSize(50, 16777215))
+
+        self.horizontalLayout_7.addWidget(self.label_3)
+
+        self.comboBox_plot_scienceplot_journal = QComboBox(self.groupBox_plot_style_sheet)
+        self.comboBox_plot_scienceplot_journal.setObjectName(u"comboBox_plot_scienceplot_journal")
+
+        self.horizontalLayout_7.addWidget(self.comboBox_plot_scienceplot_journal)
+
+
+        self.verticalLayout_plot_scienceplot_options.addLayout(self.horizontalLayout_7)
+
+        self.horizontalLayout_9 = QHBoxLayout()
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
+        self.label_12 = QLabel(self.groupBox_plot_style_sheet)
+        self.label_12.setObjectName(u"label_12")
+        self.label_12.setMinimumSize(QSize(50, 0))
+        self.label_12.setMaximumSize(QSize(50, 16777215))
+
+        self.horizontalLayout_9.addWidget(self.label_12)
+
+        self.comboBox_plot_scienceplot_color = QComboBox(self.groupBox_plot_style_sheet)
+        self.comboBox_plot_scienceplot_color.setObjectName(u"comboBox_plot_scienceplot_color")
+
+        self.horizontalLayout_9.addWidget(self.comboBox_plot_scienceplot_color)
+
+
+        self.verticalLayout_plot_scienceplot_options.addLayout(self.horizontalLayout_9)
+
+        self.horizontalLayout_8 = QHBoxLayout()
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
         self.label_4 = QLabel(self.groupBox_plot_style_sheet)
         self.label_4.setObjectName(u"label_4")
         sizePolicy1.setHeightForWidth(self.label_4.sizePolicy().hasHeightForWidth())
@@ -114,19 +150,44 @@ class Ui_MainWindow(object):
         self.label_4.setMinimumSize(QSize(50, 0))
         self.label_4.setMaximumSize(QSize(50, 16777215))
 
-        self.horizontalLayout_6.addWidget(self.label_4)
+        self.horizontalLayout_8.addWidget(self.label_4)
 
-        self.comboBox_plot_style_modify = QComboBox(self.groupBox_plot_style_sheet)
-        self.comboBox_plot_style_modify.setObjectName(u"comboBox_plot_style_modify")
-        sizePolicy.setHeightForWidth(self.comboBox_plot_style_modify.sizePolicy().hasHeightForWidth())
-        self.comboBox_plot_style_modify.setSizePolicy(sizePolicy)
-        self.comboBox_plot_style_modify.setMinimumSize(QSize(110, 0))
-        self.comboBox_plot_style_modify.setMaximumSize(QSize(16777215, 16777215))
+        self.comboBox_plot_scienceplot_grid = QComboBox(self.groupBox_plot_style_sheet)
+        self.comboBox_plot_scienceplot_grid.setObjectName(u"comboBox_plot_scienceplot_grid")
+        sizePolicy.setHeightForWidth(self.comboBox_plot_scienceplot_grid.sizePolicy().hasHeightForWidth())
+        self.comboBox_plot_scienceplot_grid.setSizePolicy(sizePolicy)
+        self.comboBox_plot_scienceplot_grid.setMinimumSize(QSize(110, 0))
+        self.comboBox_plot_scienceplot_grid.setMaximumSize(QSize(16777215, 16777215))
 
-        self.horizontalLayout_6.addWidget(self.comboBox_plot_style_modify)
+        self.horizontalLayout_8.addWidget(self.comboBox_plot_scienceplot_grid)
 
 
-        self.verticalLayout_5.addLayout(self.horizontalLayout_6)
+        self.verticalLayout_plot_scienceplot_options.addLayout(self.horizontalLayout_8)
+
+
+        self.verticalLayout_5.addLayout(self.verticalLayout_plot_scienceplot_options)
+
+        self.verticalLayout_matplotlib_options = QVBoxLayout()
+        self.verticalLayout_matplotlib_options.setObjectName(u"verticalLayout_matplotlib_options")
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.label_13 = QLabel(self.groupBox_plot_style_sheet)
+        self.label_13.setObjectName(u"label_13")
+        self.label_13.setMinimumSize(QSize(50, 0))
+        self.label_13.setMaximumSize(QSize(50, 16777215))
+
+        self.horizontalLayout_6.addWidget(self.label_13)
+
+        self.comboBox_plot_matplotlib_style = QComboBox(self.groupBox_plot_style_sheet)
+        self.comboBox_plot_matplotlib_style.setObjectName(u"comboBox_plot_matplotlib_style")
+
+        self.horizontalLayout_6.addWidget(self.comboBox_plot_matplotlib_style)
+
+
+        self.verticalLayout_matplotlib_options.addLayout(self.horizontalLayout_6)
+
+
+        self.verticalLayout_5.addLayout(self.verticalLayout_matplotlib_options)
 
 
         self.verticalLayout_visual_graph_settings.addWidget(self.groupBox_plot_style_sheet)
@@ -300,8 +361,11 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.actionPlot_Configuration.setText(QCoreApplication.translate("MainWindow", u"Plot Configuration", None))
         self.groupBox_plot_style_sheet.setTitle(QCoreApplication.translate("MainWindow", u"Plot Style Sheet", None))
-        self.label.setText(QCoreApplication.translate("MainWindow", u"Style", None))
-        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Modify", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Module", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"Journal", None))
+        self.label_12.setText(QCoreApplication.translate("MainWindow", u"Color", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Grid", None))
+        self.label_13.setText(QCoreApplication.translate("MainWindow", u"Style", None))
         self.groupBox_plot_configurations.setTitle(QCoreApplication.translate("MainWindow", u"Plot Configuration", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Experiment", None))
         self.label_11.setText("")
