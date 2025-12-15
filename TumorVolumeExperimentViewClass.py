@@ -87,16 +87,18 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.initialize_plotting()
 
         # Initialize style sheet
-        self.matplotlib_style_sheets_options = [    "Solarize_Light2",      "bmh",              "classic",
-            "dark_background",   "fast",            "fivethirtyeight",      "ggplot",           "grayscale",
-            "seaborn",           "seaborn-bright",  "seaborn-colorblind",   "seaborn-dark",     "seaborn-dark-palette",
-            "seaborn-darkgrid",  "seaborn-deep",    "seaborn-muted",        "seaborn-notebook", "seaborn-paper",
-            "seaborn-pastel",    "seaborn-poster",  "seaborn-talk",         "seaborn-ticks",    "seaborn-white",
-            "seaborn-whitegrid", "tableau-colorblind10" ]
-        self.scienceplots_style_sheets = ["Science Base",   "Nature",  "Nature + Grid",
-            "IEEE", "IEEE + Grid", "Science", "Science + Grid"]
+        self.current_plot_style = 0
+        self.style_modules_supported = ['Matplotlib', 'Science Plots']
+        self.matplotlib_style_sheets_options = [    "default",              "Solarize_Light2",     "bmh",
+            "classic",              "dark_background",   "fast",            "fivethirtyeight",     "ggplot",
+            "grayscale",            "seaborn",           "seaborn-bright",  "seaborn-colorblind",  "seaborn-dark",
+            "seaborn-dark-palette", "seaborn-darkgrid",  "seaborn-deep",    "seaborn-muted",       "seaborn-notebook",
+            "seaborn-paper",        "seaborn-pastel",    "seaborn-poster",  "seaborn-talk",        "seaborn-ticks",
+            "seaborn-white",        "seaborn-whitegrid", "tableau-colorblind10" ]
+        self.scienceplots_style_sheets = ["Science Base",   "Nature", "IEEE", "Science"]
         self.scienceplots_color_palletes = ["bright", "vibrant", "muted", "retro", "high-vis", "high-contrast"]
-        self.initialize_matplotlib_style_sheets()
+        self.scienceplots_grid_options = ["No Grid", "Grid"]
+        self.initialize_style_sheets_functions()
 
     # Inititialize Utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
@@ -156,8 +158,29 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Connect combobox change to figure update
         for cbox in self.plot_select_comboBox:
             cbox.currentTextChanged.connect(self.update_experiment_view)
-    def initialize_matplotlib_style_sheets(self):
-        pass
+    def initialize_style_sheets_functions(self):
+        # Set up highlevel options
+        self.current_plot_style = 0
+        self.style_modules_supported = ['Matplotlib', 'Science Plots']
+        self.ui.comboBox_plot_style_module.addItems(self.style_modules_supported)
+        self.ui.comboBox_plot_matplotlib_style.setCurrentIndex(self.current_plot_style )
+        self.toggle_style_widgets(self.current_plot_style)
+
+        # Set up matplotlib options
+        self.ui.comboBox_plot_matplotlib_style.addItems(self.matplotlib_style_sheets_options)
+
+        # Set up science plots
+        self.ui.comboBox_plot_scienceplot_journal.addItems(self.scienceplots_style_sheets)
+        self.ui.comboBox_plot_scienceplot_color.addItems(self.scienceplots_color_palletes)
+        self.ui.comboBox_plot_scienceplot_grid.addItems(self.scienceplots_grid_options)
+
+        # Toggle module widgets with group
+        self.toggle_style_widgets(self.current_plot_style)
+
+        # Connect module change to togle
+        self.ui.comboBox_plot_style_module.currentIndexChanged.connect(self.toggle_style_widgets)
+        self.ui.groupBox_plot_style_sheet.toggled.connect(self.toggle_plot_style_group)
+        self.ui.groupBox_plot_configurations.toggled.connect(self.toggle_plot_configureation_group)
 
     # Update Figure
     def update_experiment_view(self):
@@ -176,6 +199,18 @@ class TumorVolumeExperimentWindow(QMainWindow):
         graphic_view_boolean_settings = self.graphic_view_plot_dict[configuration_text]
         for (gv, gv_visible) in zip(self.graphic_views, graphic_view_boolean_settings):
             gv.setVisible(gv_visible)
+    def toggle_style_widgets(self, new_index):
+        # Matplotlib = 0, Science Plots = 1
+        set_layout_visible(self.ui.verticalLayout_plot_scienceplot_options, bool(new_index))
+        set_layout_visible(self.ui.verticalLayout_matplotlib_options,not bool(new_index))
+    def toggle_plot_style_group(self, checked):
+        set_layout_visible(self.ui.verticalLayout_plot_style_group, checked)
+        if checked == True:
+            plot_style_selection = self.ui.comboBox_plot_style_module.currentIndex()
+            self.toggle_style_widgets(bool(plot_style_selection))
+    def toggle_plot_configureation_group(self, checked):
+        set_layout_visible(self.ui.verticalLayout_plot_configuration, checked)
+
 
     # Plot Figure
     def draw_figure_group(self):
