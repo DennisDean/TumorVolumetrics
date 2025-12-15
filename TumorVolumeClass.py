@@ -35,15 +35,17 @@ import xml.etree.ElementTree as ET
 import bisect
 import math
 from lifelines import KaplanMeierFitter
-from scipy.stats import sem
-from scipy.stats import t
+from scipy.stats import sem, t, ttest_ind
 
 # Visualization
 import matplotlib.pyplot as plt
+from contextlib import nullcontext
+from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 # GUI
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
 
 
 # Set up logger
@@ -1500,7 +1502,7 @@ class TumorVolumeExperimentClass():
         return log2fc, lower, upper
 
     # Visualization Utilities
-    def plot_to_widget_by_name(self, plot_name, parent_widget, **plot_kwargs):
+    def plot_to_widget_by_name(self, plot_name, parent_widget, plot_style = None, **plot_kwargs):
         """
         Call a plotting function by name and render to a widget.
 
@@ -1529,10 +1531,10 @@ class TumorVolumeExperimentClass():
         if not callable(plot_function):
             raise ValueError(f"'{plot_name}' is not a callable method")
 
-        return plot_function(parent_widget=parent_widget, **plot_kwargs)
+        return plot_function(parent_widget=parent_widget, plot_style = plot_style, **plot_kwargs)
 
     # Plotting Functions
-    def plot_average_tumor_volume_change_bar(self, control_arms=("control", "vehicle", "placebo"),
+    def plot_average_tumor_volume_change_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
             error_metric="std", show_axis_labels=True, compute_day: int | None = None,
             title="Average % Tumor Volume Change by Study", figsize=(10, 6), parent_widget=None):
         """
@@ -1562,12 +1564,8 @@ class TumorVolumeExperimentClass():
         """
         import numpy as np
 
-        if parent_widget:
-            from matplotlib.backends.backend_qt5agg import FigureCanvas
-            from matplotlib.figure import Figure
-            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
-        else:
-            import matplotlib.pyplot as plt
+        # Plot
+        print(f"plot_style = {plot_style}")
 
         # Sort studies
         study_keys = sorted(self.study_keys)
@@ -1700,7 +1698,7 @@ class TumorVolumeExperimentClass():
             plt.show()
 
         return fig, ax
-    def plot_tumor_control_ratio_bar(self, control_arms=("control", "vehicle", "placebo"), error_metric="std", show_axis_labels=True,
+    def plot_tumor_control_ratio_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), error_metric="std", show_axis_labels=True,
             compute_day: int | None = None, title="T/C Ratio (SE) by Study", figsize=(10, 6), parent_widget=None):
         """
         Plot the T/C (Treatment/Control) ratio for each study with standard error.
@@ -1728,14 +1726,6 @@ class TumorVolumeExperimentClass():
             - Sets self.current_tumor_control_ratio_canvas to FigureCanvas
             - Replaces parent_widget's layout contents
         """
-        import numpy as np
-
-        if parent_widget:
-            from matplotlib.backends.backend_qt5agg import FigureCanvas
-            from matplotlib.figure import Figure
-            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
-        else:
-            import matplotlib.pyplot as plt
 
         # Sort studies
         study_keys = sorted(self.study_keys)
@@ -1894,7 +1884,7 @@ class TumorVolumeExperimentClass():
             plt.show()
 
         return fig, ax
-    def proportion_in_objective_response_classification_bar(self, control_arms=("control", "vehicle", "placebo"),
+    def proportion_in_objective_response_classification_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
             show_legend=False, show_axis_labels=False, compute_day: int | None = None,
             title="Objective Response Distribution by Study", figsize=(10, 6), parent_widget=None):
         """
@@ -1929,14 +1919,6 @@ class TumorVolumeExperimentClass():
             - Each segment shows "count (percentage%)"
             - Colors are pulled from self.objective_response_colors
         """
-        import numpy as np
-
-        if parent_widget:
-            from matplotlib.backends.backend_qt5agg import FigureCanvas
-            from matplotlib.figure import Figure
-            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
-        else:
-            import matplotlib.pyplot as plt
 
         OR_ORDER = ["CR", "PR", "SD", "PD"]
         OR_COLORS = [self.objective_response_colors[o] for o in OR_ORDER]
@@ -2094,7 +2076,7 @@ class TumorVolumeExperimentClass():
             plt.show()
 
         return fig, ax
-    def plot_auc_with_controls_bar(self, control_arms=("control", "vehicle", "placebo"), error_metric="sem",
+    def plot_auc_with_controls_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), error_metric="sem",
             show_legend=True, show_axis_labels=False, compute_day: int | None = None, title="Average AUC by Study",
             figsize=(12, 6), parent_widget=None):
         """
@@ -2106,12 +2088,6 @@ class TumorVolumeExperimentClass():
         # ---------------------------------------------------------
         #  Handle Qt vs standalone
         # ---------------------------------------------------------
-        if parent_widget:
-            from matplotlib.backends.backend_qt5agg import FigureCanvas
-            from matplotlib.figure import Figure
-            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
-        else:
-            import matplotlib.pyplot as plt
 
         study_keys = sorted(self.study_keys)
 
@@ -2278,25 +2254,12 @@ class TumorVolumeExperimentClass():
             plt.show()
 
         return fig, ax
-    def plot_log2fc_points(self, control_arms=("control", "vehicle", "placebo"), show_legend=True, show_axis_labels=True,
+    def plot_log2fc_points(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), show_legend=True, show_axis_labels=True,
             compute_day=None, title="Log2 Change (Control vs Treatment)", figsize=(12, 6), parent_widget=None):
         """
         Plot log2-fold change at compute_day for control vs treatment arms.
         Supports Qt embedding via parent_widget or standalone matplotlib display.
         """
-
-        import numpy as np
-        from scipy.stats import ttest_ind
-
-        # ----------------------------
-        # Handle Qt vs standalone
-        # ----------------------------
-        if parent_widget:
-            from matplotlib.backends.backend_qt5agg import FigureCanvas
-            from matplotlib.figure import Figure
-            from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
-        else:
-            import matplotlib.pyplot as plt
 
         # ----- helper: find index for compute_day -----
         def get_index(days, compute_day):

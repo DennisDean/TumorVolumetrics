@@ -95,9 +95,14 @@ class TumorVolumeExperimentWindow(QMainWindow):
             "seaborn-dark-palette", "seaborn-darkgrid",  "seaborn-deep",    "seaborn-muted",       "seaborn-notebook",
             "seaborn-paper",        "seaborn-pastel",    "seaborn-poster",  "seaborn-talk",        "seaborn-ticks",
             "seaborn-white",        "seaborn-whitegrid", "tableau-colorblind10" ]
-        self.scienceplots_style_sheets = ["Science Base",   "Nature", "IEEE", "Science"]
-        self.scienceplots_color_palletes = ["bright", "vibrant", "muted", "retro", "high-vis", "high-contrast"]
+        self.scienceplots_style_sheets = ["No Journal",   "Nature", "IEEE", "Science"]
+        self.scienceplots_color_palletes = ["No Palette", "bright", "vibrant", "muted", "retro", "high-vis", "high-contrast"]
         self.scienceplots_grid_options = ["No Grid", "Grid"]
+        self.plot_style_module:str|None = None
+        self.plot_matplotlib_style:str|None = None
+        self.plot_scienceplot_journal:str|None = None
+        self.plot_scienceplot_color:str|None = None
+        self.plot_scienceplot_grid:str|None = None
         self.initialize_style_sheets_functions()
 
     # Inititialize Utilities
@@ -182,12 +187,45 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.groupBox_plot_style_sheet.toggled.connect(self.toggle_plot_style_group)
         self.ui.groupBox_plot_configurations.toggled.connect(self.toggle_plot_configureation_group)
 
-    # Update Figure
-    def update_experiment_view(self):
-        # Respond to figure comboBox change
-        self.draw_figure_group()
+        # Connect plot style selection
+        self.ui.pushButton_plot_uodate_style.clicked.connect(self.update_plot_style)
 
-    # Utilities
+    # Update Figure
+    def update_experiment_view(self, plot_style = None):
+        # Respond to figure comboBox change
+        self.draw_figure_group(plot_style = plot_style)
+    def update_plot_style(self):
+        # Get style information from interface
+        plot_style = None
+        plot_style_module = self.ui.comboBox_plot_style_module.currentText()
+        if plot_style_module == "Matplotlib":
+            self.plot_style_module = plot_style_module
+            self.plot_matplotlib_style = self.ui.comboBox_plot_matplotlib_style.currentText()
+            plot_style = [self.plot_matplotlib_style]
+        elif plot_style_module == "Science Plots":
+            # Get plot specification
+            self.plot_style_module = plot_style_module
+            self.plot_scienceplot_journal = self.ui.comboBox_plot_scienceplot_journal.currentText().lower()
+            self.plot_scienceplot_color = self.ui.comboBox_plot_scienceplot_color.currentText().lower()
+            self.plot_scienceplot_grid = self.ui.comboBox_plot_scienceplot_grid.currentText().lower()
+
+            # Set up matplotloib style variable
+            plot_style = ['science']
+            if self.plot_scienceplot_journal != "No Journal".lower():
+                plot_style.append(self.plot_scienceplot_journal.lower())
+            if self.plot_scienceplot_color != "No Palette".lower():
+                plot_style.append(self.plot_scienceplot_color)
+            if self.plot_scienceplot_grid != 'No Grid'.lower():
+                plot_style.append(self.plot_scienceplot_grid)
+        else:
+            logger.info(f'Plot style module not supported: {self.plot_style_module }')
+            return
+
+        # Update figures
+        print(f'Update_plot_style, plot_style = {plot_style}')
+        self.update_experiment_view(plot_style = plot_style)
+
+    # Interface Utilities
     def toggle_graph_configuration_group(self):
         # Add/remove plot selection parmaeters
         toggled_boolean =  not self.ui.groupBox_plot_configurations.isVisible()
@@ -211,18 +249,22 @@ class TumorVolumeExperimentWindow(QMainWindow):
     def toggle_plot_configureation_group(self, checked):
         set_layout_visible(self.ui.verticalLayout_plot_configuration, checked)
 
-
     # Plot Figure
-    def draw_figure_group(self):
+    def draw_figure_group(self, plot_style = None):
+        # Get style information
+        updated_style = plot_style
+
         # Get plot settings
         experiment_id = self.ui.comboBox_configuration_experiments.currentText()
         num_figures = int(self.ui.comboBox_configuration_num_of_plots.currentText())
         experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_id]
+
+        # Update each plot
         for idx in range(num_figures):
             selected_plot = self.plot_select_comboBox[idx].currentText()
             plot_name = self.plotting_function_dict[selected_plot]
             graphic_view = self.graphic_views[idx]
-            experiment_obj.plot_to_widget_by_name(plot_name, graphic_view)
+            experiment_obj.plot_to_widget_by_name(plot_name, graphic_view, plot_style = updated_style)
 
 
 
