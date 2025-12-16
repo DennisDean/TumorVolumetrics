@@ -89,13 +89,16 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Initialize style sheet
         self.current_plot_style = 0
         self.style_modules_supported = ['Matplotlib', 'Science Plots']
-        self.matplotlib_style_sheets_options = [    "default",              "Solarize_Light2",     "bmh",
-            "classic",              "dark_background",   "fast",            "fivethirtyeight",     "ggplot",
-            "grayscale",            "seaborn",           "seaborn-bright",  "seaborn-colorblind",  "seaborn-dark",
-            "seaborn-dark-palette", "seaborn-darkgrid",  "seaborn-deep",    "seaborn-muted",       "seaborn-notebook",
-            "seaborn-paper",        "seaborn-pastel",    "seaborn-poster",  "seaborn-talk",        "seaborn-ticks",
-            "seaborn-white",        "seaborn-whitegrid", "tableau-colorblind10" ]
-        self.scienceplots_style_sheets = ["No Journal",   "Nature", "IEEE", "Science"]
+        self.matplotlib_style_sheets_options = [
+            "default",                      "classic",                   "fast",
+            "dark_background",              "grayscale",                 "bmh",
+            "fivethirtyeight",              "ggplot",                    "tableau-colorblind10",
+            "seaborn-v0_8-bright",          "seaborn-v0_8-colorblind",   "seaborn-v0_8-dark",
+            "seaborn-v0_8-dark-palette",    "seaborn-v0_8-darkgrid",     "seaborn-v0_8-deep",
+            "seaborn-v0_8-muted",           "seaborn-v0_8-notebook",     "seaborn-v0_8-paper",
+            "seaborn-v0_8-pastel",          "seaborn-v0_8-poster",       "seaborn-v0_8-talk",
+            "seaborn-v0_8-ticks",           "seaborn-v0_8-white",        "seaborn-v0_8-whitegrid"]
+        self.scienceplots_style_sheets = ["No Journal", "Nature", "IEEE", "Science"]
         self.scienceplots_color_palletes = ["No Palette", "bright", "vibrant", "muted", "retro", "high-vis", "high-contrast"]
         self.scienceplots_grid_options = ["No Grid", "Grid"]
         self.plot_style_module:str|None = None
@@ -201,7 +204,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         if plot_style_module == "Matplotlib":
             self.plot_style_module = plot_style_module
             self.plot_matplotlib_style = self.ui.comboBox_plot_matplotlib_style.currentText()
-            plot_style = [self.plot_matplotlib_style]
+            plot_style = self.plot_matplotlib_style
         elif plot_style_module == "Science Plots":
             # Get plot specification
             self.plot_style_module = plot_style_module
