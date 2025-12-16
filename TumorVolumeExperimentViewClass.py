@@ -225,7 +225,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
             return
 
         # Update figures
-        print(f'Update_plot_style, plot_style = {plot_style}')
         self.update_experiment_view(plot_style = plot_style)
 
     # Interface Utilities

@@ -187,8 +187,14 @@ class MainApp(QMainWindow):
             self,
             "Select a Tumor Volume File",
             "",  # starting directory
-            "All Files (*);;CSV Files (*.csv)"  # file filters
+            "CSV Files (*.csv)"  # file filters
         )
+
+        # Check if CSV file was selected
+        extension = os.path.splitext(file_path)[1]
+        if extension != ".csv":
+            logger.info(f"File with a csv extension was not selected ({extension}).")
+            return
 
         # Process file selection outputs
         if file_path:

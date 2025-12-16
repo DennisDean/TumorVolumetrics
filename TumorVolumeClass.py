@@ -386,8 +386,6 @@ class TumorVolumeTimeSeriesClass():
             Whether to plot tumor weight data (if available). Default is True.
         """
 
-        import matplotlib.pyplot as plt
-
         if self.time_day is None or self.tumor_volume is None:
             raise ValueError("time_day and tumor_volume must not be None")
 
@@ -1573,10 +1571,6 @@ class TumorVolumeExperimentClass():
             # Create standalone pyplot figure (will use matplotlib defaults or rcParams)
             fig, ax = plt.subplots()
 
-        print(f"Applied style: {plot_style}")
-        print(f"Figure facecolor: {fig.get_facecolor()}")
-        print(f"Axes facecolor: {ax.get_facecolor()}")
-
         if plot_style:
             with plt.style.context(plot_style):
                 # Get the colors from the style
@@ -1705,13 +1699,22 @@ class TumorVolumeExperimentClass():
             ax.axhline(0, color=line_color, linewidth=1)
 
             # Enable grid with style's properties
+            # Enable grid with style's properties
             # Enable grid only if 'grid' style is in the plot_style
             if plot_style:
                 # Handle both string and list inputs
-                styles = [plot_style] if isinstance(plot_style, str) else plot_style
-                if 'grid' in styles:
+                if isinstance(plot_style, str):
+                    styles = [plot_style]
+                elif isinstance(plot_style, list):
+                    styles = plot_style
+                else:
+                    styles = []
+
+                # Check if any style contains 'grid'
+                grid_styles = ['grid', 'seaborn-v0_8-whitegrid', 'seaborn-v0_8-darkgrid']
+                if any(grid_style in styles for grid_style in grid_styles):
                     ax.grid(True)
-                    ax.set_axisbelow(True)  # Put grid behind bars
+                    ax.set_axisbelow(True)
 
             # Add vertical lines between studies
             for i in range(len(x) - 1):
@@ -1750,167 +1753,6 @@ class TumorVolumeExperimentClass():
             if plot_style in ['dark_background', 'seaborn-v0_8-dark']:
                 fig.patch.set_facecolor(fig.get_facecolor())
                 ax.set_facecolor(ax.get_facecolor())
-
-            # Enable right-click menu
-            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
-            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
-
-            # Assign figure to parent_widget so save dialog knows what to save
-            parent_widget.figure = fig
-            parent_widget.canvas_item = canvas
-
-            # Store canvas reference
-            self.current_tumor_volume_canvas = canvas
-
-            # Clear existing layout
-            existing_layout = parent_widget.layout()
-            if existing_layout:
-                while existing_layout.count():
-                    item = existing_layout.takeAt(0)
-                    widget = item.widget()
-                    if widget:
-                        widget.setParent(None)
-            else:
-                existing_layout = QVBoxLayout(parent_widget)
-                parent_widget.setLayout(existing_layout)
-
-            existing_layout.setContentsMargins(0, 0, 0, 0)
-            existing_layout.addWidget(canvas)
-
-            # Ensure proper sizing
-            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-            # Draw the canvas
-            canvas.draw()
-        else:
-            # Show plot in standalone mode
-            plt.show()
-
-        return fig, ax
-    def plot_average_tumor_volume_change_bar_2(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
-            error_metric="std", show_axis_labels=True, compute_day: int | None = None,
-            title="Average % Tumor Volume Change by Study", figsize=(10, 6), parent_widget=None):
-        """
-        Plot the average percent tumor volume change for each study.
-
-        Creates a bar chart showing mean tumor volume changes across studies with error bars.
-        Can be embedded in a Qt widget or displayed as a standalone matplotlib figure.
-
-        Args:
-            control_arms: Tuple of arm names to exclude (case-insensitive).
-            error_metric: Error bar type - "std" for standard deviation or "sem" for standard error.
-            show_axis_labels: Whether to display axis labels. Defaults to True.
-            compute_day: Optional specific day for computing percent change. Defaults to None (final day).
-            title: Plot title. Set to None to hide. Defaults to "Average % Tumor Volume Change by Study".
-            figsize: Figure size as (width, height) in inches. Defaults to (10, 6).
-            parent_widget: Optional Qt widget to embed the plot. If provided, renders as
-                          a FigureCanvas within this widget. If None, creates standalone
-                          matplotlib figure. Defaults to None.
-
-        Returns:
-            tuple: (fig, ax) - matplotlib Figure and Axes objects for the plot.
-                Returns None if no studies have data to plot.
-
-        Side Effects (when parent_widget is provided):
-            - Sets self.current_tumor_volume_canvas to FigureCanvas
-            - Replaces parent_widget's layout contents
-        """
-        import numpy as np
-
-        # Sort studies
-        study_keys = sorted(self.study_keys)
-
-        study_means = []
-        study_errors = []
-        study_labels = []
-        study_colors = []
-
-        # Build bar data
-        for idx, study in enumerate(study_keys):
-            study_obj = self.experiment_study_dict[study]
-
-            arms = study_obj.unique_arms
-            arms_to_plot = [arm for arm in arms if arm.lower() not in control_arms]
-
-            all_changes = []
-
-            for arm in arms_to_plot:
-                arm_id_list = study_obj.study_arms_dict[arm]
-
-                for ts_id in arm_id_list:
-                    tv_data_obj = study_obj.study_tv_time_dict[ts_id]
-                    tv_pct_change = tv_data_obj.compute_percent_change_tumor_volume(compute_day)
-                    final_change = tv_pct_change
-                    all_changes.append(final_change)
-
-            if len(all_changes) == 0:
-                continue
-
-            mean_val = np.nanmean(all_changes)
-            if error_metric == "sem":
-                err_val = np.nanstd(all_changes) / np.sqrt(len(all_changes))
-            else:
-                err_val = np.nanstd(all_changes)
-
-            study_means.append(mean_val)
-            study_errors.append(err_val)
-            study_labels.append(study)
-            study_colors.append('#808080')
-
-        # Check if we have data to plot
-        if len(study_means) == 0:
-            logger.info("No studies with data to plot")
-            return None
-
-        # ---------------- Plotting ----------------
-        # Create styled figure
-        fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
-
-        # Apply figsize only for standalone mode
-        if not parent_widget and figsize:
-            fig.set_size_inches(figsize)
-
-        with style_ctx:
-            x = np.arange(len(study_means))
-
-            bars = ax.bar(
-                x,
-                study_means,
-                yerr=study_errors,
-                color=study_colors,
-                capsize=5,
-                width=0.6,
-                edgecolor="black",
-            )
-
-            ax.axhline(0, color="black", linewidth=1)
-
-            # Add vertical lines between studies
-            for i in range(len(x) - 1):
-                line_x = x[i] + 0.5
-                ax.axvline(x=line_x, color='black', linestyle='--', linewidth=1, alpha=0.5)
-
-            # Axis labels
-            if show_axis_labels:
-                ax.set_ylabel("% Tumor Volume Change")
-                ax.set_xlabel("Study")
-
-            if title:
-                ax.set_title(title)
-
-            # Ticks
-            ax.set_xticks(x)
-            ax.set_xticklabels(study_labels, rotation=45, ha="right")
-
-        # fig.tight_layout()
-
-        # Handle widget integration
-        if parent_widget:
-            # Create a new Figure Canvas
-            canvas = FigureCanvas(fig)
-            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-            canvas.updateGeometry()
-            canvas.setStyleSheet("background-color: white;")  # Qt background
 
             # Enable right-click menu
             canvas.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -2049,44 +1891,78 @@ class TumorVolumeExperimentClass():
             return None
 
         # ---------------- Plotting ----------------
-        if parent_widget:
-            # Create matplotlib Figure (not pyplot)
-            fig = Figure(figsize=figsize)
-            ax = fig.add_subplot(111)
-        else:
-            # Use pyplot for standalone
-            fig, ax = plt.subplots(figsize=figsize)
+        # Create styled figure
+        fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
 
-        x = np.arange(len(study_means))
+        # Apply figsize only for standalone mode
+        if not parent_widget and figsize:
+            fig.set_size_inches(figsize)
 
-        bars = ax.bar(
-            x,
-            study_means,
-            yerr=study_errors,
-            color=study_colors,
-            capsize=5,
-            width=0.6,
-            edgecolor="black",
-        )
+        with style_ctx:
+            x = np.arange(len(study_means))
 
-        ax.axhline(0, color="black", linewidth=1)
+            # Get style colors
+            prop_cycle = plt.rcParams['axes.prop_cycle']
+            colors = prop_cycle.by_key()['color']
+            bar_colors = [colors[i % len(colors)] for i in range(len(study_means))]
+            line_color = plt.rcParams['text.color']  # Will be white for dark themes
 
-        # Add vertical lines between studies
-        for i in range(len(x) - 1):
-            line_x = x[i] + 0.5
-            ax.axvline(x=line_x, color='black', linestyle='--', linewidth=1, alpha=0.5)
+            # Assign colors to bars (cycling if more bars than colors)
+            bar_colors = [colors[i % len(colors)] for i in range(len(study_means))]
 
-        # Axis labels
-        if show_axis_labels:
-            ax.set_ylabel("T/C Ratio (SE)")
-            ax.set_xlabel("Study")
+            bars = ax.bar(
+                x,
+                study_means,
+                yerr=study_errors,
+                color=bar_colors[0],
+                ecolor=line_color,  # Error bars match theme
+                capsize=5,
+            )
 
-        if title:
-            ax.set_title(title)
 
-        # Ticks
-        ax.set_xticks(x)
-        ax.set_xticklabels(study_labels, rotation=45, ha="right")
+            # Add lines between each study
+            ax.axhline(0, color=line_color, linewidth=1)
+
+
+            # Enable grid with style's properties
+            # Enable grid only if 'grid' style is in the plot_style
+            if plot_style:
+                # Handle both string and list inputs
+                if isinstance(plot_style, str):
+                    styles = [plot_style]
+                elif isinstance(plot_style, list):
+                    styles = plot_style
+                else:
+                    styles = []
+
+                # Check if any style contains 'grid'
+                grid_styles = ['grid', 'seaborn-v0_8-whitegrid', 'seaborn-v0_8-darkgrid']
+                if any(grid_style in styles for grid_style in grid_styles):
+                    ax.grid(True)
+                    ax.set_axisbelow(True)
+
+
+
+
+
+
+            # Add vertical lines between studies
+            for i in range(len(x) - 1):
+                line_x = x[i] + 0.5
+                ax.axvline(x=line_x, color=line_color, linestyle='-',
+                           linewidth=1, alpha=0.5)
+
+            # Axis labels
+            if show_axis_labels:
+                ax.set_ylabel("T/C Ratio (SE)")
+                ax.set_xlabel("Study")
+
+            if title:
+                ax.set_title(title)
+
+            # Ticks
+            ax.set_xticks(x)
+            ax.set_xticklabels(study_labels, rotation=45, ha="right")
 
         # fig.tight_layout()
 
@@ -2096,7 +1972,17 @@ class TumorVolumeExperimentClass():
             canvas = FigureCanvas(fig)
             canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             canvas.updateGeometry()
-            canvas.setStyleSheet("background-color: white;")  # Qt background
+
+            # Get matplotlib's figure background color
+            fig_facecolor = fig.get_facecolor()
+
+            # Convert RGBA to hex for Qt
+            hex_color = mcolors.to_hex(fig_facecolor)
+            canvas.setStyleSheet(f"background-color: {hex_color};")
+
+            if plot_style in ['dark_background', 'seaborn-v0_8-dark']:
+                fig.patch.set_facecolor(fig.get_facecolor())
+                ax.set_facecolor(ax.get_facecolor())
 
             # Enable right-click menu
             canvas.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -2212,73 +2098,75 @@ class TumorVolumeExperimentClass():
         x = np.arange(len(study_keys))
 
         # ---------------- Plotting ----------------
-        if parent_widget:
-            # Create matplotlib Figure (not pyplot)
-            fig = Figure(figsize=figsize)
-            ax = fig.add_subplot(111)
-        else:
-            # Use pyplot for standalone
-            fig, ax = plt.subplots(figsize=figsize)
+        # Create styled figure
+        fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
 
-        bottoms = np.zeros(len(study_keys))
+        # Apply figsize only for standalone mode
+        if not parent_widget and figsize:
+            fig.set_size_inches(figsize)
 
-        # Add stacked layers CR, PR, SD, PD
-        for idx, or_code in enumerate(OR_ORDER):
+        with style_ctx:
 
-            heights = study_or_props[:, idx]
-            counts = np.array([d[or_code] for d in study_or_counts])
 
-            bars = ax.bar(
-                x,
-                heights,
-                bottom=bottoms,
-                color=OR_COLORS[idx],
-                edgecolor="black",
-                label=self.objective_response_names[or_code],
-            )
+            bottoms = np.zeros(len(study_keys))
 
-            # -------- Add Count + Percentage in Each Segment --------
-            for i, bar in enumerate(bars):
-                count = counts[i]
-                height = bar.get_height()
-                total = sum(study_or_counts[i].values())
+            # Add stacked layers CR, PR, SD, PD
+            for idx, or_code in enumerate(OR_ORDER):
 
-                if count > 0 and height > 0 and total > 0:
-                    pct = height * 100
-                    label_text = f"{or_code}\n\n{count} ({pct:.0f}%)"
+                heights = study_or_props[:, idx]
+                counts = np.array([d[or_code] for d in study_or_counts])
 
-                    ax.text(
-                        bar.get_x() + bar.get_width() / 2,
-                        bottoms[i] + height / 2,
-                        label_text,
-                        ha="center",
-                        va="center",
-                        fontsize=10,
-                        color="white" if idx in (0, 1, 3) else "black",
-                        fontweight="bold"
-                    )
+                bars = ax.bar(
+                    x,
+                    heights,
+                    bottom=bottoms,
+                    color=OR_COLORS[idx],
+                    edgecolor="black",
+                    label=self.objective_response_names[or_code],
+                )
 
-            bottoms += heights
+                # -------- Add Count + Percentage in Each Segment --------
+                for i, bar in enumerate(bars):
+                    count = counts[i]
+                    height = bar.get_height()
+                    total = sum(study_or_counts[i].values())
 
-        # Labels
-        if show_axis_labels:
-            ax.set_ylabel("Proportion of Responses")
-            ax.set_xlabel("Study")
+                    if count > 0 and height > 0 and total > 0:
+                        pct = height * 100
+                        label_text = f"{or_code}\n\n{count} ({pct:.0f}%)"
 
-        ax.set_xticks(x)
-        ax.set_xticklabels(study_keys, rotation=45, ha="right")
+                        ax.text(
+                            bar.get_x() + bar.get_width() / 2,
+                            bottoms[i] + height / 2,
+                            label_text,
+                            ha="center",
+                            va="center",
+                            fontsize=10,
+                            color="white" if idx in (0, 1, 3) else "black",
+                            fontweight="bold"
+                        )
 
-        if title:
-            ax.set_title(title)
+                bottoms += heights
 
-        # ---------------- Legend Outside Plot ----------------
-        if show_legend:
-            ax.legend(
-                title="Objective Responses",
-                loc="center left",
-                bbox_to_anchor=(1.02, 0.5),
-                frameon=True
-            )
+            # Labels
+            if show_axis_labels:
+                ax.set_ylabel("Proportion of Responses")
+                ax.set_xlabel("Study")
+
+            ax.set_xticks(x)
+            ax.set_xticklabels(study_keys, rotation=45, ha="right")
+
+            if title:
+                ax.set_title(title)
+
+            # ---------------- Legend Outside Plot ----------------
+            if show_legend:
+                ax.legend(
+                    title="Objective Responses",
+                    loc="center left",
+                    bbox_to_anchor=(1.02, 0.5),
+                    frameon=True
+                )
 
         # fig.tight_layout()
 
@@ -2288,7 +2176,17 @@ class TumorVolumeExperimentClass():
             canvas = FigureCanvas(fig)
             canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             canvas.updateGeometry()
-            canvas.setStyleSheet("background-color: white;")  # Qt background
+
+            # Get matplotlib's figure background color
+            fig_facecolor = fig.get_facecolor()
+
+            # Convert RGBA to hex for Qt
+            hex_color = mcolors.to_hex(fig_facecolor)
+            canvas.setStyleSheet(f"background-color: {hex_color};")
+
+            if plot_style in ['dark_background', 'seaborn-v0_8-dark']:
+                fig.patch.set_facecolor(fig.get_facecolor())
+                ax.set_facecolor(ax.get_facecolor())
 
             # Enable right-click menu
             canvas.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -2406,62 +2304,94 @@ class TumorVolumeExperimentClass():
         # ---------------------------------------------------------
         #   CREATE FIGURE
         # ---------------------------------------------------------
-        if parent_widget:
-            fig = Figure(figsize=figsize)
-            ax = fig.add_subplot(111)
-        else:
-            fig, ax = plt.subplots(figsize=figsize)
+        # Create styled figure
+        fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
+
+        # Apply figsize only for standalone mode
+        if not parent_widget and figsize:
+            fig.set_size_inches(figsize)
+
+
 
         # ---------------------------------------------------------
         #   PLOT
         # ---------------------------------------------------------
-        n_studies = len(study_labels)
-        x = np.arange(n_studies)
-        width = 0.35
+        with style_ctx:
+            n_studies = len(study_labels)
+            x = np.arange(n_studies)
+            width = 0.35
 
-        ax.bar(
-            x - width / 2,
-            control_means,
-            width=width,
-            yerr=control_errors,
-            color=ctrl_color,
-            edgecolor="black",
-            capsize=5,
-            label="Control"
-        )
+            # Get colors from the style
+            prop_cycle = plt.rcParams['axes.prop_cycle']
+            colors = prop_cycle.by_key()['color']
+            edge_color = plt.rcParams['axes.edgecolor']
+            line_color = plt.rcParams['text.color']
 
-        ax.bar(
-            x + width / 2,
-            treatment_means,
-            width=width,
-            yerr=treatment_errors,
-            color=trt_color,
-            edgecolor="black",
-            capsize=5,
-            label="Treatment"
-        )
+            # Use first two colors from the cycle for control/treatment
+            ctrl_color = colors[0]
+            trt_color = colors[1]
 
-        ax.axhline(0, color="black", linewidth=1)
+            ax.bar(
+                x - width / 2,
+                control_means,
+                width=width,
+                yerr=control_errors,
+                color=ctrl_color,
+                edgecolor=edge_color,
+                ecolor=line_color,  # Error bar color
+                capsize=5,
+                label="Control"
+            )
 
-        # Labels
-        y_label_title = f"AUC ({error_metric.upper()})"
-        if compute_day is not None:
-            y_label_title = f"AUC at Day {compute_day} ({error_metric.upper()})"
-        ax.set_ylabel(y_label_title)
+            ax.bar(
+                x + width / 2,
+                treatment_means,
+                width=width,
+                yerr=treatment_errors,
+                color=trt_color,
+                edgecolor=edge_color,
+                ecolor=line_color,  # Error bar color
+                capsize=5,
+                label="Treatment"
+            )
 
-        if show_axis_labels:
-            ax.set_xlabel("Study")
+            ax.axhline(0, color=line_color, linewidth=1)
 
-        if title:
-            ax.set_title(title)
+            # Enable grid with style's properties
+            # Enable grid only if 'grid' style is in the plot_style
+            if plot_style:
+                # Handle both string and list inputs
+                if isinstance(plot_style, str):
+                    styles = [plot_style]
+                elif isinstance(plot_style, list):
+                    styles = plot_style
+                else:
+                    styles = []
 
-        ax.set_xticks(x)
-        ax.set_xticklabels(study_labels, rotation=45, ha="right")
+                # Check if any style contains 'grid'
+                grid_styles = ['grid', 'seaborn-v0_8-whitegrid', 'seaborn-v0_8-darkgrid']
+                if any(grid_style in styles for grid_style in grid_styles):
+                    ax.grid(True)
+                    ax.set_axisbelow(True)
 
-        if show_legend:
-            ax.legend(loc="upper right", frameon=True, framealpha=0.8)
+            # Labels
+            y_label_title = f"AUC ({error_metric.upper()})"
+            if compute_day is not None:
+                y_label_title = f"AUC at Day {compute_day} ({error_metric.upper()})"
+            ax.set_ylabel(y_label_title)
 
-        # fig.tight_layout()
+            if show_axis_labels:
+                ax.set_xlabel("Study")
+
+            if title:
+                ax.set_title(title)
+
+            ax.set_xticks(x)
+            ax.set_xticklabels(study_labels, rotation=45, ha="right")
+
+            if show_legend:
+                ax.legend(loc="upper right", frameon=True, framealpha=0.8)
+
 
         # ---------------------------------------------------------
         #   EMBED IN QT (IF REQUESTED)
@@ -2470,7 +2400,18 @@ class TumorVolumeExperimentClass():
             canvas = FigureCanvas(fig)
             canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             canvas.updateGeometry()
-            canvas.setStyleSheet("background-color: white;")
+
+            # Get matplotlib's figure background color
+            fig_facecolor = fig.get_facecolor()
+
+            # Convert RGBA to hex for Qt
+            hex_color = mcolors.to_hex(fig_facecolor)
+            canvas.setStyleSheet(f"background-color: {hex_color};")
+
+            if plot_style in ['dark_background', 'seaborn-v0_8-dark']:
+                fig.patch.set_facecolor(fig.get_facecolor())
+                ax.set_facecolor(ax.get_facecolor())
+
 
             # Enable right-click menu
             canvas.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -2500,7 +2441,6 @@ class TumorVolumeExperimentClass():
 
             canvas.draw()
         else:
-            import matplotlib.pyplot as plt
             plt.show()
 
         return fig, ax
@@ -2679,7 +2619,6 @@ class TumorVolumeExperimentClass():
             canvas.draw()
 
         else:
-            import matplotlib.pyplot as plt
             plt.show()
 
         return fig, ax
