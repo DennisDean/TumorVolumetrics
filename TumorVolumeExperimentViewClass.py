@@ -194,10 +194,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.pushButton_plot_uodate_style.clicked.connect(self.update_plot_style)
 
     # Update Figure
-    def update_experiment_view(self, plot_style = None):
-        # Respond to figure comboBox change
-        self.draw_figure_group(plot_style = plot_style)
-    def update_plot_style(self):
+    def get_plot_style(self):
         # Get style information from interface
         plot_style = None
         plot_style_module = self.ui.comboBox_plot_style_module.currentText()
@@ -221,10 +218,17 @@ class TumorVolumeExperimentWindow(QMainWindow):
             if self.plot_scienceplot_grid != 'No Grid'.lower():
                 plot_style.append(self.plot_scienceplot_grid)
         else:
-            logger.info(f'Plot style module not supported: {self.plot_style_module }')
-            return
+            logger.info(f'Plot style module not supported: {self.plot_style_module}')
 
+        # Return Plot Style
+        return plot_style
+    def update_experiment_view(self):
+        # Respond to figure comboBox change
+        plot_style = self.get_plot_style()
+        self.draw_figure_group(plot_style = plot_style)
+    def update_plot_style(self):
         # Update figures
+        plot_style = self.get_plot_style()
         self.update_experiment_view(plot_style = plot_style)
 
     # Interface Utilities
