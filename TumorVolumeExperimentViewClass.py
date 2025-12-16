@@ -4,6 +4,8 @@
 import logging
 logger = logging.getLogger(__name__)
 
+import matplotlib as mpl
+
 # Extend Existing Class
 from FigureGraphicsViewClass import FigureGraphicsView
 
@@ -38,6 +40,18 @@ def set_layout_visible(layout, visible: bool):
         if nested_layout:
             # Recursively process the nested layout
             set_layout_visible(nested_layout, visible)
+def latex_available():
+    try:
+        mpl.rcParams["text.usetex"] = True
+        import matplotlib.pyplot as plt
+        plt.figure()
+        plt.text(0.5, 0.5, r"$\alpha$")
+        plt.close()
+        return True
+    except Exception:
+        return False
+    finally:
+        mpl.rcParams["text.usetex"] = False
 
 # GUI Class
 class TumorVolumeExperimentWindow(QMainWindow):
@@ -107,6 +121,9 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.plot_scienceplot_color:str|None = None
         self.plot_scienceplot_grid:str|None = None
         self.initialize_style_sheets_functions()
+
+        # Check if Latex is avaialble
+        self.use_latex = latex_available()
 
     # Inititialize Utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
@@ -216,6 +233,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
             if self.plot_scienceplot_color != "No Palette".lower():
                 plot_style.append(self.plot_scienceplot_color)
             if self.plot_scienceplot_grid != 'No Grid'.lower():
+                plot_style.append(self.plot_scienceplot_grid)
+            if self.use_latex == False:
                 plot_style.append(self.plot_scienceplot_grid)
         else:
             logger.info(f'Plot style module not supported: {self.plot_style_module}')

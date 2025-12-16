@@ -76,8 +76,8 @@ https://www.gnu.org/licenses/agpl-3.0.html for full terms.
 # System Support
 import os
 import sys
+import matplotlib as mpl
 
-from fontTools.ufoLib import deprecatedFontInfoAttributesVersion2
 
 from logging_config import logger
 __all__ = ['logger']
@@ -117,6 +117,18 @@ def set_layout_visible(layout, visible: bool):
         if nested_layout:
             # Recursively process the nested layout
             set_layout_visible(nested_layout, visible)
+def latex_available():
+    try:
+        mpl.rcParams["text.usetex"] = True
+        import matplotlib.pyplot as plt
+        plt.figure()
+        plt.text(0.5, 0.5, r"$\alpha$")
+        plt.close()
+        return True
+    except Exception:
+        return False
+    finally:
+        mpl.rcParams["text.usetex"] = False
 
 # Application
 class MainApp(QMainWindow):
@@ -178,7 +190,10 @@ class MainApp(QMainWindow):
         self.tumor_volume_file_window:TumorVolumeFileWindow|None = None
         self.tumor_volume_experiment_window:TumorVolumeExperimentViewClass|None = None
 
-        # Button
+        # Check if Latex is available
+        self.use_latex = latex_available()
+        if self.use_latex == False:
+            logger.info(f'Full style sheet functionality requires Latex installed')
 
     # Major Commands
     def pushbutton_load_csv_file(self):
