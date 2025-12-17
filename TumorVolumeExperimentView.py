@@ -239,8 +239,8 @@ class Ui_MainWindow(object):
         self.comboBox_plot_style_module.setObjectName(u"comboBox_plot_style_module")
         sizePolicy.setHeightForWidth(self.comboBox_plot_style_module.sizePolicy().hasHeightForWidth())
         self.comboBox_plot_style_module.setSizePolicy(sizePolicy)
-        self.comboBox_plot_style_module.setMinimumSize(QSize(170, 0))
-        self.comboBox_plot_style_module.setMaximumSize(QSize(16777215, 16777215))
+        self.comboBox_plot_style_module.setMinimumSize(QSize(170, 25))
+        self.comboBox_plot_style_module.setMaximumSize(QSize(16777215, 25))
 
         self.verticalLayout_plot_style_group.addWidget(self.comboBox_plot_style_module)
 
@@ -259,6 +259,8 @@ class Ui_MainWindow(object):
 
         self.comboBox_plot_matplotlib_style = QComboBox(self.groupBox_plot_style_sheet)
         self.comboBox_plot_matplotlib_style.setObjectName(u"comboBox_plot_matplotlib_style")
+        self.comboBox_plot_matplotlib_style.setMinimumSize(QSize(110, 25))
+        self.comboBox_plot_matplotlib_style.setMaximumSize(QSize(16777215, 25))
 
         self.horizontalLayout_6.addWidget(self.comboBox_plot_matplotlib_style)
 
@@ -281,7 +283,7 @@ class Ui_MainWindow(object):
 
         self.comboBox_plot_scienceplot_journal = QComboBox(self.groupBox_plot_style_sheet)
         self.comboBox_plot_scienceplot_journal.setObjectName(u"comboBox_plot_scienceplot_journal")
-        self.comboBox_plot_scienceplot_journal.setMinimumSize(QSize(0, 25))
+        self.comboBox_plot_scienceplot_journal.setMinimumSize(QSize(110, 25))
         self.comboBox_plot_scienceplot_journal.setMaximumSize(QSize(16777215, 25))
 
         self.horizontalLayout_7.addWidget(self.comboBox_plot_scienceplot_journal)
@@ -300,11 +302,10 @@ class Ui_MainWindow(object):
 
         self.comboBox_plot_scienceplot_color = QComboBox(self.groupBox_plot_style_sheet)
         self.comboBox_plot_scienceplot_color.setObjectName(u"comboBox_plot_scienceplot_color")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.comboBox_plot_scienceplot_color.sizePolicy().hasHeightForWidth())
-        self.comboBox_plot_scienceplot_color.setSizePolicy(sizePolicy2)
+        sizePolicy.setHeightForWidth(self.comboBox_plot_scienceplot_color.sizePolicy().hasHeightForWidth())
+        self.comboBox_plot_scienceplot_color.setSizePolicy(sizePolicy)
+        self.comboBox_plot_scienceplot_color.setMinimumSize(QSize(110, 25))
+        self.comboBox_plot_scienceplot_color.setMaximumSize(QSize(16777215, 25))
 
         self.horizontalLayout_9.addWidget(self.comboBox_plot_scienceplot_color)
 
@@ -455,11 +456,11 @@ class Ui_MainWindow(object):
 
         self.pushButton_objective_response_update = QPushButton(self.groupBox_objective_response)
         self.pushButton_objective_response_update.setObjectName(u"pushButton_objective_response_update")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.pushButton_objective_response_update.sizePolicy().hasHeightForWidth())
-        self.pushButton_objective_response_update.setSizePolicy(sizePolicy3)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.pushButton_objective_response_update.sizePolicy().hasHeightForWidth())
+        self.pushButton_objective_response_update.setSizePolicy(sizePolicy2)
         self.pushButton_objective_response_update.setMinimumSize(QSize(0, 25))
         self.pushButton_objective_response_update.setMaximumSize(QSize(16777215, 25))
 

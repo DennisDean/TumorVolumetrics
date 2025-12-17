@@ -250,7 +250,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
         self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
 
-
     # Update Figure
     def get_plot_style(self):
         # Get style information from interface
@@ -290,6 +289,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Update figures
         plot_style = self.get_plot_style()
         self.update_experiment_view()
+        self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
 
     # Interface Utilities
     def toggle_graph_configuration_group(self):
@@ -307,6 +307,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Matplotlib = 0, Science Plots = 1
         set_layout_visible(self.ui.verticalLayout_plot_scienceplot_options, bool(new_index))
         set_layout_visible(self.ui.verticalLayout_matplotlib_options,not bool(new_index))
+        self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
     # def toggle_plot_style_group(self, checked):
     #     set_layout_visible(self.ui.verticalLayout_plot_style_group, checked)
     #     if checked == True:
@@ -370,7 +371,19 @@ class TumorVolumeExperimentWindow(QMainWindow):
             self._gb_objrp_anim.setEndValue(header_height)
 
         self._gb_objrp_anim.start()
+    def _recompute_groupbox_height(self, groupbox):
+        layout = groupbox.layout()
+        if not layout:
+            return
 
+        layout.activate()
+
+        header_height = groupbox.fontMetrics().height() + 16
+        content_height = layout.sizeHint().height()
+
+        expanded_height = header_height + content_height
+
+        groupbox.setMaximumHeight(expanded_height)
 
     # Plot Figure
     def draw_figure_group(self, plot_style = None):
