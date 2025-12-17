@@ -4,13 +4,17 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import matplotlib as mpl
-
 # Extend Existing Class
 from FigureGraphicsViewClass import FigureGraphicsView
 
 # Import
-from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy
+
+# Plotting
+import matplotlib as mpl
+
+# Interface
+from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve
 
 # Tumor volume classes
 from TumorVolumeClass import TumorVolumeDataClass
@@ -126,6 +130,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.use_latex = latex_available()
 
         # Set up group boxes
+        self._gb_animation:QPropertyAnimation|None = None
         self.initialize_collapsable_group_boxes()
 
     # Inititialize Utilities
@@ -211,15 +216,40 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Connect plot style selection
         self.ui.pushButton_plot_uodate_style.clicked.connect(self.update_plot_style)
     def initialize_collapsable_group_boxes(self):
-        # Use check box to colapse boxes
-        self.toggle_plot_style_group(self.ui.groupBox_plot_style_sheet.isChecked())
-        self.toggle_plot_configureation_group(self.ui.groupBox_plot_configurations.isChecked())
-        self.toggle_plot_objective_response_group(self.ui.groupBox_objective_response.isChecked())
+
+        # Define box animation
+        self._gb_style_anim = QPropertyAnimation(self.ui.groupBox_plot_style_sheet, b"maximumHeight")
+        self._gb_style_anim.setDuration(180)
+        self._gb_style_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
+        self._gb_confg_anim = QPropertyAnimation(self.ui.groupBox_plot_configurations, b"maximumHeight")
+        self._gb_confg_anim.setDuration(180)
+        self._gb_confg_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
+        self._gb_objrp_anim = QPropertyAnimation(self.ui.groupBox_objective_response, b"maximumHeight")
+        self._gb_objrp_anim.setDuration(180)
+        self._gb_objrp_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
+        # Set checked
+        self.ui.groupBox_plot_configurations.setChecked(True)
+        self.ui.groupBox_plot_style_sheet.setChecked(False)
+        self.ui.groupBox_objective_response.setChecked(False)
+
+        # Set initial group box settings
+        group_boxes = [self.ui.groupBox_plot_configurations, self.ui.groupBox_plot_style_sheet, self.ui.groupBox_objective_response]
+        init_group_box_state = [True, False, False]
+        for gbox, gstate in zip(group_boxes, init_group_box_state):
+            gbox.setChecked(gstate)
+            gbox.layout().activate()
+            header_height = gbox.fontMetrics().height()+16
+            if gstate == False:
+                gbox.setMaximumHeight(header_height)
 
         # Conenct to toggle function
-        self.ui.groupBox_plot_style_sheet.toggled.connect(self.toggle_plot_style_group)
-        self.ui.groupBox_plot_configurations.toggled.connect(self.toggle_plot_configureation_group)
-        self.ui.groupBox_objective_response.toggled.connect(self.toggle_plot_objective_response_group)
+        self.ui.groupBox_plot_style_sheet.toggled.connect(lambda checked: self._animate_style_groupbox(self.ui.groupBox_plot_style_sheet, checked))
+        self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
+        self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
+
 
     # Update Figure
     def get_plot_style(self):
@@ -277,15 +307,70 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Matplotlib = 0, Science Plots = 1
         set_layout_visible(self.ui.verticalLayout_plot_scienceplot_options, bool(new_index))
         set_layout_visible(self.ui.verticalLayout_matplotlib_options,not bool(new_index))
-    def toggle_plot_style_group(self, checked):
-        set_layout_visible(self.ui.verticalLayout_plot_style_group, checked)
-        if checked == True:
-            plot_style_selection = self.ui.comboBox_plot_style_module.currentIndex()
-            self.toggle_style_widgets(bool(plot_style_selection))
-    def toggle_plot_configureation_group(self, checked):
-        set_layout_visible(self.ui.verticalLayout_plot_configuration, checked)
-    def toggle_plot_objective_response_group(self, checked):
-        set_layout_visible(self.ui.verticalLayout_groupbox_objective_response_2, checked)
+    # def toggle_plot_style_group(self, checked):
+    #     set_layout_visible(self.ui.verticalLayout_plot_style_group, checked)
+    #     if checked == True:
+    #         plot_style_selection = self.ui.comboBox_plot_style_module.currentIndex()
+    #         self.toggle_style_widgets(bool(plot_style_selection))
+    # def toggle_plot_configureation_group(self, checked):
+    #     set_layout_visible(self.ui.verticalLayout_plot_configuration, checked)
+    # def toggle_plot_objective_response_group(self, checked):
+    #     set_layout_visible(self.ui.verticalLayout_groupbox_objective_response_2, checked)
+    def _animate_style_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_style_anim.stop()
+
+        if expanded:
+            self._gb_style_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_style_anim.setEndValue(expanded_height)
+        else:
+            self._gb_style_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_style_anim.setEndValue(header_height)
+
+        self._gb_style_anim.start()
+    def _animate_confg_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_confg_anim.stop()
+
+        if expanded:
+            self._gb_confg_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_confg_anim.setEndValue(expanded_height)
+        else:
+            self._gb_confg_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_confg_anim.setEndValue(header_height)
+
+        self._gb_confg_anim.start()
+    def _animate_objrp_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_objrp_anim.stop()
+
+        if expanded:
+            self._gb_objrp_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_objrp_anim.setEndValue(expanded_height)
+        else:
+            self._gb_objrp_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_objrp_anim.setEndValue(header_height)
+
+        self._gb_objrp_anim.start()
+
 
     # Plot Figure
     def draw_figure_group(self, plot_style = None):
