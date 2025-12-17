@@ -125,6 +125,9 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Check if Latex is avaialble
         self.use_latex = latex_available()
 
+        # Set up group boxes
+        self.initialize_collapsable_group_boxes()
+
     # Inititialize Utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
         # Capture the original geometry and size policy
@@ -204,11 +207,19 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         # Connect module change to togle
         self.ui.comboBox_plot_style_module.currentIndexChanged.connect(self.toggle_style_widgets)
-        self.ui.groupBox_plot_style_sheet.toggled.connect(self.toggle_plot_style_group)
-        self.ui.groupBox_plot_configurations.toggled.connect(self.toggle_plot_configureation_group)
 
         # Connect plot style selection
         self.ui.pushButton_plot_uodate_style.clicked.connect(self.update_plot_style)
+    def initialize_collapsable_group_boxes(self):
+        # Use check box to colapse boxes
+        self.toggle_plot_style_group(self.ui.groupBox_plot_style_sheet.isChecked())
+        self.toggle_plot_configureation_group(self.ui.groupBox_plot_configurations.isChecked())
+        self.toggle_plot_objective_response_group(self.ui.groupBox_objective_response.isChecked())
+
+        # Conenct to toggle function
+        self.ui.groupBox_plot_style_sheet.toggled.connect(self.toggle_plot_style_group)
+        self.ui.groupBox_plot_configurations.toggled.connect(self.toggle_plot_configureation_group)
+        self.ui.groupBox_objective_response.toggled.connect(self.toggle_plot_objective_response_group)
 
     # Update Figure
     def get_plot_style(self):
@@ -248,7 +259,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
     def update_plot_style(self):
         # Update figures
         plot_style = self.get_plot_style()
-        self.update_experiment_view(plot_style = plot_style)
+        self.update_experiment_view()
 
     # Interface Utilities
     def toggle_graph_configuration_group(self):
@@ -273,6 +284,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
             self.toggle_style_widgets(bool(plot_style_selection))
     def toggle_plot_configureation_group(self, checked):
         set_layout_visible(self.ui.verticalLayout_plot_configuration, checked)
+    def toggle_plot_objective_response_group(self, checked):
+        set_layout_visible(self.ui.verticalLayout_groupbox_objective_response_2, checked)
 
     # Plot Figure
     def draw_figure_group(self, plot_style = None):
