@@ -11,10 +11,15 @@ from FigureGraphicsViewClass import FigureGraphicsView
 
 # Plotting
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import matplotlib.patches as mpatches
+
 
 # Interface
 from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox
-from PySide6.QtCore import QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve, QSize
+from PySide6.QtGui import QColor, QPixmap, QIcon
 
 # Tumor volume classes
 from TumorVolumeClass import TumorVolumeDataClass
@@ -133,7 +138,11 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self._gb_animation:QPropertyAnimation|None = None
         self.initialize_collapsable_group_boxes()
 
-    # Inititialize Utilities
+        # Initialize objection response plot
+        self.available_style_colors = None
+        self.initialize_objective_response_plot_groupbox()
+
+    # Figure utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
         # Capture the original geometry and size policy
         old_height = old_graphic_view.height()
@@ -170,6 +179,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         self.graphic_views = [self.graphicsView_visual_top_left, self.graphicsView_visual_top_right,
             self.graphicsView_visual_bottom_left, self.graphicsView_visual_bottom_right]
+
+    # Inititialize Utilities
     def initialize_plotting(self):
         # Setup plotting
         self.plot_types = ["Avg_TV_Change_Bar", "TV_Control_Bar", "Objective_Response_Bar",
@@ -249,6 +260,16 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.groupBox_plot_style_sheet.toggled.connect(lambda checked: self._animate_style_groupbox(self.ui.groupBox_plot_style_sheet, checked))
         self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
         self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
+    def initialize_objective_response_plot_groupbox(self):
+        # Get current style color selection
+        available_style_colors = self.get_style_colors()
+        orc_cboxes = [self.ui.comboBox_objective_plot_cr, self.ui.comboBox_objective_plot_pr,
+                      self.ui.comboBox_objective_plot_sd, self.ui.comboBox_objective_plot_pd]
+        self._populate_color_comboboxes(orc_cboxes, available_style_colors)
+        self.available_style_colors = available_style_colors
+
+        # Connect pushbutton to update objective response plot
+        self.ui.pushButton_objective_response_update.clicked.connect(self.update_objective_response_bar_plot)
 
     # Update Figure
     def get_plot_style(self):
@@ -281,6 +302,46 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         # Return Plot Style
         return plot_style
+    def get_style_colors_2(self):
+        # rewrite of generated code to return style colors
+        # module = ("Matplotlib", "Science Plots")
+        plot_style_module = self.ui.comboBox_plot_style_module.currentText()
+        plot_style = self.get_plot_style()
+
+        # Apply the style temporarily to extract colors
+        with plt.style.context(plot_style):
+            # Get the color cycle from the current style
+            prop_cycle = plt.rcParams['axes.prop_cycle']
+            colors = prop_cycle.by_key()['color']
+
+        return colors
+    def get_style_colors(self):
+        # module = ("Matplotlib", "Science Plots")
+        plot_style_module = self.ui.comboBox_plot_style_module.currentText()
+        plot_style = self.get_plot_style()
+
+        # Apply the style temporarily to extract colors
+        with plt.style.context(plot_style):
+            # Get the color cycle from the current style
+            prop_cycle = plt.rcParams['axes.prop_cycle']
+            colors = prop_cycle.by_key()['color']
+
+            # Create objective response color dictionary
+            # Map responses to colors from the style's color cycle
+            objective_responses = ['CR', 'PR', 'SD', 'PD']
+
+            self.objective_response_colors = {}
+
+            # Assign colors to each response type
+            for i, response in enumerate(objective_responses):
+                # Use modulo to cycle through colors if we have more responses than colors
+                color_idx = i % len(colors)
+                self.objective_response_colors[response] = colors[color_idx]
+
+            # Optionally, store all available colors for the combo box
+            self.available_style_colors = list(colors)
+
+        return self.objective_response_colors
     def update_experiment_view(self):
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
@@ -290,6 +351,81 @@ class TumorVolumeExperimentWindow(QMainWindow):
         plot_style = self.get_plot_style()
         self.update_experiment_view()
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
+
+        # Update Objective Response Plot Options
+        combo_boxes = [self.ui.comboBox_objective_plot_cr, self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_sd, self.ui.comboBox_objective_plot_pd]
+        available_style_colors = self.get_style_colors()
+        self._populate_color_comboboxes(combo_boxes, available_style_colors)
+    def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
+        """Populate ALL combo boxes with ALL available colors from the current style.
+
+        Args:
+            combo_boxes: List of combo box objects to populate. If None, attempts to
+                         find combo boxes using default naming convention.
+        """
+
+        # If no combo boxes provided, try default naming convention
+        if combo_boxes is None:
+            combo_boxes = []
+            response_types = ['CR', 'PR', 'SD', 'PD']
+
+            for response in response_types:
+                combo_box_name = f'comboBox_{response}_color'
+                if hasattr(self.ui, combo_box_name):
+                    combo_boxes.append(getattr(self.ui, combo_box_name))
+
+        # Populate EACH combo box with ALL available colors
+        for idx, combo_box in enumerate(combo_boxes):
+            combo_box.clear()
+
+            # Add ALL colors from the style to this combo box
+            for i, color in enumerate(self.available_style_colors):
+                # Create a colored icon for visual reference
+                pixmap = QPixmap(20, 20)
+                pixmap.fill(QColor(color))
+                icon = QIcon(pixmap)
+
+                # Add to combo box with color name/hex
+                color_name = f"Color {i+1} ({color})"
+                combo_box.addItem(icon, color_name, userData=color)
+                combo_box.setCurrentIndex(idx)
+
+    # Custom Figure
+    def update_objective_response_bar_plot(self):
+        # Send update to command line
+        print(f'update_objective_response_bar_plot')
+
+        # Create new dictionary
+        current_colors = self.get_style_colors_2()
+        print(f'current_colors: {current_colors}')
+        pd_color = current_colors[self.ui.comboBox_objective_plot_pr.currentIndex()]
+        sd_color = current_colors[self.ui.comboBox_objective_plot_sd.currentIndex()]
+        pr_color = current_colors[self.ui.comboBox_objective_plot_pr.currentIndex()]
+        cr_color = current_colors[self.ui.comboBox_objective_plot_cr.currentIndex()]
+
+        # Create new color dictionary
+        objective_response_color_dict = {'PD':pd_color, 'SD':sd_color, 'PR':pr_color, 'CR':cr_color}
+        ["CR", "PR", "SD", "PD"]
+        self.tv_data_obj.objective_response_colors = objective_response_color_dict.copy()
+
+        # Check if Objective Response Curve is present
+        updated_style = self.get_plot_style()
+        selected_plot_cbox  = [self.ui.comboBox_configuration_plot_upper_left, self.ui.comboBox_configuration_plot_upper_right,
+                               self.ui.comboBox_configuration_plot_lower_left, self.ui.comboBox_configuration_plot_lower_right]
+        selected_gviews = [self.graphicsView_visual_top_left,    self.graphicsView_visual_top_right,
+                           self.graphicsView_visual_bottom_left, self.graphicsView_visual_bottom_right]
+        for splot_cbox, s_gview in zip(selected_plot_cbox, selected_gviews):
+            plot_name = splot_cbox.currentText()
+            if plot_name == 'Objective_Response_Bar':
+                experiment_name = self.ui.comboBox_configuration_experiments.currentText()
+                plot_function_name = self.plotting_function_dict[plot_name]
+                print(f'experiment_name = {experiment_name}')
+                print(f'self.plotting_function_dict = {self.plotting_function_dict}')
+                experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_name]
+                print(f'experiment_obj = {experiment_obj}')
+                experiment_obj.plot_to_widget_by_name(plot_function_name, s_gview, plot_style=updated_style,
+                    objective_response_color_dict = objective_response_color_dict)
+
 
     # Interface Utilities
     def toggle_graph_configuration_group(self):
@@ -308,15 +444,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
         set_layout_visible(self.ui.verticalLayout_plot_scienceplot_options, bool(new_index))
         set_layout_visible(self.ui.verticalLayout_matplotlib_options,not bool(new_index))
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
-    # def toggle_plot_style_group(self, checked):
-    #     set_layout_visible(self.ui.verticalLayout_plot_style_group, checked)
-    #     if checked == True:
-    #         plot_style_selection = self.ui.comboBox_plot_style_module.currentIndex()
-    #         self.toggle_style_widgets(bool(plot_style_selection))
-    # def toggle_plot_configureation_group(self, checked):
-    #     set_layout_visible(self.ui.verticalLayout_plot_configuration, checked)
-    # def toggle_plot_objective_response_group(self, checked):
-    #     set_layout_visible(self.ui.verticalLayout_groupbox_objective_response_2, checked)
+
+    # Group box animation code (could be consolidated with a dictionary)
     def _animate_style_groupbox(self, groupbox: QGroupBox, expanded: bool):
         header_height = groupbox.fontMetrics().height() + 16
 

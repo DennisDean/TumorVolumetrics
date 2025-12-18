@@ -2022,7 +2022,8 @@ class TumorVolumeExperimentClass():
         return fig, ax
     def proportion_in_objective_response_classification_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
             show_legend=False, show_axis_labels=False, compute_day: int | None = None,
-            title="Objective Response Distribution by Study", figsize=(10, 6), parent_widget=None):
+            title="Objective Response Distribution by Study", figsize=(10, 6), parent_widget=None,
+            objective_response_color_dict:dict[str,str]|None = None):
         """
         Create a stacked 100% bar plot showing objective response proportions
         for each study, with count and percentage inside each bar segment.
@@ -2057,7 +2058,13 @@ class TumorVolumeExperimentClass():
         """
 
         OR_ORDER = ["CR", "PR", "SD", "PD"]
-        OR_COLORS = [self.objective_response_colors[o] for o in OR_ORDER]
+        if objective_response_color_dict is None:
+            OR_COLORS = [self.objective_response_colors[o] for o in OR_ORDER]
+            print(f'Using default in colorsObjective Response Colors: {objective_response_color_dict}')
+        else:
+            OR_COLORS = [objective_response_color_dict[o] for o in OR_ORDER]
+            print(f'Passing in colorsObjective Response Colors: {objective_response_color_dict}')
+        print(f'update_objective_response_bar_plot = {self.objective_response_colors}')
 
         study_keys = sorted(self.study_keys)
 
