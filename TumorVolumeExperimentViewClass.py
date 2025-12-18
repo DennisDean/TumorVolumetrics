@@ -1,6 +1,7 @@
 # Code for displaying a tumor experiment pllots
 
 #TODO: Semantic color coding of objective response with gray and blue tones
+#TODO: Check with a dataset that contains multuple experiments
 
 # Set up a module-level logger
 import logging
