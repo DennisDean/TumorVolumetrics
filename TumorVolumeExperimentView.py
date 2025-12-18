@@ -380,12 +380,12 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_13.addWidget(self.label_14)
 
-        self.comboBox_objective_plot_cr = QComboBox(self.groupBox_objective_response)
-        self.comboBox_objective_plot_cr.setObjectName(u"comboBox_objective_plot_cr")
-        self.comboBox_objective_plot_cr.setMinimumSize(QSize(0, 25))
-        self.comboBox_objective_plot_cr.setMaximumSize(QSize(16777215, 25))
+        self.comboBox_objective_plot_pd = QComboBox(self.groupBox_objective_response)
+        self.comboBox_objective_plot_pd.setObjectName(u"comboBox_objective_plot_pd")
+        self.comboBox_objective_plot_pd.setMinimumSize(QSize(0, 25))
+        self.comboBox_objective_plot_pd.setMaximumSize(QSize(16777215, 25))
 
-        self.horizontalLayout_13.addWidget(self.comboBox_objective_plot_cr)
+        self.horizontalLayout_13.addWidget(self.comboBox_objective_plot_pd)
 
 
         self.verticalLayout_groupbox_objective_response.addLayout(self.horizontalLayout_13)
@@ -401,12 +401,12 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_12.addWidget(self.label_15)
 
-        self.comboBox_objective_plot_pr = QComboBox(self.groupBox_objective_response)
-        self.comboBox_objective_plot_pr.setObjectName(u"comboBox_objective_plot_pr")
-        self.comboBox_objective_plot_pr.setMinimumSize(QSize(0, 25))
-        self.comboBox_objective_plot_pr.setMaximumSize(QSize(16777215, 25))
+        self.comboBox_objective_plot_sd = QComboBox(self.groupBox_objective_response)
+        self.comboBox_objective_plot_sd.setObjectName(u"comboBox_objective_plot_sd")
+        self.comboBox_objective_plot_sd.setMinimumSize(QSize(0, 25))
+        self.comboBox_objective_plot_sd.setMaximumSize(QSize(16777215, 25))
 
-        self.horizontalLayout_12.addWidget(self.comboBox_objective_plot_pr)
+        self.horizontalLayout_12.addWidget(self.comboBox_objective_plot_sd)
 
 
         self.verticalLayout_groupbox_objective_response.addLayout(self.horizontalLayout_12)
@@ -423,12 +423,12 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_10.addWidget(self.label_11)
 
-        self.comboBox_objective_plot_pd = QComboBox(self.groupBox_objective_response)
-        self.comboBox_objective_plot_pd.setObjectName(u"comboBox_objective_plot_pd")
-        self.comboBox_objective_plot_pd.setMinimumSize(QSize(0, 25))
-        self.comboBox_objective_plot_pd.setMaximumSize(QSize(16777215, 25))
+        self.comboBox_objective_plot_pr = QComboBox(self.groupBox_objective_response)
+        self.comboBox_objective_plot_pr.setObjectName(u"comboBox_objective_plot_pr")
+        self.comboBox_objective_plot_pr.setMinimumSize(QSize(0, 25))
+        self.comboBox_objective_plot_pr.setMaximumSize(QSize(16777215, 25))
 
-        self.horizontalLayout_10.addWidget(self.comboBox_objective_plot_pd)
+        self.horizontalLayout_10.addWidget(self.comboBox_objective_plot_pr)
 
 
         self.verticalLayout_groupbox_objective_response.addLayout(self.horizontalLayout_10)
@@ -444,12 +444,12 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_11.addWidget(self.label_16)
 
-        self.comboBox_objective_plot_sd = QComboBox(self.groupBox_objective_response)
-        self.comboBox_objective_plot_sd.setObjectName(u"comboBox_objective_plot_sd")
-        self.comboBox_objective_plot_sd.setMinimumSize(QSize(0, 25))
-        self.comboBox_objective_plot_sd.setMaximumSize(QSize(16777215, 25))
+        self.comboBox_objective_plot_cr = QComboBox(self.groupBox_objective_response)
+        self.comboBox_objective_plot_cr.setObjectName(u"comboBox_objective_plot_cr")
+        self.comboBox_objective_plot_cr.setMinimumSize(QSize(0, 25))
+        self.comboBox_objective_plot_cr.setMaximumSize(QSize(16777215, 25))
 
-        self.horizontalLayout_11.addWidget(self.comboBox_objective_plot_sd)
+        self.horizontalLayout_11.addWidget(self.comboBox_objective_plot_cr)
 
 
         self.verticalLayout_groupbox_objective_response.addLayout(self.horizontalLayout_11)

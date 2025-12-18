@@ -679,7 +679,7 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QComboBox" name="comboBox_objective_plot_cr">
+                  <widget class="QComboBox" name="comboBox_objective_plot_pd">
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
@@ -724,7 +724,7 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QComboBox" name="comboBox_objective_plot_pr">
+                  <widget class="QComboBox" name="comboBox_objective_plot_sd">
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
@@ -772,7 +772,7 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QComboBox" name="comboBox_objective_plot_pd">
+                  <widget class="QComboBox" name="comboBox_objective_plot_pr">
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
@@ -817,7 +817,7 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QComboBox" name="comboBox_objective_plot_sd">
+                  <widget class="QComboBox" name="comboBox_objective_plot_cr">
                    <property name="minimumSize">
                     <size>
                      <width>0</width>

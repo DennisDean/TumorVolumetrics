@@ -2060,11 +2060,8 @@ class TumorVolumeExperimentClass():
         OR_ORDER = ["CR", "PR", "SD", "PD"]
         if objective_response_color_dict is None:
             OR_COLORS = [self.objective_response_colors[o] for o in OR_ORDER]
-            print(f'Using default in colorsObjective Response Colors: {objective_response_color_dict}')
         else:
             OR_COLORS = [objective_response_color_dict[o] for o in OR_ORDER]
-            print(f'Passing in colorsObjective Response Colors: {objective_response_color_dict}')
-        print(f'update_objective_response_bar_plot = {self.objective_response_colors}')
 
         study_keys = sorted(self.study_keys)
 
@@ -2140,7 +2137,7 @@ class TumorVolumeExperimentClass():
 
                     if count > 0 and height > 0 and total > 0:
                         pct = height * 100
-                        label_text = f"{or_code}\n\n{count} ({pct:.0f}%)"
+                        label_text = f"{or_code}\n\n{count} ({pct:.0f}{"%"})"
 
                         ax.text(
                             bar.get_x() + bar.get_width() / 2,
@@ -2305,7 +2302,7 @@ class TumorVolumeExperimentClass():
         #   NO DATA TO PLOT
         # ---------------------------------------------------------
         if len(study_labels) == 0:
-            print("No AUC data available to plot")
+            logger.info("No AUC data available to plot")
             return None
 
         # ---------------------------------------------------------
@@ -2915,7 +2912,7 @@ class TumorVolumeDataClass():
         try:
             from lxml import etree
         except Exception:
-            print("lxml is not installed. Install it (pip install lxml) to perform XSD validation.")
+            logger.info("lxml is not installed. Install it (pip install lxml) to perform XSD validation.")
             return False
 
         xml_doc = etree.parse(xml_path)
@@ -2924,9 +2921,9 @@ class TumorVolumeDataClass():
         schema = etree.XMLSchema(schema_doc)
         valid = schema.validate(xml_doc)
         if not valid:
-            print("Validation errors:")
+            logger.info("Validation errors:")
             for err in schema.error_log:
-                print(err.message)
+                logger.info(err.message)
         return valid
     def dataframe_to_csv(self, df: pd.DataFrame, csv_path: str, index=False):
         """

@@ -1,5 +1,7 @@
 # Code for displaying a tumor experiment pllots
 
+#TODO: Semantic color coding of objective response with gray and blue tones
+
 # Set up a module-level logger
 import logging
 logger = logging.getLogger(__name__)
@@ -12,9 +14,6 @@ from FigureGraphicsViewClass import FigureGraphicsView
 # Plotting
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-import matplotlib.patches as mpatches
-
 
 # Interface
 from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox
@@ -71,7 +70,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Setup and Draw Window
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle("Tumor Volume File")
+        self.setWindowTitle("Tumor Volume Experiment")
 
         # Show plotting configuration layout
         self.ui.actionPlot_Configuration.triggered.connect(self.toggle_graph_configuration_group)
@@ -263,8 +262,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
     def initialize_objective_response_plot_groupbox(self):
         # Get current style color selection
         available_style_colors = self.get_style_colors()
-        orc_cboxes = [self.ui.comboBox_objective_plot_cr, self.ui.comboBox_objective_plot_pr,
-                      self.ui.comboBox_objective_plot_sd, self.ui.comboBox_objective_plot_pd]
+        orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
+                      self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         self._populate_color_comboboxes(orc_cboxes, available_style_colors)
         self.available_style_colors = available_style_colors
 
@@ -328,7 +327,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
             # Create objective response color dictionary
             # Map responses to colors from the style's color cycle
-            objective_responses = ['CR', 'PR', 'SD', 'PD']
+            objective_responses = ['PD', 'SD', 'PR', 'CR']
 
             self.objective_response_colors = {}
 
@@ -353,7 +352,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
 
         # Update Objective Response Plot Options
-        combo_boxes = [self.ui.comboBox_objective_plot_cr, self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_sd, self.ui.comboBox_objective_plot_pd]
+        combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
+                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         available_style_colors = self.get_style_colors()
         self._populate_color_comboboxes(combo_boxes, available_style_colors)
     def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
@@ -367,7 +367,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # If no combo boxes provided, try default naming convention
         if combo_boxes is None:
             combo_boxes = []
-            response_types = ['CR', 'PR', 'SD', 'PD']
+            response_types = ['PD', 'SD', 'PR', 'CR']
 
             for response in response_types:
                 combo_box_name = f'comboBox_{response}_color'
@@ -375,6 +375,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
                     combo_boxes.append(getattr(self.ui, combo_box_name))
 
         # Populate EACH combo box with ALL available colors
+        count = 0
         for idx, combo_box in enumerate(combo_boxes):
             combo_box.clear()
 
@@ -388,24 +389,20 @@ class TumorVolumeExperimentWindow(QMainWindow):
                 # Add to combo box with color name/hex
                 color_name = f"Color {i+1} ({color})"
                 combo_box.addItem(icon, color_name, userData=color)
-                combo_box.setCurrentIndex(idx)
+            combo_box.setCurrentIndex(count)
+            count += 1
 
     # Custom Figure
     def update_objective_response_bar_plot(self):
-        # Send update to command line
-        print(f'update_objective_response_bar_plot')
-
         # Create new dictionary
         current_colors = self.get_style_colors_2()
-        print(f'current_colors: {current_colors}')
-        pd_color = current_colors[self.ui.comboBox_objective_plot_pr.currentIndex()]
+        pd_color = current_colors[self.ui.comboBox_objective_plot_pd.currentIndex()]
         sd_color = current_colors[self.ui.comboBox_objective_plot_sd.currentIndex()]
         pr_color = current_colors[self.ui.comboBox_objective_plot_pr.currentIndex()]
         cr_color = current_colors[self.ui.comboBox_objective_plot_cr.currentIndex()]
 
         # Create new color dictionary
         objective_response_color_dict = {'PD':pd_color, 'SD':sd_color, 'PR':pr_color, 'CR':cr_color}
-        ["CR", "PR", "SD", "PD"]
         self.tv_data_obj.objective_response_colors = objective_response_color_dict.copy()
 
         # Check if Objective Response Curve is present
@@ -419,13 +416,9 @@ class TumorVolumeExperimentWindow(QMainWindow):
             if plot_name == 'Objective_Response_Bar':
                 experiment_name = self.ui.comboBox_configuration_experiments.currentText()
                 plot_function_name = self.plotting_function_dict[plot_name]
-                print(f'experiment_name = {experiment_name}')
-                print(f'self.plotting_function_dict = {self.plotting_function_dict}')
                 experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_name]
-                print(f'experiment_obj = {experiment_obj}')
                 experiment_obj.plot_to_widget_by_name(plot_function_name, s_gview, plot_style=updated_style,
                     objective_response_color_dict = objective_response_color_dict)
-
 
     # Interface Utilities
     def toggle_graph_configuration_group(self):
