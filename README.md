@@ -34,6 +34,17 @@ The core component under development is the *[TumorVolumeTimeSeriesClass](media/
 
 A design requirement for all classes is flexibility: they support **command-line use, interactive workflows, and GUI-driven analysis**.
 
+<p align="center">    
+<img src="src/media/tv_view.png" /><br>
+<b>Figure 1.</b> Configurable experiment view.
+</p>
+
+
+<p align="center">    
+<img src="src/media/tv_view_with_configuration_options.png"  width="600" /><br>
+<b>Figure 2.</b> Configurable experiment view with configuration options shown.
+</p>
+
 ---
 
 ## Load Tumor Volume File Grouping
@@ -49,8 +60,8 @@ Key actions:
 The XML format is intentionally extensible. For example, units, mouse strain, and tumor-specific details can be included for downstream or custom analyses.
 
 <p align="center">    
-<img src="media/tumor_volumetrics_main_interface.png" /><br>
-<b>Figure 1.</b> Simplified interface enables rapid access and visualization.
+<img src="src/media/tumor_volumetrics_main_interface.png" /><br>
+<b>Figure 3.</b> Simplified interface enables rapid access and visualization.
 </p>
 
 ---
@@ -60,8 +71,8 @@ The XML format is intentionally extensible. For example, units, mouse strain, an
 The *Show* panel provides quick navigation of loaded data using combo boxes for selecting contributor, disease, experiment, study, arm, and individual time series. Currently, selecting and displaying an item reveals the underlying CSV rows. Interactive plotting tools for experiments and subgroups are under active development.
 
 <p align="center">    
-<img src="media/tumor_voumetrics_file_screen.png" /><br>
-<b>Figure 2.</b> File selection and inspection interface.</b>
+<img src="src/media/tumor_voumetrics_file_screen.png" /><br>
+<b>Figure 4.</b> File selection and inspection interface.</b>
 </p>
 
 ---
@@ -69,23 +80,23 @@ The *Show* panel provides quick navigation of loaded data using combo boxes for 
 ## Figure Examples
 
 <p align="center">    
-<img src="media/spider_with_weights.png" /><br>
-<b>Figure 3.</b> Tumor volume spider plots with weights.
+<img src="src/media/spider_with_weights.png" /><br>
+<b>Figure 5.</b> Tumor volume spider plots with weights.
 </p>
 
 <p align="center">    
-<img src="media/tumor_volume_average_with_std.png" /><br>
-<b>Figure 4.</b> Average tumor volume curves with standard deviation.
+<img src="src/media/tumor_volume_average_with_std.png" /><br>
+<b>Figure 6.</b> Average tumor volume curves with standard deviation.
 </p>
 
 <p align="center">    
-<img src="media/kaplan_meier_with_at_risk_plot_table.png" /> <br>
-<b>Figure 5.</b> Event-free Kaplan–Meier curve with at-risk table.
+<img src="src/media/kaplan_meier_with_at_risk_plot_table.png" /> <br>
+<b>Figure 7.</b> Event-free Kaplan–Meier curve with at-risk table.
 </p>
 
 <p align="center">    
-<img src="media/tumor_volume_change_as_objective_response.png" /><br>
-<b>Figure 6.</b> Change in tumor volume plotted as objective response.
+<img src="src/media/tumor_volume_change_as_objective_response.png" /><br>
+<b>Figure 8.</b> Change in tumor volume plotted as objective response.
 </p>
 
 ---
