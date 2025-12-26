@@ -18,7 +18,7 @@ This repository is under active development and does not yet represent a stable 
 
 ### Tumor Volume Classes
 
-The core component under development is the *[TumorVolumeTimeSeriesClass](media/TumorVolumeClassReadMe.md)*, which supports data verification, metadata inspection, summaries, and basic tumor-volume plots. The file includes the following class structures:
+The core component under development is the *[TumorVolumeTimeSeriesClass](src/media/TumorVolumeClassReadMe.md)*, which supports data verification, metadata inspection, summaries, and basic tumor-volume plots. The file includes the following class structures:
 
 - **Tumor Volume Data Class**  
   Loads tumor volume time-series data from CSV. Includes utilities for logging summaries and input checks.
@@ -109,7 +109,6 @@ The *Show* panel provides quick navigation of loaded data using combo boxes for 
 
 ## Features in Progress
 
-- Interactive experiment‐level viewer with plotting and export  
 - Extensible XML schema for metadata-rich saving of tumor volume datasets  
 - Enhanced CSV validation and interactive sorting tools  
 - Expanded plotting options for arms, studies, and experiments  
