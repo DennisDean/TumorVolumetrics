@@ -41,7 +41,7 @@ A design requirement for all classes is flexibility: they support **command-line
 
 
 <p align="center">    
-<img src="src/media/tv_view_with_configuration_options.png"  width="600" /><br>
+<img src="src/media/tv_view_with_configuration_options.png"  /><br>
 <b>Figure 2.</b> Configurable experiment view with configuration options shown.
 </p>
 
