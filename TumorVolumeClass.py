@@ -632,6 +632,36 @@ class TumorVolumeStudyClass():
             logger.info(f'     {arm}: ' + ', '.join(self.study_arms_dict[arm]))
 
     # Visualization
+    def plot_to_widget_by_name(self, plot_name, parent_widget, plot_style=None, **plot_kwargs):
+        """
+        Call a plotting function by name and render to a widget.
+
+        Args:
+            plot_name: String name of the plotting method
+            parent_widget: Qt widget to embed the plot
+            **plot_kwargs: Any keyword arguments to pass to the plotting function
+
+        Returns:
+            Result from the plotting function (typically (fig, ax) tuple)
+
+        Example:
+            # Call by string name
+            experiment_obj.plot_to_widget_by_name(
+                "plot_average_tumor_volume_change_bar",
+                graphic_view,
+                error_metric="sem"
+            )
+        """
+        # Get the method by name
+        plot_function = getattr(self, plot_name, None)
+        print(f'plot_name={plot_name},plot_function={plot_function} ')
+        if plot_function is None:
+            raise ValueError(f"Plot function '{plot_name}' not found")
+
+        if not callable(plot_function):
+            raise ValueError(f"'{plot_name}' is not a callable method")
+
+        return plot_function(parent_widget=parent_widget, plot_style=plot_style, **plot_kwargs)
     def plot_spider(self, figsize=(10, 6),
                     volume_label="Tumor Volume", volume_units="mm^3", weight_label="Weight", weight_units="mg",
                     title=None, plot_weight=True, show_individual=True, show_aggregate=True, aggregate_sem=True,

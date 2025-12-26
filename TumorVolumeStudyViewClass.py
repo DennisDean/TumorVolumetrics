@@ -85,6 +85,11 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.experiments = tv_data_obj.unique_experiments
         self.ui.comboBox_configuration_experiments.addItems(self.experiments)
 
+        # Get Studies
+        self.studies = tv_data_obj.unique_studies
+        self.ui.comboBox_configuration_study.addItems(self.studies)
+        print(self.studies)
+
         # Set plot configurations
         self.initial_configuration = '4'
         self.plot_config_to_index = lambda x: int(x)-1
@@ -192,9 +197,25 @@ class TumorVolumeStudyWindow(QMainWindow):
                             "Objective_Response_Bar":"proportion_in_objective_response_classification_bar", "AUC_with_Control_Bar":"plot_auc_with_controls_bar",
                             "Log2_Fold_Change_w_Error":"plot_log2fc_points"}
 
+        # Setup study plotting
+        self.plot_types_2 = ["Spider_Plot", "Event_Free_Survivial", "Area_Under_the_Curve",
+                           "Percent_TV_Change", "Objective_Response"]
+        self.plot_select_comboBox_2 = [self.ui.comboBox_configuration_plot_upper_left_2,
+                                     self.ui.comboBox_configuration_plot_upper_right_2,
+                                     self.ui.comboBox_configuration_plot_lower_left_2,
+                                     self.ui.comboBox_configuration_plot_lower_right_2]
+        self.plotting_function_dict_2 = {"Spider_Plot": "plot_spider",
+                                       "Event_Free_Survivial": "plot_event_free_survival",
+                                       "Area_Under_the_Curve": "plot_auc_bar",
+                                       "Percent_TV_Change": "plot_percent_tumor_vol_change_bar",
+                                       "Objective_Response": "plot_vol_change_as_objective_response_bar"}
+
         # Initialize selection comboBoxes
         for idx, cbox in enumerate(self.plot_select_comboBox):
             cbox.addItems(self.plot_types)
+            cbox.setCurrentIndex(idx)
+        for idx, cbox in enumerate(self.plot_select_comboBox_2):
+            cbox.addItems(self.plot_types_2)
             cbox.setCurrentIndex(idx)
 
         # Draw plots
@@ -203,6 +224,9 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Connect combobox change to figure update
         for cbox in self.plot_select_comboBox:
             cbox.currentTextChanged.connect(self.update_experiment_view)
+        for cbox in self.plot_select_comboBox_2:
+            cbox.currentTextChanged.connect(self.update_experiment_view)
+
     def initialize_style_sheets_functions(self):
         # Set up highlevel options
         self.current_plot_style = 0
@@ -525,6 +549,18 @@ class TumorVolumeStudyWindow(QMainWindow):
             plot_name = self.plotting_function_dict[selected_plot]
             graphic_view = self.graphic_views[idx]
             experiment_obj.plot_to_widget_by_name(plot_name, graphic_view, plot_style = updated_style)
+
+        # Get plot settings
+        study_id = self.ui.comboBox_configuration_study.currentText()
+        num_figures = int(self.ui.comboBox_configuration_num_of_plots.currentText())
+        study_obj = self.tv_data_obj.tumor_vol_study_dict[study_id]
+
+        # Update each plot
+        for idx in range(num_figures):
+            selected_plot = self.plot_select_comboBox_2[idx].currentText()
+            plot_name = self.plotting_function_dict_2[selected_plot]
+            graphic_view = self.graphic_views[idx]
+            study_obj.plot_to_widget_by_name(plot_name, graphic_view, plot_style=updated_style)
 
 
 
