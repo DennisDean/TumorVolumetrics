@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 # Interface
 from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox
-from PySide6.QtCore import QPropertyAnimation, QEasingCurve, QSize
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QColor, QPixmap, QIcon
 
 # Tumor volume classes
@@ -74,8 +74,9 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.setWindowTitle("Tumor Volume Experiment")
 
         # Show plotting configuration layout
+        initial_plot_configuration_visability = False
         self.ui.actionPlot_Configuration.triggered.connect(self.toggle_graph_configuration_group)
-        set_layout_visible(self.ui.verticalLayout_visual_graph_settings, True)
+        set_layout_visible(self.ui.verticalLayout_visual_graph_settings, initial_plot_configuration_visability)
 
         # Save data object
         self.tv_data_obj = tv_data_obj

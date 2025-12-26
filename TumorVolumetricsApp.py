@@ -78,7 +78,7 @@ import os
 import sys
 import matplotlib as mpl
 
-
+import TumorVolumeStudyViewClass
 from logging_config import logger
 __all__ = ['logger']
 
@@ -94,6 +94,7 @@ from TumorVolumetricsInterface import Ui_MainWindow
 from TumorVolumeClass import TumorVolumeDataClass
 from TumorVolumeFileViewClass import TumorVolumeFileWindow
 from TumorVolumeExperimentViewClass import TumorVolumeExperimentWindow
+from TumorVolumeStudyViewClass import TumorVolumeStudyWindow
 
 # Utilities
 def set_layout_visible(layout, visible: bool):
@@ -180,7 +181,7 @@ class MainApp(QMainWindow):
         self.ui.pushButton_show_contributor.clicked.connect(self.pushbutton_show_csv_file)
         self.ui.pushButton_show_disease.clicked.connect(self.pushbutton_show_csv_file)
         self.ui.pushButton_show_experiment.clicked.connect(self.pushbutton_show_experiment_viewer)
-        self.ui.pushButton_show_study.clicked.connect(self.pushbutton_show_csv_file)
+        self.ui.pushButton_show_study.clicked.connect(self.pushbutton_show_study_viewer)
         self.ui.pushButton_show_arm.clicked.connect(self.pushbutton_show_csv_file)
         self.ui.pushButton_show_curves.clicked.connect(self.pushbutton_show_csv_file)
 
@@ -189,6 +190,7 @@ class MainApp(QMainWindow):
         self.tv_fn:str|None = None
         self.tumor_volume_file_window:TumorVolumeFileWindow|None = None
         self.tumor_volume_experiment_window:TumorVolumeExperimentViewClass|None = None
+        self.tumor_volume_study_window:TumorVolumeStudyViewClass|None = None
 
         # Check if Latex is available
         self.use_latex = latex_available()
@@ -332,12 +334,22 @@ class MainApp(QMainWindow):
         logger.info(f'Displaying tumor volume experiment viewer: {self.tumor_volume_file_path}')
 
         if self.tumor_volume_experiment_window is None:
-            self.tumor_volume_experiment_window = TumorVolumeExperimentWindow(self.tumor_volume_data_obj)
+            self.tumor_volume_study_window = TumorVolumeExperimentWindow(self.tumor_volume_data_obj)
 
         # Let the window populate itself
-        self.tumor_volume_experiment_window.show()
-        self.tumor_volume_experiment_window.raise_()
-        self.tumor_volume_experiment_window.activateWindow()
+        self.tumor_volume_study_window.show()
+        self.tumor_volume_study_window.raise_()
+        self.tumor_volume_study_window.activateWindow()
+    def pushbutton_show_study_viewer(self):
+        logger.info(f'Displaying tumor volume study viewer: {self.tumor_volume_file_path}')
+
+        if self.tumor_volume_study_window is None:
+            self.tumor_volume_study_window = TumorVolumeStudyWindow(self.tumor_volume_data_obj)
+
+        # Let the window populate itself
+        self.tumor_volume_study_window.show()
+        self.tumor_volume_study_window.raise_()
+        self.tumor_volume_study_window.activateWindow()
 
 # Start Application
 def main():
