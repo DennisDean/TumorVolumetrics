@@ -631,7 +631,7 @@ class TumorVolumeStudyClass():
         for arm in self.unique_arms:
             logger.info(f'     {arm}: ' + ', '.join(self.study_arms_dict[arm]))
 
-    # Visualization
+    # Visualization Utilities
     def plot_to_widget_by_name(self, plot_name, parent_widget, plot_style=None, **plot_kwargs):
         """
         Call a plotting function by name and render to a widget.
@@ -654,7 +654,6 @@ class TumorVolumeStudyClass():
         """
         # Get the method by name
         plot_function = getattr(self, plot_name, None)
-        print(f'plot_name={plot_name},plot_function={plot_function} ')
         if plot_function is None:
             raise ValueError(f"Plot function '{plot_name}' not found")
 
@@ -662,15 +661,97 @@ class TumorVolumeStudyClass():
             raise ValueError(f"'{plot_name}' is not a callable method")
 
         return plot_function(parent_widget=parent_widget, plot_style=plot_style, **plot_kwargs)
-    def plot_spider(self, figsize=(10, 6),
+    def _create_styled_figure(self, plot_style=None, parent_widget=None):
+        """
+        Create a matplotlib figure with optional style applied, supporting both standalone and Qt widget modes.
+
+        Args:
+            plot_style: Style(s) to apply. Can be:
+                       - None: Use default matplotlib style
+                       - str: Single style name (e.g., 'seaborn-v0_8', 'ggplot')
+                       - list: Multiple styles (e.g., ['science', 'ieee'] for SciencePlots)
+            parent_widget: Optional Qt widget to embed the plot. If None, creates standalone figure.
+
+        Returns:
+            tuple: (fig, ax, style_context) where:
+                - fig: matplotlib Figure object
+                - ax: matplotlib Axes object
+                - style_context: Context manager for style (use with 'with' statement)
+
+        Usage:
+            fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
+            with style_ctx:
+                # All plotting code here
+                ax.plot(x, y)
+                ax.set_title("My Plot")
+        """
+        # Create appropriate style context
+        if plot_style is not None:
+            style_context = plt.style.context(plot_style)
+        else:
+            style_context = nullcontext()
+
+        # Create figure WITHOUT manually entering the context
+        if parent_widget:
+            # Create Figure object for Qt widget embedding (size controlled by layout)
+            fig = Figure()
+            ax = fig.add_subplot(111)
+        else:
+            # Create standalone pyplot figure (will use matplotlib defaults or rcParams)
+            fig, ax = plt.subplots()
+
+        if plot_style:
+            with plt.style.context(plot_style):
+                # Get the colors from the style
+                fig_color = plt.rcParams['figure.facecolor']
+                axes_color = plt.rcParams['axes.facecolor']
+                text_color = plt.rcParams['text.color']
+
+                # Apply them to your figure
+                fig.patch.set_facecolor(fig_color)
+                ax.set_facecolor(axes_color)
+                ax.tick_params(colors=text_color)
+                ax.xaxis.label.set_color(text_color)
+                ax.yaxis.label.set_color(text_color)
+                ax.title.set_color(text_color)
+                ax.spines['bottom'].set_color(text_color)
+                ax.spines['top'].set_color(text_color)
+                ax.spines['left'].set_color(text_color)
+                ax.spines['right'].set_color(text_color)
+
+        return fig, ax, style_context
+
+    # Visualization
+    def plot_spider(self, plot_style=None, figsize=(10, 6),
                     volume_label="Tumor Volume", volume_units="mm^3", weight_label="Weight", weight_units="mg",
                     title=None, plot_weight=True, show_individual=True, show_aggregate=True, aggregate_sem=True,
-                    error_bars=False, aggregate_marker=None, tv_transform_str="No Transform"):
+                    error_bars=False, aggregate_marker=None, tv_transform_str="No Transform", parent_widget=None):
         """
         Spider plot for tumor volume study data with optional aggregation curves.
 
+        Creates a spider plot showing individual and/or aggregate tumor volume trajectories.
+        Can be embedded in a Qt widget or displayed as a standalone matplotlib figure.
+
         Parameters
         ----------
+        plot_style : str, list, or None
+            Matplotlib style sheet(s) to apply. Can be a single style name or list of styles.
+            Examples: 'dark_background', 'seaborn-v0_8-darkgrid', ['dark_background', 'seaborn-v0_8-poster']
+        figsize : tuple
+            Figure size as (width, height) in inches. Defaults to (10, 6).
+            Only applies to standalone mode.
+        volume_label : str
+            Label for tumor volume y-axis.
+        volume_units : str
+            Units for tumor volume (e.g., "mm^3").
+        weight_label : str
+            Label for weight y-axis.
+        weight_units : str
+            Units for weight (e.g., "mg").
+        title : str or None
+            Plot title. If None, auto-generates title from study_id.
+        plot_weight : bool
+            Whether to include weight subplot.
         show_individual : bool
             Plot each individual mouse time series (spider lines).
         show_aggregate : bool
@@ -682,12 +763,31 @@ class TumorVolumeStudyClass():
         aggregate_marker : str or None
             Marker style for aggregate plots (e.g., 'o', 's', '^', 'D').
             If None, no markers are shown on aggregate lines.
-        plot_weight : bool
-            Whether to include weight subplot.
         tv_transform_str : str
             Transform to apply to tumor volume data. Options: "No Transform",
             "Percent Change", "Prop. Vol. Change", "Percent Prgress/Regress"
+        parent_widget : QWidget or None
+            Optional Qt widget to embed the plot. If provided, renders as
+            a FigureCanvas within this widget. If None, creates standalone
+            matplotlib figure. Defaults to None.
+
+        Returns
+        -------
+        tuple or None
+            (fig, ax_vol) or (fig, (ax_vol, ax_w)) - matplotlib Figure and Axes objects.
+            Returns None if no valid data to plot.
+
+        Side Effects (when parent_widget is provided)
+        ---------------------------------------------
+        - Sets self.current_tumor_volume_canvas to FigureCanvas
+        - Replaces parent_widget's layout contents
+
+        Raises
+        ------
+        ValueError
+            If no time-series data available or invalid transform specified.
         """
+        import numpy as np
 
         # Validate data
         if not self.study_tv_time_dict:
@@ -705,216 +805,383 @@ class TumorVolumeStudyClass():
         )
         has_weight = plot_weight and has_weight_data
 
-        # Color per arm
-        color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
-        arm_colors = {arm: color_cycle[i % len(color_cycle)]
-                      for i, arm in enumerate(self.unique_arms)}
-
-        # Create figure
+        # Create styled figure
         if has_weight:
-            fig, (ax_vol, ax_w) = plt.subplots(
-                2, 1, figsize=figsize, sharex=True,
-                gridspec_kw={'height_ratios': [4, 1]}
-            )
+            # Create multi-axis figure manually since _create_styled_figure returns single axis
+            if plot_style is not None:
+                style_context = plt.style.context(plot_style)
+            else:
+                from contextlib import nullcontext
+                style_context = nullcontext()
+
+            if parent_widget:
+                fig = Figure()
+                ax_vol = fig.add_subplot(2, 1, 1)
+                ax_w = fig.add_subplot(2, 1, 2, sharex=ax_vol)
+                fig.subplots_adjust(hspace=0.1)
+            else:
+                fig, (ax_vol, ax_w) = plt.subplots(
+                    2, 1, figsize=figsize, sharex=True,
+                    gridspec_kw={'height_ratios': [4, 1]}
+                )
+
+            if plot_style:
+                with plt.style.context(plot_style):
+                    # Get the colors from the style
+                    fig_color = plt.rcParams['figure.facecolor']
+                    axes_color = plt.rcParams['axes.facecolor']
+                    text_color = plt.rcParams['text.color']
+
+                    # Apply to figure
+                    fig.patch.set_facecolor(fig_color)
+
+                    # Apply to both axes
+                    for ax in [ax_vol, ax_w]:
+                        ax.set_facecolor(axes_color)
+                        ax.tick_params(colors=text_color)
+                        ax.xaxis.label.set_color(text_color)
+                        ax.yaxis.label.set_color(text_color)
+                        ax.title.set_color(text_color)
+                        for spine in ax.spines.values():
+                            spine.set_color(text_color)
+
+            style_ctx = style_context
         else:
-            fig, ax_vol = plt.subplots(figsize=figsize)
+            fig, ax_vol, style_ctx = self._create_styled_figure(plot_style, parent_widget)
             ax_w = None
 
-        # Storage for aggregation - now using dictionaries keyed by time point
-        arm_time_vol = {arm: {} for arm in self.unique_arms}
-        arm_time_wgt = {arm: {} for arm in self.unique_arms}
+        # Apply figsize only for standalone mode
+        if not parent_widget and figsize:
+            fig.set_size_inches(figsize)
 
-        # ================================
-        # 1. PLOT INDIVIDUAL TIME SERIES
-        # ================================
-        for arm in self.unique_arms:
-            color = arm_colors[arm]
+        with style_ctx:
+            # Color per arm - get from current style
+            color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+            arm_colors = {arm: color_cycle[i % len(color_cycle)]
+                          for i, arm in enumerate(self.unique_arms)}
+            line_color = plt.rcParams['text.color']  # Will adapt to theme
 
-            for mouse_id in self.study_arms_dict[arm]:
+            # Storage for aggregation - now using dictionaries keyed by time point
+            arm_time_vol = {arm: {} for arm in self.unique_arms}
+            arm_time_wgt = {arm: {} for arm in self.unique_arms}
 
-                ts = self.study_tv_time_dict.get(mouse_id)
-                if ts is None or ts.time_day is None or ts.tumor_volume is None:
-                    continue
-
-                # Apply transform to tumor volume data
-                transformed_volume = tv_transform_f(ts.tumor_volume)
-
-                # Store for aggregation by time point
-                for t, v in zip(ts.time_day, transformed_volume):
-                    if t not in arm_time_vol[arm]:
-                        arm_time_vol[arm][t] = []
-                    arm_time_vol[arm][t].append(v)
-
-                # Spider (volume)
-                if show_individual:
-                    ax_vol.plot(ts.time_day,
-                                transformed_volume,
-                                marker="o",
-                                alpha=0.7,
-                                linewidth=1.0,
-                                color=color)
-
-                # Weight
-                if has_weight and hasattr(ts, "tumor_weight") and ts.tumor_weight is not None:
-                    for t, w in zip(ts.time_day, ts.tumor_weight):
-                        if t not in arm_time_wgt[arm]:
-                            arm_time_wgt[arm][t] = []
-                        arm_time_wgt[arm][t].append(w)
-
-                    if show_individual:
-                        ax_w.plot(ts.time_day,
-                                  ts.tumor_weight,
-                                  marker="s",
-                                  alpha=0.7,
-                                  linewidth=1.0,
-                                  color=color)
-
-        # ================================
-        # 2. MEAN / AGGREGATE CURVES
-        # ================================
-        if show_aggregate:
+            # ================================
+            # 1. PLOT INDIVIDUAL TIME SERIES
+            # ================================
             for arm in self.unique_arms:
                 color = arm_colors[arm]
 
-                if len(arm_time_vol[arm]) == 0:
-                    continue
+                for mouse_id in self.study_arms_dict[arm]:
 
-                # Sort time points and compute statistics
-                time_points = sorted(arm_time_vol[arm].keys())
-                mean_vol = []
-                sem_vol = []
+                    ts = self.study_tv_time_dict.get(mouse_id)
+                    if ts is None or ts.time_day is None or ts.tumor_volume is None:
+                        continue
 
-                for t in time_points:
-                    values = np.array(arm_time_vol[arm][t])
-                    mean_vol.append(np.mean(values))
-                    if aggregate_sem:
-                        sem_vol.append(sem(values))
+                    # Apply transform to tumor volume data
+                    transformed_volume = tv_transform_f(ts.tumor_volume)
 
-                mean_vol = np.array(mean_vol)
-                sem_vol = np.array(sem_vol) if aggregate_sem else None
+                    # Store for aggregation by time point
+                    for t, v in zip(ts.time_day, transformed_volume):
+                        if t not in arm_time_vol[arm]:
+                            arm_time_vol[arm][t] = []
+                        arm_time_vol[arm][t].append(v)
 
-                # Plot mean tumor volume curve
-                if error_bars and aggregate_sem:
-                    # Error bars style (always with markers)
-                    ax_vol.errorbar(time_points, mean_vol,
-                                    yerr=sem_vol,
-                                    marker='o' if aggregate_marker is None else aggregate_marker,
-                                    markersize=6,
-                                    linewidth=2.8,
-                                    capsize=4,
-                                    capthick=2,
+                    # Spider (volume)
+                    if show_individual:
+                        ax_vol.plot(ts.time_day,
+                                    transformed_volume,
+                                    marker="o",
+                                    alpha=0.7,
+                                    linewidth=1.0,
                                     color=color)
-                else:
-                    # Line style (with optional markers)
-                    ax_vol.plot(time_points, mean_vol,
-                                marker=aggregate_marker,
-                                markersize=6 if aggregate_marker else None,
-                                linewidth=2.8,
-                                color=color)
 
-                    # SEM shading
-                    if aggregate_sem and sem_vol is not None:
-                        ax_vol.fill_between(time_points,
-                                            mean_vol - sem_vol,
-                                            mean_vol + sem_vol,
-                                            color=color,
-                                            alpha=0.25)
+                    # Weight
+                    if has_weight and hasattr(ts, "tumor_weight") and ts.tumor_weight is not None:
+                        for t, w in zip(ts.time_day, ts.tumor_weight):
+                            if t not in arm_time_wgt[arm]:
+                                arm_time_wgt[arm][t] = []
+                            arm_time_wgt[arm][t].append(w)
 
-                # Weight aggregation
-                if has_weight and len(arm_time_wgt[arm]) > 0:
-                    time_points_w = sorted(arm_time_wgt[arm].keys())
-                    mean_w = []
-                    sem_w = []
+                        if show_individual:
+                            ax_w.plot(ts.time_day,
+                                      ts.tumor_weight,
+                                      marker="s",
+                                      alpha=0.7,
+                                      linewidth=1.0,
+                                      color=color)
 
-                    for t in time_points_w:
-                        values = np.array(arm_time_wgt[arm][t])
-                        mean_w.append(np.mean(values))
+            # ================================
+            # 2. MEAN / AGGREGATE CURVES
+            # ================================
+            if show_aggregate:
+                for arm in self.unique_arms:
+                    color = arm_colors[arm]
+
+                    if len(arm_time_vol[arm]) == 0:
+                        continue
+
+                    # Sort time points and compute statistics
+                    time_points = sorted(arm_time_vol[arm].keys())
+                    mean_vol = []
+                    sem_vol = []
+
+                    for t in time_points:
+                        values = np.array(arm_time_vol[arm][t])
+                        mean_vol.append(np.mean(values))
                         if aggregate_sem:
-                            sem_w.append(sem(values))
+                            sem_vol.append(sem(values))
 
-                    mean_w = np.array(mean_w)
-                    sem_w = np.array(sem_w) if aggregate_sem else None
+                    mean_vol = np.array(mean_vol)
+                    sem_vol = np.array(sem_vol) if aggregate_sem else None
 
+                    # Plot mean tumor volume curve
                     if error_bars and aggregate_sem:
                         # Error bars style (always with markers)
-                        ax_w.errorbar(time_points_w, mean_w,
-                                      yerr=sem_w,
-                                      marker='s' if aggregate_marker is None else aggregate_marker,
-                                      markersize=6,
-                                      linewidth=2.8,
-                                      capsize=4,
-                                      capthick=2,
-                                      color=color)
+                        ax_vol.errorbar(time_points, mean_vol,
+                                        yerr=sem_vol,
+                                        marker='o' if aggregate_marker is None else aggregate_marker,
+                                        markersize=6,
+                                        linewidth=2.8,
+                                        capsize=4,
+                                        capthick=2,
+                                        color=color,
+                                        ecolor=line_color)
                     else:
                         # Line style (with optional markers)
-                        ax_w.plot(time_points_w, mean_w,
-                                  marker=aggregate_marker,
-                                  markersize=6 if aggregate_marker else None,
-                                  linewidth=2.8,
-                                  color=color)
+                        ax_vol.plot(time_points, mean_vol,
+                                    marker=aggregate_marker,
+                                    markersize=6 if aggregate_marker else None,
+                                    linewidth=2.8,
+                                    color=color)
 
-                        if aggregate_sem and sem_w is not None:
-                            ax_w.fill_between(time_points_w,
-                                              mean_w - sem_w,
-                                              mean_w + sem_w,
-                                              color=color,
-                                              alpha=0.25)
+                        # SEM shading
+                        if aggregate_sem and sem_vol is not None:
+                            ax_vol.fill_between(time_points,
+                                                mean_vol - sem_vol,
+                                                mean_vol + sem_vol,
+                                                color=color,
+                                                alpha=0.25)
 
-        # ================================
-        # 3. AXIS FORMATTING
-        # ================================
-        # Adjust label based on transform
-        volume_label_str = f"{volume_label} ({volume_units})"
-        if not volume_units:
-            volume_label_str = f"{volume_label}"
+                    # Weight aggregation
+                    if has_weight and len(arm_time_wgt[arm]) > 0:
+                        time_points_w = sorted(arm_time_wgt[arm].keys())
+                        mean_w = []
+                        sem_w = []
 
-        ax_vol.set_ylabel(volume_label_str)
-        ax_vol.set_xlabel("Time (days)")
-        ax_vol.minorticks_on()
-        ax_vol.grid(True, alpha=0.3)
-        ax_vol.grid(True, which='minor', linestyle=':', alpha=0.15)
+                        for t in time_points_w:
+                            values = np.array(arm_time_wgt[arm][t])
+                            mean_w.append(np.mean(values))
+                            if aggregate_sem:
+                                sem_w.append(sem(values))
 
-        # Add horizontal line at 0 for transformed data
-        if tv_transform_str != "No Transform":
-            ax_vol.axhline(y=0, color='k', linestyle='--', alpha=0.3, linewidth=1)
+                        mean_w = np.array(mean_w)
+                        sem_w = np.array(sem_w) if aggregate_sem else None
 
-        # Legend for arms
-        legend_handles = []
-        legend_labels = []
-        for arm, color in arm_colors.items():
-            h, = ax_vol.plot([], [], color=color, linewidth=3, label=arm)
-            legend_handles.append(h)
-            legend_labels.append(arm)
-        ax_vol.legend(legend_handles, legend_labels, title="Arms")
+                        if error_bars and aggregate_sem:
+                            # Error bars style (always with markers)
+                            ax_w.errorbar(time_points_w, mean_w,
+                                          yerr=sem_w,
+                                          marker='s' if aggregate_marker is None else aggregate_marker,
+                                          markersize=6,
+                                          linewidth=2.8,
+                                          capsize=4,
+                                          capthick=2,
+                                          color=color,
+                                          ecolor=line_color)
+                        else:
+                            # Line style (with optional markers)
+                            ax_w.plot(time_points_w, mean_w,
+                                      marker=aggregate_marker,
+                                      markersize=6 if aggregate_marker else None,
+                                      linewidth=2.8,
+                                      color=color)
 
-        # Weight subplot formatting
-        if has_weight:
-            weight_label_str = f"{weight_label} ({weight_units})"
-            ax_w.set_ylabel(weight_label_str)
-            ax_w.minorticks_on()
-            ax_w.grid(True, alpha=0.3)
-            ax_w.grid(True, which='minor', linestyle=':', alpha=0.15)
+                            if aggregate_sem and sem_w is not None:
+                                ax_w.fill_between(time_points_w,
+                                                  mean_w - sem_w,
+                                                  mean_w + sem_w,
+                                                  color=color,
+                                                  alpha=0.25)
 
-        # ================================
-        # 4. TITLE
-        # ================================
-        if title is None:
-            title = f"Tumor Volume Study: {self.study_id}"
+            # ================================
+            # 3. AXIS FORMATTING
+            # ================================
+            # Adjust label based on transform
+            volume_label_str = f"{volume_label} ({volume_units})"
+            if not volume_units:
+                volume_label_str = f"{volume_label}"
+
+            ax_vol.set_ylabel(volume_label_str)
+            ax_vol.set_xlabel("Time (days)")
+            ax_vol.minorticks_on()
+
+            # Enable grid with style's properties
+            if plot_style:
+                # Handle both string and list inputs
+                if isinstance(plot_style, str):
+                    styles = [plot_style]
+                elif isinstance(plot_style, list):
+                    styles = plot_style
+                else:
+                    styles = []
+
+                # Check if any style contains 'grid'
+                grid_styles = ['grid', 'seaborn-v0_8-whitegrid', 'seaborn-v0_8-darkgrid']
+                if any(grid_style in styles for grid_style in grid_styles):
+                    ax_vol.grid(True, alpha=0.3)
+                    ax_vol.grid(True, which='minor', linestyle=':', alpha=0.15)
+                    ax_vol.set_axisbelow(True)
+            else:
+                # Default grid behavior
+                ax_vol.grid(True, alpha=0.3)
+                ax_vol.grid(True, which='minor', linestyle=':', alpha=0.15)
+
+            # Add horizontal line at 0 for transformed data
             if tv_transform_str != "No Transform":
-                title += f" ({tv_transform_str})"
+                ax_vol.axhline(y=0, color=line_color, linestyle='--', alpha=0.3, linewidth=1)
 
-        fig.suptitle(title)
-        plt.tight_layout()
-        plt.show()
-    def plot_event_free_survival(self, delta=1.0, cutoff=None, figsize=(10, 8),
+            # Legend for arms
+            legend_handles = []
+            legend_labels = []
+            for arm, color in arm_colors.items():
+                h, = ax_vol.plot([], [], color=color, linewidth=3, label=arm)
+                legend_handles.append(h)
+                legend_labels.append(arm)
+            ax_vol.legend(legend_handles, legend_labels, title="Arms")
+
+            # Weight subplot formatting
+            if has_weight:
+                weight_label_str = f"{weight_label} ({weight_units})"
+                ax_w.set_ylabel(weight_label_str)
+                ax_w.minorticks_on()
+
+                if plot_style:
+                    if any(grid_style in styles for grid_style in grid_styles):
+                        ax_w.grid(True, alpha=0.3)
+                        ax_w.grid(True, which='minor', linestyle=':', alpha=0.15)
+                        ax_w.set_axisbelow(True)
+                else:
+                    ax_w.grid(True, alpha=0.3)
+                    ax_w.grid(True, which='minor', linestyle=':', alpha=0.15)
+
+            # ================================
+            # 4. TITLE
+            # ================================
+            if title is None:
+                title = f"Tumor Volume Study: {self.study_id}"
+                if tv_transform_str != "No Transform":
+                    title += f" ({tv_transform_str})"
+
+            fig.suptitle(title)
+
+        # Handle widget integration
+        if parent_widget:
+            # Create a new Figure Canvas
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.updateGeometry()
+
+            # Get matplotlib's figure background color
+            fig_facecolor = fig.get_facecolor()
+
+            # Convert RGBA to hex for Qt
+            hex_color = mcolors.to_hex(fig_facecolor)
+            canvas.setStyleSheet(f"background-color: {hex_color};")
+
+            if plot_style in ['dark_background', 'seaborn-v0_8-dark']:
+                fig.patch.set_facecolor(fig.get_facecolor())
+                ax_vol.set_facecolor(ax_vol.get_facecolor())
+                if has_weight:
+                    ax_w.set_facecolor(ax_w.get_facecolor())
+
+            # Enable right-click menu
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+
+            # Store canvas reference
+            self.current_tumor_volume_canvas = canvas
+
+            # Clear existing layout
+            existing_layout = parent_widget.layout()
+            if existing_layout:
+                while existing_layout.count():
+                    item = existing_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                existing_layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(existing_layout)
+
+            existing_layout.setContentsMargins(0, 0, 0, 0)
+            existing_layout.addWidget(canvas)
+
+            # Ensure proper sizing
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+            # Draw the canvas
+            canvas.draw()
+        else:
+            # Show plot in standalone mode
+            plt.tight_layout()
+            plt.show()
+
+        if has_weight:
+            return fig, (ax_vol, ax_w)
+        else:
+            return fig, ax_vol
+    def plot_event_free_survival(self, plot_style=None, delta=1.0, cutoff=None, figsize=(10, 8),
                                  title="Event-Free Survival (Tumor Volume Doubling)",
-                                 show_number_at_risk_plot=True, show_at_risk_table=False):
+                                 show_number_at_risk_plot=True, show_at_risk_table=False, parent_widget=None):
         """
-        Three-panel figure:
-        - Top: Kaplan–Meier event-free survival curves + p-value
-        - Middle: Arm labels only (aligned with the numbers-at-risk table)
-        - Bottom: Numbers at risk table
+        Event-free survival analysis with Kaplan-Meier curves and risk tables.
+
+        Creates a multi-panel figure showing survival curves, numbers at risk plot, and optional table.
+        Can be embedded in a Qt widget or displayed as a standalone matplotlib figure.
+
+        Parameters
+        ----------
+        plot_style : str, list, or None
+            Matplotlib style sheet(s) to apply. Can be a single style name or list of styles.
+            Examples: 'dark_background', 'seaborn-v0_8-darkgrid', ['dark_background', 'seaborn-v0_8-poster']
+        delta : float
+            Threshold for defining an event (tumor volume increase factor). Defaults to 1.0 (doubling).
+        cutoff : float or None
+            Optional time cutoff for censoring. Defaults to None.
+        figsize : tuple
+            Figure size as (width, height) in inches. Defaults to (10, 8).
+            Only applies to standalone mode.
+        title : str
+            Plot title. Defaults to "Event-Free Survival (Tumor Volume Doubling)".
+        show_number_at_risk_plot : bool
+            Whether to show the middle panel with line plot of numbers at risk. Defaults to True.
+        show_at_risk_table : bool
+            Whether to show the bottom panel with table of numbers at risk. Defaults to False.
+        parent_widget : QWidget or None
+            Optional Qt widget to embed the plot. If provided, renders as
+            a FigureCanvas within this widget. If None, creates standalone
+            matplotlib figure. Defaults to None.
+
+        Returns
+        -------
+        tuple
+            (fig, axes_dict) where axes_dict contains:
+            - 'km': Kaplan-Meier curve axis (always present)
+            - 'labels': Numbers at risk plot axis (if show_number_at_risk_plot=True)
+            - 'risk': At-risk table axis (if show_at_risk_table=True)
+            Returns None if no valid data to plot.
+
+        Side Effects (when parent_widget is provided)
+        ---------------------------------------------
+        - Sets self.current_tumor_volume_canvas to FigureCanvas
+        - Replaces parent_widget's layout contents
         """
+        import numpy as np
+        from contextlib import nullcontext
 
         # -----------------------------------------------------
         # Compute survival data
@@ -924,18 +1191,22 @@ class TumorVolumeStudyClass():
         p_val = self.compute_logrank_pvalue(survival)
 
         # -----------------------------------------------------
-        # Figure with THREE rows
+        # Create styled figure with multiple subplots
         # -----------------------------------------------------
-        fig = plt.figure(figsize=figsize)
+        # Create appropriate style context
+        if plot_style is not None:
+            style_context = plt.style.context(plot_style)
+        else:
+            style_context = nullcontext()
 
         # Setup subplot proportions
         show_kaplan_meier_curve = True  # axis linked to km has to be true
-        km_subplot_proportion = 4.0 if show_kaplan_meier_curve == True else 0
-        num_at_risk_plot_proportion = 1.0 if show_number_at_risk_plot == True else 0
-        at_risk_table_proportion = 0.6 if show_at_risk_table == True else 0
+        km_subplot_proportion = 4.0 if show_kaplan_meier_curve else 0
+        num_at_risk_plot_proportion = 1.0 if show_number_at_risk_plot else 0
+        at_risk_table_proportion = 0.6 if show_at_risk_table else 0
 
         # Determine number of subplots
-        num_of_subplots = int(show_kaplan_meier_curve)+int(show_number_at_risk_plot)+int(show_at_risk_table)
+        num_of_subplots = int(show_kaplan_meier_curve) + int(show_number_at_risk_plot) + int(show_at_risk_table)
 
         # Set up height proportions
         height_ratios = []
@@ -945,122 +1216,229 @@ class TumorVolumeStudyClass():
             height_ratios.append(num_at_risk_plot_proportion)
         if show_at_risk_table:
             height_ratios.append(at_risk_table_proportion)
+
+        # Create figure
+        if parent_widget:
+            fig = Figure()
+        else:
+            fig = plt.figure(figsize=figsize)
+
         gs = fig.add_gridspec(num_of_subplots, 1,
                               height_ratios=height_ratios, hspace=0.15)
 
+        # Create subplots
         current_sub_plot = 0
-        if show_kaplan_meier_curve == True:
+        axes_dict = {}
+
+        if show_kaplan_meier_curve:
             ax_km = fig.add_subplot(gs[current_sub_plot])
+            axes_dict['km'] = ax_km
             current_sub_plot += 1
-        if show_number_at_risk_plot == True:
+
+        if show_number_at_risk_plot:
             ax_labels = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
+            axes_dict['labels'] = ax_labels
             current_sub_plot += 1
-        if show_at_risk_table == True:
+
+        if show_at_risk_table:
             ax_risk = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
+            axes_dict['risk'] = ax_risk
 
-        # -----------------------------------------------------
-        # KM curves
-        # -----------------------------------------------------
+        # Apply style colors to all axes
+        if plot_style:
+            with plt.style.context(plot_style):
+                # Get the colors from the style
+                fig_color = plt.rcParams['figure.facecolor']
+                axes_color = plt.rcParams['axes.facecolor']
+                text_color = plt.rcParams['text.color']
 
-        km = KaplanMeierFitter()
-        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-        arm_colors = {arm: colors[i % len(colors)] for i, arm in enumerate(self.unique_arms)}
+                # Apply to figure
+                fig.patch.set_facecolor(fig_color)
 
-        for arm in self.unique_arms:
-            km.fit(survival[arm]["time"], survival[arm]["event"], label=arm)
-            km.plot_survival_function(ax=ax_km, ci_show=False, color=arm_colors[arm], linewidth=2)
+                # Apply to all axes
+                for ax in axes_dict.values():
+                    ax.set_facecolor(axes_color)
+                    ax.tick_params(colors=text_color)
+                    ax.xaxis.label.set_color(text_color)
+                    ax.yaxis.label.set_color(text_color)
+                    ax.title.set_color(text_color)
+                    for spine in ax.spines.values():
+                        spine.set_color(text_color)
 
-        ax_km.set_ylabel("Event-Free Probability")
-        ax_km.set_title(f"{title}\nP-value = {p_val:.4g}")
-        ax_km.grid(True, alpha=0.3)
+        style_ctx = style_context
 
-        # Hide top and right spines
-        for spine in ["right", "left"]:
-            ax_km.spines[spine].set_visible(False)
+        # Apply figsize only for standalone mode
+        if not parent_widget and figsize:
+            fig.set_size_inches(figsize)
 
-        # # force whole-number x-ticks
-        max_t = int(t_grid[-1])
-        # step = 5 if max_t > 5 else 1
-        # ax_km.set_xticks(np.arange(0, max_t + 1, step))
-        # ax_km.set_xlim(-0.5, max_t + 0.5)
-        # ax_km.get_xmajorticklabels()
+        with style_ctx:
+            # -----------------------------------------------------
+            # KM curves
+            # -----------------------------------------------------
+            from lifelines import KaplanMeierFitter
 
-        # Set major tick labels using the built-in function
-        #ax_km.set_xticklabels([f"{int(x)}" for x in ax_km.get_xticks()])
-        # ax_km.tick_params(axis='x', which='major', labelsize=10)
+            km = KaplanMeierFitter()
+            colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+            arm_colors = {arm: colors[i % len(colors)] for i, arm in enumerate(self.unique_arms)}
+            line_color = plt.rcParams['text.color']  # Will adapt to theme
 
-        #-----------------------------------------------------
-        # Middle panel: AT-RISK LINE PLOTS
-        # -----------------------------------------------------
-        if show_number_at_risk_plot  == True:
-            ax_labels.set_ylabel("Number at Risk")
-            ax_labels.set_ylim(0-0.76, max(max(risk_table[arm]) for arm in self.unique_arms) * 1.1+0.5)
-
-            # Plot line for each arm showing numbers at risk over time
             for arm in self.unique_arms:
-                ax_labels.plot(t_grid, risk_table[arm],
-                               color=arm_colors[arm],
-                               linewidth=2,
-                               marker='none',
-                               markersize=4,
-                               label=arm)
+                km.fit(survival[arm]["time"], survival[arm]["event"], label=arm)
+                km.plot_survival_function(ax=ax_km, ci_show=False, color=arm_colors[arm], linewidth=2)
 
-            ax_labels.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
-            ax_labels.grid(True, alpha=0.3, axis='y')
-            ax_labels.legend(loc='best', framealpha=0.9)
+            ax_km.set_ylabel("Event-Free Probability")
+            ax_km.set_title(f"{title}\nP-value = {p_val:.4g}")
+
+            # Enable grid with style's properties
+            if plot_style:
+                # Handle both string and list inputs
+                if isinstance(plot_style, str):
+                    styles = [plot_style]
+                elif isinstance(plot_style, list):
+                    styles = plot_style
+                else:
+                    styles = []
+
+                # Check if any style contains 'grid'
+                grid_styles = ['grid', 'seaborn-v0_8-whitegrid', 'seaborn-v0_8-darkgrid']
+                if any(grid_style in styles for grid_style in grid_styles):
+                    ax_km.grid(True, alpha=0.3)
+                    ax_km.set_axisbelow(True)
+            else:
+                ax_km.grid(True, alpha=0.3)
 
             # Hide top and right spines
             for spine in ["right", "left"]:
-                ax_labels.spines[spine].set_visible(False)
+                ax_km.spines[spine].set_visible(False)
 
-            # Match x-axis limits with KM plot
-            ax_labels.set_xlim(-0.5, max_t + 0.5)
+            # Set x-axis limits
+            max_t = int(t_grid[-1])
+            ax_km.set_xlim(-0.5, max_t + 0.5)
 
+            # -----------------------------------------------------
+            # Middle panel: AT-RISK LINE PLOTS
+            # -----------------------------------------------------
+            if show_number_at_risk_plot:
+                ax_labels.set_ylabel("Number at Risk")
+                ax_labels.set_ylim(0 - 0.76, max(max(risk_table[arm]) for arm in self.unique_arms) * 1.1 + 0.5)
 
+                # Plot line for each arm showing numbers at risk over time
+                for arm in self.unique_arms:
+                    ax_labels.plot(t_grid, risk_table[arm],
+                                   color=arm_colors[arm],
+                                   linewidth=2,
+                                   marker='none',
+                                   markersize=4,
+                                   label=arm)
 
-        # -----------------------------------------------------
-        # Bottom panel: NUMBERS AT RISK
-        # -----------------------------------------------------
-        if show_at_risk_table == True:
-            ax_risk.set_yticks(range(len(self.unique_arms)))
-            ax_risk.set_yticklabels(self.unique_arms)
-            ax_risk.set_xlabel("Time (days)")
-            ax_risk.set_xlim(-0.5, max_t + 0.5)
-            ax_risk.set_ylim(-0.6, len(self.unique_arms))
+                ax_labels.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
 
-            # Clear spines except left
-            for spine in ["right", "left"]:
-                ax_risk.spines[spine].set_visible(False)
+                # Grid handling
+                if plot_style and any(grid_style in styles for grid_style in grid_styles):
+                    ax_labels.grid(True, alpha=0.3, axis='y')
+                    ax_labels.set_axisbelow(True)
+                else:
+                    ax_labels.grid(True, alpha=0.3, axis='y')
 
-            # Plot the numbers at risk
-            for i, arm in enumerate(self.unique_arms):
-                # invisible line to preserve alignment
-                ax_risk.plot(t_grid, [i] * len(t_grid), alpha=0)
+                ax_labels.legend(loc='best', framealpha=0.9)
 
-                for x, y_val in zip(t_grid, risk_table[arm]):
-                    ax_risk.text(x, i, f"{y_val}", ha="center", va="center", fontsize=10)
+                # Hide top and right spines
+                for spine in ["right", "left"]:
+                    ax_labels.spines[spine].set_visible(False)
 
-            ax_risk.grid(False)
+                # Match x-axis limits with KM plot
+                ax_labels.set_xlim(-0.5, max_t + 0.5)
 
-        plt.show()
-    def plot_auc_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
-                     control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85,
-                     bar_edgecolor="black", show_bar_labels=False, title="AUC by Arm", color_cycle=None,
-                     show_axis_labels:bool=True, plot_normalized_auc=False, show_legend:bool=True):
+            # -----------------------------------------------------
+            # Bottom panel: NUMBERS AT RISK
+            # -----------------------------------------------------
+            if show_at_risk_table:
+                ax_risk.set_yticks(range(len(self.unique_arms)))
+                ax_risk.set_yticklabels(self.unique_arms)
+                ax_risk.set_xlabel("Time (days)")
+                ax_risk.set_xlim(-0.5, max_t + 0.5)
+                ax_risk.set_ylim(-0.6, len(self.unique_arms))
+
+                # Clear spines except left
+                for spine in ["right", "left"]:
+                    ax_risk.spines[spine].set_visible(False)
+
+                # Plot the numbers at risk
+                for i, arm in enumerate(self.unique_arms):
+                    # invisible line to preserve alignment
+                    ax_risk.plot(t_grid, [i] * len(t_grid), alpha=0)
+
+                    for x, y_val in zip(t_grid, risk_table[arm]):
+                        ax_risk.text(x, i, f"{y_val}", ha="center", va="center",
+                                     fontsize=10, color=line_color)
+
+                ax_risk.grid(False)
+
+        # Handle widget integration
+        if parent_widget:
+            # Create a new Figure Canvas
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.updateGeometry()
+
+            # Get matplotlib's figure background color
+            fig_facecolor = fig.get_facecolor()
+
+            # Convert RGBA to hex for Qt
+            hex_color = mcolors.to_hex(fig_facecolor)
+            canvas.setStyleSheet(f"background-color: {hex_color};")
+
+            if plot_style in ['dark_background', 'seaborn-v0_8-dark']:
+                fig.patch.set_facecolor(fig.get_facecolor())
+                for ax in axes_dict.values():
+                    ax.set_facecolor(ax.get_facecolor())
+
+            # Enable right-click menu
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
+
+            # Assign figure to parent_widget so save dialog knows what to save
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+
+            # Store canvas reference
+            self.current_tumor_volume_canvas = canvas
+
+            # Clear existing layout
+            existing_layout = parent_widget.layout()
+            if existing_layout:
+                while existing_layout.count():
+                    item = existing_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                existing_layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(existing_layout)
+
+            existing_layout.setContentsMargins(0, 0, 0, 0)
+            existing_layout.addWidget(canvas)
+
+            # Ensure proper sizing
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+            # Draw the canvas
+            canvas.draw()
+        else:
+            # Show plot in standalone mode
+            plt.show()
+
+        return fig, axes_dict
+    def plot_auc_bar(self, compute_day: int | None = None,
+            figsize=(12, 6), sort_descending=True, control_arms=("control", "vehicle", "placebo"),bar_alpha=0.85,
+            bar_edgecolor="black", show_bar_labels=False, title="AUC by Arm", color_cycle=None,
+            show_axis_labels: bool = True, plot_normalized_auc=False, show_legend: bool = True, plot_style=None,
+            parent_widget=None):
         """
         Vertical bar plot of AUC values for each time-series.
         Controls are plotted first, followed by experimental arms.
 
-        Parameters
-        ----------
-        compute_day : int or None
-            Compute AUC up to max_day if provided.
-        sort_descending : bool
-            Sort AUC values within each arm.
-        show_bar_labels : bool
-            If True, display numeric AUC above each bar.
-        control_arms : tuple
-            Arms considered control and plotted first.
+        Supports matplotlib styles and embedding into a PySide6 Graphics/View widget.
         """
 
         # -------------------------------------------
@@ -1076,10 +1454,9 @@ class TumorVolumeStudyClass():
             for ts_id in ts_ids:
                 ts = self.study_tv_time_dict[ts_id]
                 auc_val, normalized_auc = ts.compute_auc(compute_day=compute_day)
-                if plot_normalized_auc:
-                    arm_auc.append((ts_id, normalized_auc))
-                else:
-                    arm_auc.append((ts_id, auc_val))
+
+                value = normalized_auc if plot_normalized_auc else auc_val
+                arm_auc.append((ts_id, value))
 
             arm_auc.sort(key=lambda x: x[1], reverse=sort_descending)
             auc_dict[arm] = arm_auc
@@ -1095,7 +1472,7 @@ class TumorVolumeStudyClass():
         # 3. COLOR MAP FOR ARMS
         # -------------------------------------------
         if color_cycle is None:
-            color_cycle = list(plt.cm.tab10.colors)
+            color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
         arm_colors = {
             arm: color_cycle[i % len(color_cycle)]
@@ -1108,85 +1485,142 @@ class TumorVolumeStudyClass():
         bar_x_positions = []
         bar_heights = []
         bar_colors = []
-        bar_labels = []  # mouse IDs only (no arm)
+        bar_labels = []
 
         idx = 0
         for arm in ordered_arms:
-            color = arm_colors[arm]
             for ts_id, auc_val in auc_dict[arm]:
                 bar_x_positions.append(idx)
                 bar_heights.append(auc_val)
-                bar_colors.append(color)
-                bar_labels.append(str(ts_id))  # no arm name
-
+                bar_colors.append(arm_colors[arm])
+                bar_labels.append(str(ts_id))
                 idx += 1
 
-        # -------------------------------------------
-        # 5. PLOT
-        # -------------------------------------------
-        fig, ax = plt.subplots(figsize=figsize)
+        if not bar_heights:
+            logger.info("No AUC values to plot")
+            return None
 
-        ax.bar(
-            bar_x_positions,
-            bar_heights,
-            color=bar_colors,
-            alpha=bar_alpha,
-            edgecolor=bar_edgecolor
-        )
+        # -------------------------------------------
+        # 5. PLOTTING (STYLE + QT SUPPORT)
+        # -------------------------------------------
+        fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
 
-        # Tick labels (mouse IDs only)
-        if show_axis_labels:
-            ax.set_xticks(bar_x_positions)
-            ax.set_xticklabels(bar_labels, rotation=75, ha='right', fontsize=8)
+        if not parent_widget and figsize:
+            fig.set_size_inches(figsize)
+
+        with style_ctx:
+            bars = ax.bar(
+                bar_x_positions,
+                bar_heights,
+                color=bar_colors,
+                alpha=bar_alpha,
+                edgecolor=bar_edgecolor,
+            )
+
+            # X ticks
+            if show_axis_labels:
+                ax.set_xticks(bar_x_positions)
+                ax.set_xticklabels(bar_labels, rotation=75, ha="right", fontsize=8)
+            else:
+                ax.set_xticks([])
+                ax.set_xticklabels([])
+
+            # Labels and title
+            y_label = "Normalized AUC" if plot_normalized_auc else "AUC"
+            if show_axis_labels:
+                ax.set_ylabel(y_label)
+
+            if title:
+                ax.set_title(title)
+
+            # Grid handling (respect style)
+            if plot_style:
+                styles = [plot_style] if isinstance(plot_style, str) else plot_style
+                grid_styles = ["grid", "whitegrid", "darkgrid"]
+                if any(gs in s for s in styles for gs in grid_styles):
+                    ax.grid(True, axis="y")
+                    ax.set_axisbelow(True)
+            else:
+                ax.grid(True, axis="y", alpha=0.3)
+
+            # ---------------------------------------
+            # 6. OPTIONAL: Annotate Bars
+            # ---------------------------------------
+            if show_bar_labels:
+                for rect in bars:
+                    height = rect.get_height()
+                    ax.text(
+                        rect.get_x() + rect.get_width() / 2,
+                        height,
+                        f"{height:.1f}",
+                        ha="center",
+                        va="bottom",
+                        fontsize=8,
+                    )
+
+            # ---------------------------------------
+            # 7. LEGEND
+            # ---------------------------------------
+            if show_legend:
+                handles = [
+                    plt.Line2D([], [], color=arm_colors[a], lw=6)
+                    for a in ordered_arms
+                ]
+                ax.legend(handles, ordered_arms, title="Arms", loc="best")
+
+        # -------------------------------------------
+        # 8. QT WIDGET INTEGRATION
+        # -------------------------------------------
+        if parent_widget:
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.updateGeometry()
+
+            # Match Qt background to matplotlib figure
+            fig_facecolor = fig.get_facecolor()
+            hex_color = mcolors.to_hex(fig_facecolor)
+            canvas.setStyleSheet(f"background-color: {hex_color};")
+
+            # Context menu
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
+
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+            self.current_auc_canvas = canvas
+
+            layout = parent_widget.layout()
+            if layout:
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(layout)
+
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(canvas)
+            canvas.draw()
+
         else:
-            ax.set_xticks([])
-            ax.set_xticklabels([])
+            plt.show()
 
-        # Add labels and titles
-        y_label = "AUC" if not plot_normalized_auc else "Normalized AUC"
-        ax.set_ylabel(y_label)
-        ax.set_title(title)
-        ax.grid(True, axis='y', alpha=0.3)
-
-        # -------------------------------------------
-        # 6. OPTIONAL: Annotate Bars with AUC Values
-        # -------------------------------------------
-        if show_bar_labels:
-            for x, h in zip(bar_x_positions, bar_heights):
-                ax.text(x, h, f"{h:.1f}", ha='center', va='bottom', fontsize=8)
-
-        # -------------------------------------------
-        # 7. LEGEND FOR ARMS
-        # -------------------------------------------
-        if show_legend:
-            handles = [plt.Line2D([], [], color=arm_colors[a], lw=8)
-                       for a in ordered_arms]
-            ax.legend(handles, ordered_arms, title="Arms", loc="best")
-
-        plt.tight_layout()
-        plt.show()
-    def plot_percent_tumor_vol_change_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
-                     control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85,
-                     bar_edgecolor="black", show_bar_labels=False, title="Tumor Volume change (%)", color_cycle=None,
-                     show_axis_labels:bool=True, plot_normalized_tv_change=False, show_legend:bool=True):
+        return fig, ax
+    def plot_percent_tumor_vol_change_bar( self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
+            control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
+            title="Tumor Volume Change (%)", color_cycle=None, show_axis_labels: bool = True, plot_normalized_tv_change=False,
+            show_legend: bool = True, plot_style=None, parent_widget=None):
         """
-        Vertical bar plot of AUC values for each time-series.
+        Vertical bar plot of percent tumor volume change per time-series.
         Controls are plotted first, followed by experimental arms.
 
-        Parameters
-        ----------
-        compute_day : int or None
-            Compute AUC up to max_day if provided.
-        sort_descending : bool
-            Sort AUC values within each arm.
-        show_bar_labels : bool
-            If True, display numeric AUC above each bar.
-        control_arms : tuple
-            Arms considered control and plotted first.
+        Supports matplotlib styles and embedding into a PySide6 widget.
         """
 
         # -------------------------------------------
-        # 1. COLLECT AUC PER ARM
+        # 1. COLLECT VOLUME CHANGE PER ARM
         # -------------------------------------------
         unique_arms = list(set(self.arm_col))
         vol_change_dict = {}
@@ -1197,11 +1631,12 @@ class TumorVolumeStudyClass():
 
             for ts_id in ts_ids:
                 ts = self.study_tv_time_dict[ts_id]
-                tv_change_val, normalized_tv_change_val = ts.compute_percent_change_tumor_volume(compute_day=compute_day)
-                if plot_normalized_tv_change == True:
-                    vol_change_list.append((ts_id, normalized_tv_change_val))
-                else:
-                    vol_change_list.append((ts_id, tv_change_val))
+                tv_change, normalized_tv_change = ts.compute_percent_change_tumor_volume(
+                    compute_day=compute_day
+                )
+
+                value = normalized_tv_change if plot_normalized_tv_change else tv_change
+                vol_change_list.append((ts_id, value))
 
             vol_change_list.sort(key=lambda x: x[1], reverse=sort_descending)
             vol_change_dict[arm] = vol_change_list
@@ -1217,7 +1652,7 @@ class TumorVolumeStudyClass():
         # 3. COLOR MAP FOR ARMS
         # -------------------------------------------
         if color_cycle is None:
-            color_cycle = list(plt.cm.tab10.colors)
+            color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
         arm_colors = {
             arm: color_cycle[i % len(color_cycle)]
@@ -1230,64 +1665,352 @@ class TumorVolumeStudyClass():
         bar_x_positions = []
         bar_heights = []
         bar_colors = []
-        bar_labels = []  # mouse IDs only (no arm)
+        bar_labels = []
 
         idx = 0
         for arm in ordered_arms:
-            color = arm_colors[arm]
             for ts_id, tv_change_val in vol_change_dict[arm]:
                 bar_x_positions.append(idx)
                 bar_heights.append(tv_change_val)
-                bar_colors.append(color)
-                bar_labels.append(str(ts_id))  # no arm name
-
+                bar_colors.append(arm_colors[arm])
+                bar_labels.append(str(ts_id))
                 idx += 1
 
-        # -------------------------------------------
-        # 5. PLOT
-        # -------------------------------------------
-        fig, ax = plt.subplots(figsize=figsize)
+        if not bar_heights:
+            logger.info("No tumor volume change values to plot")
+            return None
 
-        ax.bar(
-            bar_x_positions,
-            bar_heights,
-            color=bar_colors,
-            alpha=bar_alpha,
-            edgecolor=bar_edgecolor
-        )
+        # -------------------------------------------
+        # 5. PLOTTING (STYLE + QT SUPPORT)
+        # -------------------------------------------
+        fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
 
-        # Tick labels (mouse IDs only)
-        if show_axis_labels:
-            ax.set_xticks(bar_x_positions)
-            ax.set_xticklabels(bar_labels, rotation=75, ha='right', fontsize=8)
+        if not parent_widget and figsize:
+            fig.set_size_inches(figsize)
+
+        with style_ctx:
+            bars = ax.bar(
+                bar_x_positions,
+                bar_heights,
+                color=bar_colors,
+                alpha=bar_alpha,
+                edgecolor=bar_edgecolor,
+            )
+
+            # X ticks
+            if show_axis_labels:
+                ax.set_xticks(bar_x_positions)
+                ax.set_xticklabels(bar_labels, rotation=75, ha="right", fontsize=8)
+            else:
+                ax.set_xticks([])
+                ax.set_xticklabels([])
+
+            # Labels and title
+            y_label = (
+                "Normalized Tumor Volume Change (%)"
+                if plot_normalized_tv_change
+                else "Tumor Volume Change (%)"
+            )
+            if show_axis_labels:
+                ax.set_ylabel(y_label)
+
+            if title:
+                ax.set_title(title)
+
+            # Grid handling (respect style)
+            if plot_style:
+                styles = [plot_style] if isinstance(plot_style, str) else plot_style
+                grid_styles = ["grid", "whitegrid", "darkgrid"]
+                if any(gs in s for s in styles for gs in grid_styles):
+                    ax.grid(True, axis="y")
+                    ax.set_axisbelow(True)
+            else:
+                ax.grid(True, axis="y", alpha=0.3)
+
+            # ---------------------------------------
+            # 6. OPTIONAL: Annotate Bars
+            # ---------------------------------------
+            if show_bar_labels:
+                for rect in bars:
+                    height = rect.get_height()
+                    ax.text(
+                        rect.get_x() + rect.get_width() / 2,
+                        height,
+                        f"{height:.1f}",
+                        ha="center",
+                        va="bottom",
+                        fontsize=8,
+                    )
+
+            # ---------------------------------------
+            # 7. LEGEND
+            # ---------------------------------------
+            if show_legend:
+                handles = [
+                    plt.Line2D([], [], color=arm_colors[a], lw=6)
+                    for a in ordered_arms
+                ]
+                ax.legend(handles, ordered_arms, title="Arms", loc="best")
+
+        # -------------------------------------------
+        # 8. QT WIDGET INTEGRATION
+        # -------------------------------------------
+        if parent_widget:
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.updateGeometry()
+
+            # Match Qt background to matplotlib figure
+            fig_facecolor = fig.get_facecolor()
+            hex_color = mcolors.to_hex(fig_facecolor)
+            canvas.setStyleSheet(f"background-color: {hex_color};")
+
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
+
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+            self.current_tv_change_canvas = canvas
+
+            layout = parent_widget.layout()
+            if layout:
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(layout)
+
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(canvas)
+            canvas.draw()
+
         else:
-            ax.set_xticks([])
-            ax.set_xticklabels([])
+            plt.show()
 
-        # Add labels and titles
-        y_label = "Tumor Volume Change (%)" if not plot_normalized_tv_change else "Normalized Volume Change (%)"
-        ax.set_ylabel(y_label)
-        ax.set_title(title)
-        ax.grid(True, axis='y', alpha=0.3)
+        return fig, ax
+    def plot_vol_change_as_objective_response_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
+            control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
+            title="Tumor Volume change (%)", color_cycle=None, show_axis_labels: bool = True, show_legend: bool = True,
+            y_range: list | None = None, plot_style=None, parent_widget=None):
+        """
+        Bar plot of percent tumor volume change colored by objective response category.
+        Supports matplotlib styles and embedding into a PySide6 widget.
+        """
 
-        # -------------------------------------------
-        # 6. OPTIONAL: Annotate Bars with AUC Values
-        # -------------------------------------------
-        if show_bar_labels:
-            for x, h in zip(bar_x_positions, bar_heights):
-                ax.text(x, h, f"{h:.1f}", ha='center', va='bottom', fontsize=8)
+        # -------------------------------------------------------
+        # 1. Collect volume changes + response codes per arm
+        # -------------------------------------------------------
+        unique_arms = list(set(self.arm_col))
+        vol_change_dict = {}
+        response_code_dict = {}
 
-        # -------------------------------------------
-        # 7. LEGEND FOR ARMS
-        # -------------------------------------------
-        if show_legend:
-            handles = [plt.Line2D([], [], color=arm_colors[a], lw=8)
-                       for a in ordered_arms]
-            ax.legend(handles, ordered_arms, title="Arms", loc="best")
+        for arm in unique_arms:
+            ts_ids = self.study_arms_dict[arm]
+            vol_change_list = []
+            resp_code_list = []
 
-        plt.tight_layout()
-        plt.show()
-    def plot_vol_change_as_objective_response_bar(self, compute_day: int | None = None, figsize=(12, 6),
+            for ts_id in ts_ids:
+                ts = self.study_tv_time_dict[ts_id]
+                tv_change_val, _ = ts.compute_percent_change_tumor_volume(
+                    compute_day=compute_day
+                )
+
+                response_code = ts.compute_objective_response(compute_day)
+                vol_change_list.append((ts_id, tv_change_val))
+                resp_code_list.append((ts_id, response_code))
+
+            # Sort by tumor volume change
+            vol_change_list.sort(key=lambda x: x[1], reverse=sort_descending)
+
+            # Match response code ordering
+            sorted_resp_list = [
+                (ts_id, next(r for t, r in resp_code_list if t == ts_id))
+                for ts_id, _ in vol_change_list
+            ]
+
+            vol_change_dict[arm] = vol_change_list
+            response_code_dict[arm] = sorted_resp_list
+
+        # -------------------------------------------------------
+        # 2. Arm ordering (controls first)
+        # -------------------------------------------------------
+        controls = [a for a in unique_arms if a.lower() in control_arms]
+        experimental = [a for a in unique_arms if a not in controls]
+        ordered_arms = controls + experimental
+
+        # -------------------------------------------------------
+        # 3. Flatten bar data + compute arm spans
+        # -------------------------------------------------------
+        bar_x_positions = []
+        bar_heights = []
+        bar_colors = []
+        bar_labels = []
+        arm_ranges = {}
+
+        idx = 0
+        for arm in ordered_arms:
+            if idx > 0:
+                idx += 1  # spacing between arms
+
+            start_idx = idx
+
+            for (ts_id, tv_val), (_, resp_code) in zip(
+                    vol_change_dict[arm], response_code_dict[arm]
+            ):
+                bar_x_positions.append(idx)
+                bar_heights.append(tv_val)
+                bar_colors.append(self.objective_response_colors[resp_code])
+                bar_labels.append(str(ts_id))
+                idx += 1
+
+            arm_ranges[arm] = (start_idx, idx - 1)
+
+        if not bar_heights:
+            logger.info("No tumor volume change values to plot")
+            return None
+
+        # -------------------------------------------------------
+        # 4. Plotting (STYLE + QT SUPPORT)
+        # -------------------------------------------------------
+        fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
+
+        if not parent_widget and figsize:
+            fig.set_size_inches(figsize)
+
+        with style_ctx:
+            bars = ax.bar(
+                bar_x_positions,
+                bar_heights,
+                color=bar_colors,
+                alpha=bar_alpha,
+                edgecolor=bar_edgecolor,
+            )
+
+            # X ticks
+            if show_axis_labels:
+                ax.set_xticks(bar_x_positions)
+                ax.set_xticklabels(bar_labels, rotation=75, ha="right", fontsize=8)
+            else:
+                ax.set_xticks([])
+
+            # Labels + title
+            if show_axis_labels:
+                ax.set_ylabel("Tumor Volume Change (%)")
+
+            if title:
+                ax.set_title(title)
+
+            # Grid handling (respect style)
+            if plot_style:
+                styles = [plot_style] if isinstance(plot_style, str) else plot_style
+                grid_styles = ["grid", "whitegrid", "darkgrid"]
+                if any(gs in s for s in styles for gs in grid_styles):
+                    ax.grid(True, axis="y")
+                    ax.set_axisbelow(True)
+            else:
+                ax.grid(True, axis="y", alpha=0.3)
+
+            # ---------------------------------------------------
+            # 5. Optional bar labels
+            # ---------------------------------------------------
+            if show_bar_labels:
+                for rect in bars:
+                    h = rect.get_height()
+                    ax.text(
+                        rect.get_x() + rect.get_width() / 2,
+                        h,
+                        f"{h:.1f}",
+                        ha="center",
+                        va="bottom",
+                        fontsize=8,
+                    )
+
+            # ---------------------------------------------------
+            # 6. Legend for objective response
+            # ---------------------------------------------------
+            if show_legend:
+                handles = [
+                    plt.Line2D([], [], color=self.objective_response_colors[k], lw=6)
+                    for k in ["CR", "PR", "SD", "PD"]
+                ]
+                labels = [
+                    self.objective_response_names[k]
+                    for k in ["CR", "PR", "SD", "PD"]
+                ]
+                ax.legend(handles, labels, title="Objective Response", loc="best")
+
+            # ---------------------------------------------------
+            # 7. Y-axis limits
+            # ---------------------------------------------------
+            if y_range is not None:
+                ax.set_ylim(y_range[0], y_range[1])
+            else:
+                y_range = ax.get_ylim()
+
+            # ---------------------------------------------------
+            # 8. Arm labels above bars
+            # ---------------------------------------------------
+            for arm, (start, end) in arm_ranges.items():
+                mid = (start + end) / 2
+                ax.text(
+                    mid,
+                    y_range[1] * 1.02,
+                    arm,
+                    ha="center",
+                    va="bottom",
+                    fontsize=10,
+                    fontweight="normal",
+                )
+
+            ax.set_ylim(y_range[0], y_range[1] * 1.10)
+
+        # -------------------------------------------------------
+        # 9. QT WIDGET INTEGRATION
+        # -------------------------------------------------------
+        if parent_widget:
+            canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+            )
+            canvas.updateGeometry()
+
+            fig_facecolor = fig.get_facecolor()
+            hex_color = mcolors.to_hex(fig_facecolor)
+            canvas.setStyleSheet(f"background-color: {hex_color};")
+
+            canvas.setContextMenuPolicy(Qt.CustomContextMenu)
+            canvas.customContextMenuRequested.connect(
+                parent_widget.show_context_menu
+            )
+
+            parent_widget.figure = fig
+            parent_widget.canvas_item = canvas
+            self.current_objective_response_canvas = canvas
+
+            layout = parent_widget.layout()
+            if layout:
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+            else:
+                layout = QVBoxLayout(parent_widget)
+                parent_widget.setLayout(layout)
+
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(canvas)
+            canvas.draw()
+
+        else:
+            plt.show()
+
+        return fig, ax
+
+    def plot_vol_change_as_objective_response_bar_2(self, compute_day: int | None = None, figsize=(12, 6),
                     sort_descending=True, control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85,
                     bar_edgecolor="black", show_bar_labels=False, title="Tumor Volume change (%)", color_cycle=None,
                     show_axis_labels: bool = True, show_legend: bool = True, y_range:list|None = None):
