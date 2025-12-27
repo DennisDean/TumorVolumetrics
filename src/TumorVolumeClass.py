@@ -816,8 +816,20 @@ class TumorVolumeStudyClass():
 
             if parent_widget:
                 fig = Figure()
-                ax_vol = fig.add_subplot(2, 1, 1)
-                ax_w = fig.add_subplot(2, 1, 2, sharex=ax_vol)
+
+                gs = fig.add_gridspec(
+                    nrows=2,
+                    ncols=1,
+                    height_ratios=[4, 1],  # same as pyplot version
+                    hspace=0.1
+                )
+
+                ax_vol = fig.add_subplot(gs[0])
+                ax_w = fig.add_subplot(gs[1], sharex=ax_vol)
+
+                #ax_vol = fig.add_subplot(2, 1, 1)
+                #ax_w = fig.add_subplot(2, 1, 2, sharex=ax_vol)
+
                 fig.subplots_adjust(hspace=0.1)
             else:
                 fig, (ax_vol, ax_w) = plt.subplots(
@@ -1012,7 +1024,15 @@ class TumorVolumeStudyClass():
                 volume_label_str = f"{volume_label}"
 
             ax_vol.set_ylabel(volume_label_str)
-            ax_vol.set_xlabel("Time (days)")
+
+            if plot_weight:
+                # Hide x-axis values on top plot
+                ax_vol.tick_params(axis="x", which="both", labelbottom=False)
+            else:
+                # Show x-axis values on volume plot
+                ax_vol.set_xlabel("Time (days)")
+                ax_vol.tick_params(axis="x", which="both", labelbottom=True)
+
             ax_vol.minorticks_on()
 
             # Enable grid with style's properties
@@ -1053,7 +1073,11 @@ class TumorVolumeStudyClass():
             if has_weight:
                 weight_label_str = f"{weight_label} ({weight_units})"
                 ax_w.set_ylabel(weight_label_str)
+                ax_w.set_xlabel("Time (days)")
                 ax_w.minorticks_on()
+
+                # Ensure x-axis values are visible here
+                ax_w.tick_params(axis="x", which="both", labelbottom=True)
 
                 if plot_style:
                     if any(grid_style in styles for grid_style in grid_styles):
@@ -1068,7 +1092,7 @@ class TumorVolumeStudyClass():
             # 4. TITLE
             # ================================
             if title is None:
-                title = f"Tumor Volume Study: {self.study_id}"
+                title = f"Tumor Volume Study - {self.study_id}"
                 if tv_transform_str != "No Transform":
                     title += f" ({tv_transform_str})"
 
@@ -1136,7 +1160,7 @@ class TumorVolumeStudyClass():
             return fig, ax_vol
     def plot_event_free_survival(self, plot_style=None, delta=1.0, cutoff=None, figsize=(10, 8),
                                  title="Event-Free Survival (Tumor Volume Doubling)",
-                                 show_number_at_risk_plot=True, show_at_risk_table=False, parent_widget=None):
+                                 show_number_at_risk_plot=True, show_at_risk_table=True, parent_widget=None):
         """
         Event-free survival analysis with Kaplan-Meier curves and risk tables.
 
@@ -1286,8 +1310,8 @@ class TumorVolumeStudyClass():
                 km.fit(survival[arm]["time"], survival[arm]["event"], label=arm)
                 km.plot_survival_function(ax=ax_km, ci_show=False, color=arm_colors[arm], linewidth=2)
 
-            ax_km.set_ylabel("Event-Free Probability")
-            ax_km.set_title(f"{title}\nP-value = {p_val:.4g}")
+            ax_km.set_ylabel(f"Event-Free Probability")
+            ax_km.set_title(f"{title} - {self.study_id}\nP-value = {p_val:.4g}")
 
             # Enable grid with style's properties
             if plot_style:
@@ -1340,7 +1364,7 @@ class TumorVolumeStudyClass():
                 else:
                     ax_labels.grid(True, alpha=0.3, axis='y')
 
-                ax_labels.legend(loc='best', framealpha=0.9)
+                # ax_labels.legend(loc='best', framealpha=0.9)
 
                 # Hide top and right spines
                 for spine in ["right", "left"]:
@@ -3322,7 +3346,7 @@ class TumorVolumeExperimentClass():
         # Vertical separators
         for i in range(len(x_positions) - 1):
             line_x = x_positions[i] + 1.5
-            ax.axvline(x=line_x, color='black', linestyle='--', linewidth=1, alpha=0.5)
+            ax.axvline(x=line_x, color='black', linestyle='-', linewidth=1, alpha=0.5)
 
         # Formatting
         ax.set_xticks(x_positions)
