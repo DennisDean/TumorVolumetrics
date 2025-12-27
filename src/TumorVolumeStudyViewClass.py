@@ -206,8 +206,10 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Connect combobox change to figure update
         for cbox in self.plot_select_comboBox:
-            cbox.currentTextChanged.connect(self.update_experiment_view)
+            cbox.currentTextChanged.connect(self.update_study_view)
 
+        # Initialize study selection
+        self.ui.comboBox_configuration_study.currentTextChanged.connect(self.update_study_view)
     def initialize_style_sheets_functions(self):
         # Set up highlevel options
         self.current_plot_style = 0
@@ -348,14 +350,14 @@ class TumorVolumeStudyWindow(QMainWindow):
             self.available_style_colors = list(colors)
 
         return self.objective_response_colors
-    def update_experiment_view(self):
+    def update_study_view(self):
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style = plot_style)
     def update_plot_style(self):
         # Update figures
         plot_style = self.get_plot_style()
-        self.update_experiment_view()
+        self.update_study_view()
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
 
         # Update Objective Response Plot Options

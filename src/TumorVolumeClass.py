@@ -129,6 +129,18 @@ def column_print(string_list:list, number_of_columns: int = 2, space: int = 5, i
         logger.info(indent+" ".join(string_list[num_complete_rows * number_of_columns:]))
 def write_title_list(variable_name:str, value_list:list):
     logger.info(f"{variable_name}: {', '.join(value_list)}")
+def remove_alpha(text):
+    """
+    Remove all alphabetic characters (a-z, A-Z) from a string.
+    Keeps numbers, spaces, punctuation, and special characters.
+
+    Args:
+        text: Input string
+
+    Returns:
+        String with alphabetic characters removed
+    """
+    return ''.join(char for char in text if not char.isalpha())
 
 # Main class
 class TumorVolumeTimeSeriesClass():
@@ -722,10 +734,10 @@ class TumorVolumeStudyClass():
         return fig, ax, style_context
 
     # Visualization
-    def plot_spider(self, plot_style=None, figsize=(10, 6),
-                    volume_label="Tumor Volume", volume_units="mm^3", weight_label="Weight", weight_units="mg",
-                    title=None, plot_weight=True, show_individual=True, show_aggregate=True, aggregate_sem=True,
-                    error_bars=False, aggregate_marker=None, tv_transform_str="No Transform", parent_widget=None):
+    def plot_spider(self, plot_style=None, figsize=(10, 6), volume_label="Tumor Volume", volume_units="mm^3",
+            weight_label="Weight", weight_units="mg", title=None, plot_weight=True, show_individual=True,
+            show_aggregate=True, aggregate_sem=True, error_bars=False, aggregate_marker=None,
+            tv_transform_str="No Transform", parent_widget=None):
         """
         Spider plot for tumor volume study data with optional aggregation curves.
 
@@ -1159,8 +1171,8 @@ class TumorVolumeStudyClass():
         else:
             return fig, ax_vol
     def plot_event_free_survival(self, plot_style=None, delta=1.0, cutoff=None, figsize=(10, 8),
-                                 title="Event-Free Survival (Tumor Volume Doubling)",
-                                 show_number_at_risk_plot=True, show_at_risk_table=True, parent_widget=None):
+            title="Event-Free Survival (Tumor Volume Doubling)", show_number_at_risk_plot=True, show_at_risk_table=True,
+            parent_widget=None):
         """
         Event-free survival analysis with Kaplan-Meier curves and risk tables.
 
@@ -1227,10 +1239,12 @@ class TumorVolumeStudyClass():
         show_kaplan_meier_curve = True  # axis linked to km has to be true
         km_subplot_proportion = 4.0 if show_kaplan_meier_curve else 0
         num_at_risk_plot_proportion = 1.0 if show_number_at_risk_plot else 0
-        at_risk_table_proportion = 0.6 if show_at_risk_table else 0
+        spacer_proportion = .3 if show_number_at_risk_plot else 0
+        at_risk_table_proportion = 1.0 if show_at_risk_table else 0
 
         # Determine number of subplots
-        num_of_subplots = int(show_kaplan_meier_curve) + int(show_number_at_risk_plot) + int(show_at_risk_table)
+        show_spacer = True if show_number_at_risk_plot else False
+        num_of_subplots = int(show_kaplan_meier_curve) + int(show_number_at_risk_plot) + int(show_at_risk_table) + int(show_spacer)
 
         # Set up height proportions
         height_ratios = []
@@ -1239,6 +1253,7 @@ class TumorVolumeStudyClass():
         if show_number_at_risk_plot:
             height_ratios.append(num_at_risk_plot_proportion)
         if show_at_risk_table:
+            height_ratios.append(spacer_proportion)
             height_ratios.append(at_risk_table_proportion)
 
         # Create figure
@@ -1248,7 +1263,7 @@ class TumorVolumeStudyClass():
             fig = plt.figure(figsize=figsize)
 
         gs = fig.add_gridspec(num_of_subplots, 1,
-                              height_ratios=height_ratios, hspace=0.15)
+                              height_ratios=height_ratios, hspace=0.3)
 
         # Create subplots
         current_sub_plot = 0
@@ -1265,6 +1280,7 @@ class TumorVolumeStudyClass():
             current_sub_plot += 1
 
         if show_at_risk_table:
+            current_sub_plot += 1
             ax_risk = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
             axes_dict['risk'] = ax_risk
 
@@ -1343,7 +1359,7 @@ class TumorVolumeStudyClass():
             # Middle panel: AT-RISK LINE PLOTS
             # -----------------------------------------------------
             if show_number_at_risk_plot:
-                ax_labels.set_ylabel("Number at Risk")
+                ax_labels.set_ylabel("# at Risk")
                 ax_labels.set_ylim(0 - 0.76, max(max(risk_table[arm]) for arm in self.unique_arms) * 1.1 + 0.5)
 
                 # Plot line for each arm showing numbers at risk over time
@@ -1379,9 +1395,9 @@ class TumorVolumeStudyClass():
             if show_at_risk_table:
                 ax_risk.set_yticks(range(len(self.unique_arms)))
                 ax_risk.set_yticklabels(self.unique_arms)
-                ax_risk.set_xlabel("Time (days)")
+                # ax_risk.set_xlabel("Time (days)")
                 ax_risk.set_xlim(-0.5, max_t + 0.5)
-                ax_risk.set_ylim(-0.6, len(self.unique_arms))
+                ax_risk.set_ylim(-1, len(self.unique_arms) + 0.3)
 
                 # Clear spines except left
                 for spine in ["right", "left"]:
@@ -1397,6 +1413,35 @@ class TumorVolumeStudyClass():
                                      fontsize=10, color=line_color)
 
                 ax_risk.grid(False)
+
+            # ----------------------------------------------------
+            # Conditional x-axis ownership logic
+            # ----------------------------------------------------
+            if show_number_at_risk_plot:
+                # Middle subplot owns the x-axis
+                ax_labels.tick_params(axis="x", which="both",
+                                      bottom=True, labelbottom=True)
+                ax_labels.set_xlabel("Time (days)")
+
+                # Ensure others are off
+                ax_km.tick_params(axis="x", which="both",
+                                  bottom=True, labelbottom=False)
+                ax_km.xaxis.label.set_visible(False)
+
+                ax_risk.tick_params(axis="x", which="both",
+                                    bottom=False, labelbottom=False)
+                ax_risk.xaxis.label.set_visible(False)
+
+            else:
+                # Top subplot owns the x-axis
+                ax_km.tick_params(axis="x", which="both",
+                                  bottom=True, labelbottom=True)
+                ax_km.set_xlabel("Time (days)")
+
+                # Ensure others are off
+                ax_risk.tick_params(axis="x", which="both",
+                                    bottom=False, labelbottom=False)
+                ax_risk.xaxis.label.set_visible(False)
 
         # Handle widget integration
         if parent_widget:
@@ -1457,7 +1502,7 @@ class TumorVolumeStudyClass():
             figsize=(12, 6), sort_descending=True, control_arms=("control", "vehicle", "placebo"),bar_alpha=0.85,
             bar_edgecolor="black", show_bar_labels=False, title="AUC by Arm", color_cycle=None,
             show_axis_labels: bool = True, plot_normalized_auc=False, show_legend: bool = True, plot_style=None,
-            parent_widget=None):
+            parent_widget=None, remove_text_x_labels = True):
         """
         Vertical bar plot of AUC values for each time-series.
         Controls are plotted first, followed by experimental arms.
@@ -1517,7 +1562,7 @@ class TumorVolumeStudyClass():
                 bar_x_positions.append(idx)
                 bar_heights.append(auc_val)
                 bar_colors.append(arm_colors[arm])
-                bar_labels.append(str(ts_id))
+                bar_labels.append(remove_alpha(str(ts_id)))
                 idx += 1
 
         if not bar_heights:
@@ -1555,7 +1600,7 @@ class TumorVolumeStudyClass():
                 ax.set_ylabel(y_label)
 
             if title:
-                ax.set_title(title)
+                ax.set_title(f'{title} - {self.study_id}')
 
             # Grid handling (respect style)
             if plot_style:
@@ -1630,7 +1675,6 @@ class TumorVolumeStudyClass():
 
         else:
             plt.show()
-
         return fig, ax
     def plot_percent_tumor_vol_change_bar( self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
@@ -1697,7 +1741,7 @@ class TumorVolumeStudyClass():
                 bar_x_positions.append(idx)
                 bar_heights.append(tv_change_val)
                 bar_colors.append(arm_colors[arm])
-                bar_labels.append(str(ts_id))
+                bar_labels.append(remove_alpha(str(ts_id)))
                 idx += 1
 
         if not bar_heights:
@@ -1739,7 +1783,7 @@ class TumorVolumeStudyClass():
                 ax.set_ylabel(y_label)
 
             if title:
-                ax.set_title(title)
+                ax.set_title(f'{title} - {self.study_id}')
 
             # Grid handling (respect style)
             if plot_style:
@@ -1817,7 +1861,7 @@ class TumorVolumeStudyClass():
         return fig, ax
     def plot_vol_change_as_objective_response_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
-            title="Tumor Volume change (%)", color_cycle=None, show_axis_labels: bool = True, show_legend: bool = True,
+            title="Objective Response", color_cycle=None, show_axis_labels: bool = True, show_legend: bool = True,
             y_range: list | None = None, plot_style=None, parent_widget=None):
         """
         Bar plot of percent tumor volume change colored by objective response category.
@@ -1887,7 +1931,7 @@ class TumorVolumeStudyClass():
                 bar_x_positions.append(idx)
                 bar_heights.append(tv_val)
                 bar_colors.append(self.objective_response_colors[resp_code])
-                bar_labels.append(str(ts_id))
+                bar_labels.append(remove_alpha(str(ts_id)))
                 idx += 1
 
             arm_ranges[arm] = (start_idx, idx - 1)
@@ -1925,7 +1969,7 @@ class TumorVolumeStudyClass():
                 ax.set_ylabel("Tumor Volume Change (%)")
 
             if title:
-                ax.set_title(title)
+                ax.set_title(f'{title} - {self.study_id}')
 
             # Grid handling (respect style)
             if plot_style:
@@ -1961,10 +2005,10 @@ class TumorVolumeStudyClass():
                     for k in ["CR", "PR", "SD", "PD"]
                 ]
                 labels = [
-                    self.objective_response_names[k]
+                    k #self.objective_response_names[k]
                     for k in ["CR", "PR", "SD", "PD"]
                 ]
-                ax.legend(handles, labels, title="Objective Response", loc="best")
+                ax.legend(handles, labels, loc="best")
 
             # ---------------------------------------------------
             # 7. Y-axis limits
@@ -2033,160 +2077,6 @@ class TumorVolumeStudyClass():
             plt.show()
 
         return fig, ax
-
-    def plot_vol_change_as_objective_response_bar_2(self, compute_day: int | None = None, figsize=(12, 6),
-                    sort_descending=True, control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85,
-                    bar_edgecolor="black", show_bar_labels=False, title="Tumor Volume change (%)", color_cycle=None,
-                    show_axis_labels: bool = True, show_legend: bool = True, y_range:list|None = None):
-
-        # -------------------------------------------------------
-        # 1. Collect volume changes per arm
-        # -------------------------------------------------------
-        unique_arms = list(set(self.arm_col))
-        vol_change_dict = {}
-        response_code_dict = {}
-
-        for arm in unique_arms:
-            ts_ids = self.study_arms_dict[arm]
-            vol_change_list = []
-            resp_code_list = []
-
-            for ts_id in ts_ids:
-                ts = self.study_tv_time_dict[ts_id]
-                tv_change_val, _ = ts.compute_percent_change_tumor_volume(compute_day=compute_day)
-                value = tv_change_val
-
-                # ---- GET OBJECTIVE RESPONSE CATEGORY --------------------
-                # INSERT YOUR LOGIC HERE:
-                response_code = ts.compute_objective_response(compute_day)
-                # response_code must be one of: "CR","PR","SD","PD"
-                # ---------------------------------------------------------
-
-                vol_change_list.append((ts_id, value))
-                resp_code_list.append((ts_id, response_code))
-
-            # sort both lists by the TV change value
-            vol_change_list.sort(key=lambda x: x[1], reverse=sort_descending)
-            # match ordering for response code
-            sorted_resp_list = [(ts_id, next(r for t, r in resp_code_list if t == ts_id))
-                                for ts_id, _ in vol_change_list]
-
-            vol_change_dict[arm] = vol_change_list
-            response_code_dict[arm] = sorted_resp_list
-
-        # -------------------------------------------------------
-        # 2. Arm ordering (controls first)
-        # -------------------------------------------------------
-        controls = [a for a in unique_arms if a.lower() in control_arms]
-        experimental = [a for a in unique_arms if a not in controls]
-        ordered_arms = controls + experimental
-
-        # -------------------------------------------------------
-        # 3. Flatten
-        # -------------------------------------------------------
-        bar_x_positions = []
-        bar_heights = []
-        bar_colors = []
-        bar_labels = []
-        arm_ranges = {}  # for the top subplot: arm name spans
-
-        idx = 0
-        for arm in ordered_arms:
-            start_idx = idx
-
-            # Add space before each arms
-            if idx > 0:
-                idx += 1  # 1 empty bar
-            start_idx = idx
-
-            for (ts_id, tv_val), (_, resp_code) in zip(
-                    vol_change_dict[arm], response_code_dict[arm]):
-                bar_x_positions.append(idx)
-                bar_heights.append(tv_val)
-                bar_colors.append(self.objective_response_colors[resp_code])
-                bar_labels.append(str(ts_id))
-
-                idx += 1
-
-            arm_ranges[arm] = (start_idx, idx - 1)
-
-        # -------------------------------------------------------
-        # 4. Create figure with 2 subplots (top labels + bars)
-        # -------------------------------------------------------
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot()
-
-        # -------------------------------------------------------
-        # 6. BAR PLOT
-        # -------------------------------------------------------
-        ax.bar(
-            bar_x_positions,
-            bar_heights,
-            color=bar_colors,
-            alpha=bar_alpha,
-            edgecolor=bar_edgecolor
-        )
-
-        if show_axis_labels:
-            ax.set_xticks(bar_x_positions)
-            ax.set_xticklabels(bar_labels, rotation=75, ha='right', fontsize=8)
-        else:
-            ax.set_xticks([])
-
-        y_label = "Tumor Volume Change (%)"
-        ax.set_ylabel(y_label)
-        ax.set_title(title)
-        ax.grid(True, axis='y', alpha=0.3)
-
-        # -------------------------------------------------------
-        # 7. Optional bar labels
-        # -------------------------------------------------------
-        if show_bar_labels:
-            for x, h in zip(bar_x_positions, bar_heights):
-                ax.text(x, h, f"{h:.1f}", ha='center', va='bottom', fontsize=8)
-
-        # -------------------------------------------------------
-        # 8. Legend for objective responses
-        # -------------------------------------------------------
-        if show_legend:
-            handles = [
-                plt.Line2D([], [], color=self.objective_response_colors[key], lw=8)
-                for key in ["CR", "PR", "SD", "PD"]
-            ]
-            labels = [self.objective_response_names[k] for k in ["CR", "PR", "SD", "PD"]]
-
-            ax.legend(handles, labels, title="Objective Response", loc="best")
-
-
-
-        # set y limit
-        # Set range if given
-        if y_range is not None:
-            ax.set_ylim(y_range[0], y_range[1])
-        else:
-            y_range = ax.get_ylim()
-
-        # 9. Draw arm labels centered above each arm block
-        # -------------------------------------------------------
-        for arm, (start, end) in arm_ranges.items():
-            mid = (start + end) / 2
-            ax.text(
-                mid,
-                y_range[1] * 1.02,  # slightly above plot
-                arm,
-                ha='center',
-                va='bottom',
-                fontsize=10,
-                fontweight='normal'
-            )
-
-
-
-        ax.set_ylim(y_range[0], y_range[1] * 1.10)
-
-        # Set layout and show
-        plt.tight_layout()
-        plt.show()
     def add_objective_response_legend(self, ax):
         """Add a legend explaining CR/PR/SD/PD colors."""
         import matplotlib.patches as mpatches
