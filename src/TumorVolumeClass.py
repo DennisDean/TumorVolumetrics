@@ -1537,37 +1537,38 @@ class TumorVolumeStudyClass():
         experimental = [a for a in unique_arms if a not in controls]
         ordered_arms = controls + experimental
 
-        # -------------------------------------------
-        # 3. COLOR MAP FOR ARMS
-        # -------------------------------------------
-        if color_cycle is None:
-            color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        # # -------------------------------------------
+        # # 3. COLOR MAP FOR ARMS
+        # # -------------------------------------------
+        # if color_cycle is None:
+        #     color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        #
+        # arm_colors = {
+        #     arm: color_cycle[i % len(color_cycle)]
+        #     for i, arm in enumerate(ordered_arms)
+        # }
 
-        arm_colors = {
-            arm: color_cycle[i % len(color_cycle)]
-            for i, arm in enumerate(ordered_arms)
-        }
-
-        # -------------------------------------------
-        # 4. FLATTEN BAR DATA
-        # -------------------------------------------
-        bar_x_positions = []
-        bar_heights = []
-        bar_colors = []
-        bar_labels = []
-
-        idx = 0
-        for arm in ordered_arms:
-            for ts_id, auc_val in auc_dict[arm]:
-                bar_x_positions.append(idx)
-                bar_heights.append(auc_val)
-                bar_colors.append(arm_colors[arm])
-                bar_labels.append(remove_alpha(str(ts_id)))
-                idx += 1
-
-        if not bar_heights:
-            logger.info("No AUC values to plot")
-            return None
+        # # -------------------------------------------
+        # # 4. FLATTEN BAR DATA
+        # # -------------------------------------------
+        # bar_x_positions = []
+        # bar_heights = []
+        # bar_colors = []
+        # bar_labels = []
+        #
+        # idx = 0
+        # for arm in ordered_arms:
+        #     for ts_id, auc_val in auc_dict[arm]:
+        #         bar_x_positions.append(idx)
+        #         bar_heights.append(auc_val)
+        #         bar_colors.append(arm_colors[arm])
+        #         bar_labels.append(remove_alpha(str(ts_id)))
+        #         idx += 1
+        #     idx += 1
+        #
+        # if not bar_heights:
+        #     logger.info("No AUC values to plot")
+        #     return None
 
         # -------------------------------------------
         # 5. PLOTTING (STYLE + QT SUPPORT)
@@ -1578,6 +1579,44 @@ class TumorVolumeStudyClass():
             fig.set_size_inches(figsize)
 
         with style_ctx:
+
+            # -------------------------------------------
+            # COLOR MAP FOR ARMS
+            # -------------------------------------------
+            if color_cycle is None:
+                color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+            arm_colors = {
+                arm: color_cycle[i % len(color_cycle)]
+                for i, arm in enumerate(ordered_arms)
+            }
+
+            # -------------------------------------------
+            # FLATTEN BAR DATA
+            # -------------------------------------------
+            bar_x_positions = []
+            bar_heights = []
+            bar_colors = []
+            bar_labels = []
+
+            idx = 0
+            for arm in ordered_arms:
+                for ts_id, auc_val in auc_dict[arm]:
+                    bar_x_positions.append(idx)
+                    bar_heights.append(auc_val)
+                    bar_colors.append(arm_colors[arm])
+                    bar_labels.append(remove_alpha(str(ts_id)))
+                    idx += 1
+                idx += 1
+
+            if not bar_heights:
+                logger.info("No AUC values to plot")
+                return None
+
+
+
+
+            # Create bar graph
             bars = ax.bar(
                 bar_x_positions,
                 bar_heights,
@@ -1719,34 +1758,35 @@ class TumorVolumeStudyClass():
         # -------------------------------------------
         # 3. COLOR MAP FOR ARMS
         # -------------------------------------------
-        if color_cycle is None:
-            color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        # if color_cycle is None:
+        #     color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        #
+        # arm_colors = {
+        #     arm: color_cycle[i % len(color_cycle)]
+        #     for i, arm in enumerate(ordered_arms)
+        # }
 
-        arm_colors = {
-            arm: color_cycle[i % len(color_cycle)]
-            for i, arm in enumerate(ordered_arms)
-        }
-
-        # -------------------------------------------
-        # 4. FLATTEN BAR DATA
-        # -------------------------------------------
-        bar_x_positions = []
-        bar_heights = []
-        bar_colors = []
-        bar_labels = []
-
-        idx = 0
-        for arm in ordered_arms:
-            for ts_id, tv_change_val in vol_change_dict[arm]:
-                bar_x_positions.append(idx)
-                bar_heights.append(tv_change_val)
-                bar_colors.append(arm_colors[arm])
-                bar_labels.append(remove_alpha(str(ts_id)))
-                idx += 1
-
-        if not bar_heights:
-            logger.info("No tumor volume change values to plot")
-            return None
+        # # -------------------------------------------
+        # # 4. FLATTEN BAR DATA
+        # # -------------------------------------------
+        # bar_x_positions = []
+        # bar_heights = []
+        # bar_colors = []
+        # bar_labels = []
+        #
+        # idx = 0
+        # for arm in ordered_arms:
+        #     for ts_id, tv_change_val in vol_change_dict[arm]:
+        #         bar_x_positions.append(idx)
+        #         bar_heights.append(tv_change_val)
+        #         bar_colors.append(arm_colors[arm])
+        #         bar_labels.append(remove_alpha(str(ts_id)))
+        #         idx += 1
+        #     idx += 1
+        #
+        # if not bar_heights:
+        #     logger.info("No tumor volume change values to plot")
+        #     return None
 
         # -------------------------------------------
         # 5. PLOTTING (STYLE + QT SUPPORT)
@@ -1757,12 +1797,57 @@ class TumorVolumeStudyClass():
             fig.set_size_inches(figsize)
 
         with style_ctx:
+
+            #------------------
+            # Set Arm Colors
+
+            # Get colors from the style (like in plot_auc_with_controls_bar)
+            prop_cycle = plt.rcParams['axes.prop_cycle']
+            colors = prop_cycle.by_key()['color']
+            edge_color = plt.rcParams['axes.edgecolor']
+            line_color = plt.rcParams['text.color']
+
+            # Now create color map using style colors
+            if color_cycle is None:
+                color_cycle = colors
+
+            arm_colors = {
+                arm: color_cycle[i % len(color_cycle)]
+                for i, arm in enumerate(ordered_arms)
+            }
+
+            #---------------------
+            # Flatten Bar Data
+
+            bar_x_positions = []
+            bar_heights = []
+            bar_colors = []
+            bar_labels = []
+
+            idx = 0
+            for arm in ordered_arms:
+                for ts_id, tv_change_val in vol_change_dict[arm]:
+                    bar_x_positions.append(idx)
+                    bar_heights.append(tv_change_val)
+                    bar_colors.append(arm_colors[arm])
+                    bar_labels.append(remove_alpha(str(ts_id)))
+                    idx += 1
+                idx += 1
+
+            if not bar_heights:
+                logger.info("No tumor volume change values to plot")
+                return None
+
+
+
+
+
             bars = ax.bar(
                 bar_x_positions,
                 bar_heights,
                 color=bar_colors,
                 alpha=bar_alpha,
-                edgecolor=bar_edgecolor,
+                edgecolor=edge_color,
             )
 
             # X ticks
