@@ -17,7 +17,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 # Interface
-from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox
+from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox, QScrollArea
 from PySide6.QtCore import QPropertyAnimation, QEasingCurve, QSize
 from PySide6.QtGui import QColor, QPixmap, QIcon
 
@@ -235,7 +235,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Connect plot style selection
         self.ui.pushButton_plot_uodate_style.clicked.connect(self.update_plot_style)
     def initialize_collapsable_group_boxes(self):
-
         # Define box animation
         self._gb_style_anim = QPropertyAnimation(self.ui.groupBox_plot_style_sheet, b"maximumHeight")
         self._gb_style_anim.setDuration(180)
@@ -245,6 +244,10 @@ class TumorVolumeStudyWindow(QMainWindow):
         self._gb_confg_anim.setDuration(180)
         self._gb_confg_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
+        self._gb_spidr_anim = QPropertyAnimation(self.ui.groupBox_configuration_spider, b"maximumHeight")
+        self._gb_spidr_anim.setDuration(180)
+        self._gb_spidr_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
         self._gb_objrp_anim = QPropertyAnimation(self.ui.groupBox_objective_response, b"maximumHeight")
         self._gb_objrp_anim.setDuration(180)
         self._gb_objrp_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
@@ -252,11 +255,13 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Set checked
         self.ui.groupBox_plot_configurations.setChecked(True)
         self.ui.groupBox_plot_style_sheet.setChecked(False)
+        self.ui.groupBox_configuration_spider.setChecked(False)
         self.ui.groupBox_objective_response.setChecked(False)
 
         # Set initial group box settings
-        group_boxes = [self.ui.groupBox_plot_configurations, self.ui.groupBox_plot_style_sheet, self.ui.groupBox_objective_response]
-        init_group_box_state = [True, False, False]
+        group_boxes = [self.ui.groupBox_plot_configurations, self.ui.groupBox_plot_style_sheet,
+                       self.ui.groupBox_configuration_spider, self.ui.groupBox_objective_response]
+        init_group_box_state = [True, False, False, False]
         for gbox, gstate in zip(group_boxes, init_group_box_state):
             gbox.setChecked(gstate)
             gbox.layout().activate()
@@ -267,6 +272,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Conenct to toggle function
         self.ui.groupBox_plot_style_sheet.toggled.connect(lambda checked: self._animate_style_groupbox(self.ui.groupBox_plot_style_sheet, checked))
         self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
+        self.ui.groupBox_configuration_spider.toggled.connect(lambda checked: self._animate_spider_groupbox(self.ui.groupBox_configuration_spider, checked))
         self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
     def initialize_objective_response_plot_groupbox(self):
         # Get current style color selection
@@ -278,6 +284,9 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Connect pushbutton to update objective response plot
         self.ui.pushButton_objective_response_update.clicked.connect(self.update_objective_response_bar_plot)
+    def initiali_spider_plot_group_box(self):
+        # Set data transform
+        pass
 
     # Update Figure
     def get_plot_style(self):
@@ -448,6 +457,74 @@ class TumorVolumeStudyWindow(QMainWindow):
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
 
     # Group box animation code (could be consolidated with a dictionary)
+    def _animate_style_groupbox_3(self, groupbox: QGroupBox, expanded: bool):
+        layout = groupbox.layout()
+        if layout is None:
+            return
+
+        header_height = groupbox.fontMetrics().height() + 16
+
+        # EXPAND
+        if expanded:
+            # 1. Show content FIRST
+            set_layout_visible(self.ui.verticalLayout_plot_style_group, True)
+
+            # 2. Force layout recalculation
+            layout.invalidate()
+            groupbox.updateGeometry()
+
+            # 3. Measure AFTER content is visible
+            content_height = layout.sizeHint().height()
+            expanded_height = header_height + content_height
+
+            anim = QPropertyAnimation(groupbox, b"minimumHeight", groupbox)
+            anim.setDuration(200)
+            anim.setStartValue(header_height)
+            anim.setEndValue(expanded_height)
+
+            print(header_height)
+            print(expanded_height)
+
+            # Update scroll area during animation
+            #anim.valueChanged.connect(lambda: self._update_scroll_area(groupbox))
+
+        # COLLAPSE
+        else:
+            # Keep maximum height unlimited during animation
+            groupbox.setMaximumHeight(16777215)
+
+            anim = QPropertyAnimation(groupbox, b"minimumHeight", groupbox)
+            anim.setDuration(200)
+            anim.setStartValue(groupbox.height())
+            anim.setEndValue(header_height)
+
+            print(groupbox.height())
+            print(header_height)
+
+            # Update scroll area during animation
+            anim.valueChanged.connect(lambda: self._update_scroll_area(groupbox))
+
+            # Hide content and constrain size AFTER collapse finishes
+            def on_collapse_finished():
+                set_layout_visible(self.ui.verticalLayout_plot_style_group, False)
+                groupbox.setMaximumHeight(header_height)
+                groupbox.setMinimumHeight(header_height)
+                self._update_scroll_area(groupbox)
+
+            anim.finished.connect(on_collapse_finished)
+
+        anim.start()
+        groupbox._anim = anim  # keep alive
+
+    def _update_scroll_area(self, groupbox: QGroupBox):
+        """Force the scroll area to update when groupbox size changes"""
+        scroll_area = groupbox
+        # Walk up the parent hierarchy to find the scroll area
+        while scroll_area is not None:
+            if isinstance(scroll_area, QScrollArea):
+                scroll_area.widget().updateGeometry()
+                break
+            scroll_area = scroll_area.parentWidget()
     def _animate_style_groupbox(self, groupbox: QGroupBox, expanded: bool):
         header_height = groupbox.fontMetrics().height() + 16
 
@@ -502,6 +579,37 @@ class TumorVolumeStudyWindow(QMainWindow):
             self._gb_objrp_anim.setEndValue(header_height)
 
         self._gb_objrp_anim.start()
+    def _animate_spider_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_spidr_anim.stop()
+
+        if expanded:
+            self._gb_spidr_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_spidr_anim.setEndValue(expanded_height)
+        else:
+            self._gb_spidr_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_spidr_anim.setEndValue(header_height)
+
+        self._gb_spidr_anim.start()
+    def _recompute_groupbox_height(self, groupbox):
+        layout = groupbox.layout()
+        if not layout:
+            return
+
+        layout.activate()
+
+        header_height = groupbox.fontMetrics().height() + 16
+        content_height = layout.sizeHint().height()
+
+        expanded_height = header_height + content_height
+
+        groupbox.setMaximumHeight(expanded_height)
     def _recompute_groupbox_height(self, groupbox):
         layout = groupbox.layout()
         if not layout:
