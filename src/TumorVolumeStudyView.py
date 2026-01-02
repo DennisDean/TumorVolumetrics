@@ -85,7 +85,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents_3 = QWidget()
         self.scrollAreaWidgetContents_3.setObjectName(u"scrollAreaWidgetContents_3")
-        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 231, 1161))
+        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, -25, 231, 1185))
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
@@ -670,6 +670,18 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_7.addWidget(self.groupBox_objective_response, 0, Qt.AlignTop)
 
+        self.label_10 = QLabel(self.scrollAreaWidgetContents_3)
+        self.label_10.setObjectName(u"label_10")
+        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        sizePolicy6.setHorizontalStretch(0)
+        sizePolicy6.setVerticalStretch(0)
+        sizePolicy6.setHeightForWidth(self.label_10.sizePolicy().hasHeightForWidth())
+        self.label_10.setSizePolicy(sizePolicy6)
+        self.label_10.setMinimumSize(QSize(75, 0))
+        self.label_10.setMaximumSize(QSize(75, 16777215))
+
+        self.verticalLayout_7.addWidget(self.label_10)
+
         self.scrollArea.setWidget(self.scrollAreaWidgetContents_3)
 
         self.verticalLayout_visual_graph_settings.addWidget(self.scrollArea, 0, Qt.AlignRight)
@@ -736,6 +748,7 @@ class Ui_MainWindow(object):
         self.label_11.setText(QCoreApplication.translate("MainWindow", u"PR", None))
         self.label_16.setText(QCoreApplication.translate("MainWindow", u"CR", None))
         self.pushButton_objective_response_update.setText(QCoreApplication.translate("MainWindow", u"Update", None))
+        self.label_10.setText("")
         self.menuShow.setTitle(QCoreApplication.translate("MainWindow", u"Show", None))
     # retranslateUi
 
