@@ -143,6 +143,13 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.available_style_colors = None
         self.initialize_objective_response_plot_groupbox()
 
+        # Intialize Spider Plot Group Box
+        self.tv_transform_options:list|None = None
+        self.tv_transform_dict:dict|None = None
+        self.spider_show_options:list|None = None
+        self.spider_show_dict:dict|None = None
+        self.initialize_spider_plot_group_box()
+
     # Figure utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
         # Capture the original geometry and size policy
@@ -284,10 +291,25 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Connect pushbutton to update objective response plot
         self.ui.pushButton_objective_response_update.clicked.connect(self.update_objective_response_bar_plot)
-    def initiali_spider_plot_group_box(self):
-        # Set data transform
-        pass
+    def initialize_spider_plot_group_box(self):
+        # Get transform information
+        unique_studies = self.tv_data_obj.unique_studies
+        first_study = self.tv_data_obj.tumor_vol_study_dict[unique_studies[0]]
+        self.tv_transform_options = first_study.tv_transform_options
+        self.tv_transform_dict = first_study.tv_transform_dict
+        self.ui.comboBox_config_data_transform.addItems(self.tv_transform_options)
 
+        # Set show varaibles
+        self.spider_show_options = ["True", "False"]
+        self.spider_show_dict = {"True":True, "False":False}
+        self.ui.comboBox_spider_time_series.addItems(self.show_options)
+        self.ui.comboBox_spider_aggregate.addItems(self.show_options)
+        self.ui.comboBox_spider_weight.addItems(self.show_options)
+
+        # Aggregate variables
+        self.ui.comboBox_spider_marker.addItems(show_options)
+        self.ui.comboBox_spider_sem.addItems(show_options)
+        self.ui.comboBox_spider_err_bars.addItems(show_options)
     # Update Figure
     def get_plot_style(self):
         # Get style information from interface
@@ -514,8 +536,7 @@ class TumorVolumeStudyWindow(QMainWindow):
             anim.finished.connect(on_collapse_finished)
 
         anim.start()
-        groupbox._anim = anim  # keep alive
-
+        groupbox._anim = anim  # keep alive+
     def _update_scroll_area(self, groupbox: QGroupBox):
         """Force the scroll area to update when groupbox size changes"""
         scroll_area = groupbox

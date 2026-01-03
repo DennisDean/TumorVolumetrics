@@ -533,10 +533,10 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_23.addWidget(self.label_25)
 
-        self.comboBox_6 = QComboBox(self.groupBox_configuration_spider)
-        self.comboBox_6.setObjectName(u"comboBox_6")
+        self.comboBox_spider_err_bars = QComboBox(self.groupBox_configuration_spider)
+        self.comboBox_spider_err_bars.setObjectName(u"comboBox_spider_err_bars")
 
-        self.horizontalLayout_23.addWidget(self.comboBox_6)
+        self.horizontalLayout_23.addWidget(self.comboBox_spider_err_bars)
 
 
         self.verticalLayout_6.addLayout(self.horizontalLayout_23)
