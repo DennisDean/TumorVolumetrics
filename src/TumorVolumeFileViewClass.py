@@ -214,6 +214,9 @@ class TumorVolumeFileWindow(QMainWindow):
         table.customContextMenuRequested.connect(self.show_context_menu)
     def populate_data(self, tv_file_name, tv_data_obj):
         """Populate the window with data"""
+        # Move forward only if filename is avaialbe
+
+        # Get informtion
         self.tv_file_name = tv_file_name
         self.tv_data_obj = tv_data_obj
         self.tv_data_df = tv_data_obj.tmz_data_df

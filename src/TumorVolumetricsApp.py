@@ -197,6 +197,11 @@ class MainApp(QMainWindow):
         if self.use_latex == False:
             logger.info(f'Full style sheet functionality requires Latex installed')
 
+        # Enable buttongs
+        self.ui.pushButton_load_select_file.setEnabled(True)
+        self.ui.pushButton_load_show_file.setEnabled(False)
+        self.ui.pushButton_load_saveas.setEnabled(False)
+
     # Major Commands
     def pushbutton_load_csv_file(self):
         # Respond to user file request
@@ -223,6 +228,10 @@ class MainApp(QMainWindow):
             # Store information
             self.tv_file_path = file_path
             self.tv_fn = fn
+
+            # Enable buttons
+            self.ui.pushButton_load_show_file.setEnabled(True)
+            self.ui.pushButton_load_saveas.setEnabled(True)
         else:
             logger.info(f"File selection canceled by user.")
             return

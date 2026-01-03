@@ -203,8 +203,16 @@ class TumorVolumeStudyWindow(QMainWindow):
                                        "Percent_TV_Change": "plot_percent_tumor_vol_change_bar",
                                        "Objective_Response": "plot_vol_change_as_objective_response_bar"}
 
-        self.plotting_function_dict_2 = None
+        # Get plotting function dict from TumorVolumeClass
+        # Start process of replacing plotting function dict with metadata complete
+        unique_studies = self.tv_data_obj.unique_studies
+        first_study = self.tv_data_obj.tumor_vol_study_dict[unique_studies[0]]
+        self.plotting_function_dict_2 = first_study.plotting_function_dict_2
+        print(self.plotting_function_dict_2)
 
+        # Get avaialble plot type
+        self.plot_types = list(self.plotting_function_dict_2.keys())
+        self.plot_types.sort()
 
         # Initialize selection comboBoxes
         for idx, cbox in enumerate(self.plot_select_comboBox):
@@ -298,7 +306,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Get transform information
         unique_studies = self.tv_data_obj.unique_studies
         first_study = self.tv_data_obj.tumor_vol_study_dict[unique_studies[0]]
-        self.tv_transform_options = first_study.tv_transform_options
+        self.tv_transform_options = "No Transform", "Log", "Normalize", "Percent Change" # will make automatic
         self.tv_transform_dict = first_study.tv_transform_dict
         self.ui.comboBox_config_data_transform.addItems(self.tv_transform_options)
 
@@ -661,10 +669,44 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Update each plot
         for idx in range(num_figures):
+            # Get plot information
             selected_plot = self.plot_select_comboBox[idx].currentText()
-            plot_name = self.plotting_function_dict[selected_plot]
+            plot_metadata = self.plotting_function_dict_2[selected_plot]
+            plot_name = plot_metadata["function"]
             graphic_view = self.graphic_views[idx]
-            study_obj.plot_to_widget_by_name(plot_name, graphic_view, plot_style=updated_style)
+
+            # Get custom parameters
+            custom_params = self.get_custom_parameters(plot_name)
+            print(f'plot name = {plot_name}, custom_params={custom_params}')
+
+            # Plot figure
+            study_obj.plot_to_widget_by_name(plot_name, graphic_view, plot_style=updated_style, **custom_params)
+
+    # Get custom plot figures
+    def get_custom_parameters(self, plot_name):
+        # Define custom parameters
+        custom_params = {}
+
+        if plot_name == "plot_spider":
+            custom_params = self.get_spider_group_box()
+            print(f'spider plot = {custom_params}')
+
+        return custom_params
+    def get_spider_group_box(self):
+        # Get information from group box
+        data_transform = self.ui.comboBox_config_data_transform.currentText()
+        time_series = self.ui.comboBox_spider_time_series.currentText()
+        aggregate = self.ui.comboBox_spider_aggregate.currentText()
+        weight = self.ui.comboBox_config_weigth.currentText()
+        marker = self.ui.comboBox_config_market.currentText()
+        sem = self.ui.comboBox_config_sem.currentText()
+        err_bars = self.ui.comboBox_config_err_bars.currentText()
+
+        # Construct custom parameter dictionary
+        custom_params = {"plot_weight": weight, "show_individual": time_series, "show_aggregate": aggregate,
+                         "aggregate_sem": sem, "error_bars": err_bars, "aggregate_marker":marker,
+                         "tv_transform_str":data_transform}
+        return custom_params
 
 
 
