@@ -322,6 +322,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_spider_marker.addItems(self.spider_show_options)
         self.ui.comboBox_spider_sem.addItems(self.spider_show_options)
         self.ui.comboBox_spider_err_bars.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_err_bars.setCurrentIndex(1) #set to false
 
         # Connect update buttong to graph plot
         self.ui.pushButton_update_spider.clicked.connect(self.update_study_view)
