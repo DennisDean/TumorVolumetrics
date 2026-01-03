@@ -511,6 +511,76 @@ class TumorVolumeStudyClass():
         self.default_response_color = "#CCCCCC"
         self.objective_response_colors[""] = self.default_response_color
 
+        # Create plotting dictionary
+        self.plotting_function_dict_2 = {
+            "Spider Plot":
+                {"function": "plot_spider",
+                 "params": {
+                    "plot_weight": {"type": "bool","default": True,"label": "Show Weight"},
+                    "show_individual": {"type": "bool","default": True,"label": "Show Individual Lines"},
+                    "show_aggregate": {"type": "bool","default": True,"label": "Show Aggregate Line"},
+                    "aggregate_sem": {"type": "bool","default": True,"label": "Show SEM on Aggregate"},
+                    "error_bars": {"type": "bool","default": False,"label": "Show Error Bars"},
+                    "tv_transform_str": {"type": "combo","default": "No Transform",
+                        "options": ["No Transform", "Log", "Normalize", "Percent Change"],"label": "Volume Transform"},
+                    "volume_label": {"type": "text","default": "Tumor Volume","label": "Volume Label"},
+                    "volume_units": {"type": "text","default": "mm^3","label": "Volume Units"},
+                    "weight_label": {"type": "text","default": "Weight","label": "Weight Label"},
+                    "weight_units": {"type": "text","default": "mg","label": "Weight Units"},
+                    "title": {"type": "text","default": None,"label": "Custom Title"}
+                    }
+                },
+            "Event-Free Survival":
+               {"function": "plot_event_free_survival",
+                "params": {
+                    "delta": {"type": "float","default": 1.0,"label": "Delta (Doubling Threshold)","min": 0.1,"max": 10.0,"step": 0.1},
+                    "cutoff": {"type": "float","default": None,"label": "Cutoff Day (None = auto)","min": 0,"max": 365,"step": 1,"nullable": True},
+                    "show_number_at_risk_plot": {"type": "bool","default": True,"label": "Show Number at Risk Plot"},
+                    "show_at_risk_table": {"type": "bool","default": True,"label": "Show At-Risk Table"},
+                    "title": {"type": "text","default": "Event-Free Survival (Tumor Volume Doubling)","label": "Title"}
+                    }
+                },
+            "AUC Bar Chart":
+               {"function": "plot_auc_bar",
+                "params": {
+                    "compute_day": {"type": "int","default": None,"label": "Compute Through Day","min": 1,"max": 365,"step": 1,"nullable": True},
+                    "sort_descending": {"type": "bool","default": True,"label": "Sort Descending"},
+                    "plot_normalized_auc": {"type": "bool","default": False,"label": "Plot Normalized AUC"},
+                    "show_bar_labels": {"type": "bool","default": False,"label": "Show Value Labels on Bars"},
+                    "show_axis_labels": {"type": "bool","default": True,"label": "Show Axis Labels"},
+                    "show_legend": {"type": "bool","default": True,"label": "Show Legend"},
+                    "remove_text_x_labels": {"type": "bool","default": True,"label": "Remove Text X-Labels"},
+                    "bar_alpha": {"type": "float","default": 0.85,"label": "Bar Transparency","min": 0.0,"max": 1.0,"step": 0.05},
+                    "title": {"type": "text","default": "AUC by Arm","label": "Title"}
+                }
+            },
+            "Tumor Volume Change (%)": {
+                "function": "plot_percent_tumor_vol_change_bar",
+                "params": {
+                    "compute_day": {"type": "int","default": None,"label": "Compute At Day","min": 1,"max": 365,"step": 1,"nullable": True},
+                    "sort_descending": {"type": "bool","default": True,"label": "Sort Descending"},
+                    "plot_normalized_tv_change": {"type": "bool","default": False,"label": "Plot Normalized TV Change"},
+                    "show_bar_labels": {"type": "bool","default": False,"label": "Show Value Labels on Bars"},
+                    "show_axis_labels": {"type": "bool","default": True,"label": "Show Axis Labels"},
+                    "show_legend": {"type": "bool","default": True,"label": "Show Legend"},
+                    "bar_alpha": {"type": "float","default": 0.85,"label": "Bar Transparency","min": 0.0,"max": 1.0,"step": 0.05},
+                    "title": {"type": "text","default": "Tumor Volume Change (%)","label": "Title"}
+                }
+            },
+            "Objective Response": {
+                "function": "plot_vol_change_as_objective_response_bar",
+                "params": {
+                    "compute_day": {"type": "int","default": None,"label": "Compute At Day","min": 1,"max": 365,"step": 1,"nullable": True},
+                    "sort_descending": {"type": "bool","default": True,"label": "Sort Descending"},
+                    "show_bar_labels": {"type": "bool","default": False,"label": "Show Value Labels on Bars"},
+                    "show_axis_labels": {"type": "bool","default": True,"label": "Show Axis Labels"},
+                    "show_legend": {"type": "bool","default": True,"label": "Show Legend"},
+                    "bar_alpha": {"type": "float","default": 0.85,"label": "Bar Transparency","min": 0.0,"max": 1.0,"step": 0.06},
+                    "title": {"type": "text","default": "Objective Response","label": "Title"}
+                }
+            }
+        }
+
     # Transform functions
     def tv_to_tv(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
         tv_to_tv: np.ndarray = tumor_volume_data_list

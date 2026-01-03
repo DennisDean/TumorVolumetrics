@@ -203,6 +203,9 @@ class TumorVolumeStudyWindow(QMainWindow):
                                        "Percent_TV_Change": "plot_percent_tumor_vol_change_bar",
                                        "Objective_Response": "plot_vol_change_as_objective_response_bar"}
 
+        self.plotting_function_dict_2 = None
+
+
         # Initialize selection comboBoxes
         for idx, cbox in enumerate(self.plot_select_comboBox):
             cbox.addItems(self.plot_types)
@@ -302,14 +305,15 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Set show varaibles
         self.spider_show_options = ["True", "False"]
         self.spider_show_dict = {"True":True, "False":False}
-        self.ui.comboBox_spider_time_series.addItems(self.show_options)
-        self.ui.comboBox_spider_aggregate.addItems(self.show_options)
-        self.ui.comboBox_spider_weight.addItems(self.show_options)
+        self.ui.comboBox_spider_time_series.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_aggregate.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_weight.addItems(self.spider_show_options)
 
         # Aggregate variables
-        self.ui.comboBox_spider_marker.addItems(show_options)
-        self.ui.comboBox_spider_sem.addItems(show_options)
-        self.ui.comboBox_spider_err_bars.addItems(show_options)
+        self.ui.comboBox_spider_marker.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_sem.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_err_bars.addItems(self.spider_show_options)
+
     # Update Figure
     def get_plot_style(self):
         # Get style information from interface
@@ -631,7 +635,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         expanded_height = header_height + content_height
 
         groupbox.setMaximumHeight(expanded_height)
-    def _recompute_groupbox_height(self, groupbox):
+    def _recompute_groupbox_height_2(self, groupbox):
         layout = groupbox.layout()
         if not layout:
             return
