@@ -81,9 +81,17 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Save data object
         self.tv_data_obj = tv_data_obj
 
+
         # Get Studies
         self.studies = tv_data_obj.unique_studies
         self.ui.comboBox_configuration_study.addItems(self.studies)
+
+        # Intialize Spider Plot Group Box
+        self.tv_transform_options:list|None = None
+        self.tv_transform_dict:dict|None = None
+        self.spider_show_options = ["True", "False"]
+        self.spider_show_dict = {"True": True, "False": False}
+        self.initialize_spider_plot_group_box()
 
         # Set plot configurations
         self.initial_configuration = '4'
@@ -143,12 +151,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.available_style_colors = None
         self.initialize_objective_response_plot_groupbox()
 
-        # Intialize Spider Plot Group Box
-        self.tv_transform_options:list|None = None
-        self.tv_transform_dict:dict|None = None
-        self.spider_show_options:list|None = None
-        self.spider_show_dict:dict|None = None
-        self.initialize_spider_plot_group_box()
+
 
     # Figure utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
@@ -311,8 +314,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_config_data_transform.addItems(self.tv_transform_options)
 
         # Set show varaibles
-        self.spider_show_options = ["True", "False"]
-        self.spider_show_dict = {"True":True, "False":False}
         self.ui.comboBox_spider_time_series.addItems(self.spider_show_options)
         self.ui.comboBox_spider_aggregate.addItems(self.spider_show_options)
         self.ui.comboBox_spider_weight.addItems(self.spider_show_options)
@@ -321,6 +322,9 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_spider_marker.addItems(self.spider_show_options)
         self.ui.comboBox_spider_sem.addItems(self.spider_show_options)
         self.ui.comboBox_spider_err_bars.addItems(self.spider_show_options)
+
+        # Connect update buttong to graph plot
+        self.ui.pushButton_update_spider.clicked.connect(self.update_study_view)
 
     # Update Figure
     def get_plot_style(self):
@@ -694,19 +698,18 @@ class TumorVolumeStudyWindow(QMainWindow):
         return custom_params
     def get_spider_group_box(self):
         # Get information from group box
+        print(f'self.spider_show_dict = {self.spider_show_dict}')
         data_transform = self.ui.comboBox_config_data_transform.currentText()
-        time_series = self.ui.comboBox_spider_time_series.currentText()
-        aggregate = self.ui.comboBox_spider_aggregate.currentText()
-        weight = self.ui.comboBox_config_weigth.currentText()
-        marker = self.ui.comboBox_config_market.currentText()
-        sem = self.ui.comboBox_config_sem.currentText()
-        err_bars = self.ui.comboBox_config_err_bars.currentText()
+        time_series = self.spider_show_dict[self.ui.comboBox_spider_time_series.currentText()]
+        aggregate = self.spider_show_dict[self.ui.comboBox_spider_aggregate.currentText()]
+        weight = self.spider_show_dict[self.ui.comboBox_spider_weight.currentText()]
+        marker = self.spider_show_dict[self.ui.comboBox_spider_marker.currentText()]
+        sem = self.spider_show_dict[self.ui.comboBox_spider_sem.currentText()]
+        err_bars = self.spider_show_dict[self.ui.comboBox_spider_err_bars.currentText()]
 
         # Construct custom parameter dictionary
         custom_params = {"plot_weight": weight, "show_individual": time_series, "show_aggregate": aggregate,
                          "aggregate_sem": sem, "error_bars": err_bars, "aggregate_marker":marker,
                          "tv_transform_str":data_transform}
+        print(f'Get spider group box, custom_params = {custom_params}')
         return custom_params
-
-
-

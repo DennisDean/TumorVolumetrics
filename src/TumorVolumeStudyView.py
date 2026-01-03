@@ -85,7 +85,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents_3 = QWidget()
         self.scrollAreaWidgetContents_3.setObjectName(u"scrollAreaWidgetContents_3")
-        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, -25, 231, 1185))
+        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 231, 1217))
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
@@ -541,6 +541,11 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_6.addLayout(self.horizontalLayout_23)
 
+        self.pushButton_update_spider = QPushButton(self.groupBox_configuration_spider)
+        self.pushButton_update_spider.setObjectName(u"pushButton_update_spider")
+
+        self.verticalLayout_6.addWidget(self.pushButton_update_spider)
+
 
         self.verticalLayout_4.addLayout(self.verticalLayout_6)
 
@@ -741,6 +746,7 @@ class Ui_MainWindow(object):
         self.label_24.setText(QCoreApplication.translate("MainWindow", u"Marker", None))
         self.label_26.setText(QCoreApplication.translate("MainWindow", u"SEM", None))
         self.label_25.setText(QCoreApplication.translate("MainWindow", u"Err. Bars", None))
+        self.pushButton_update_spider.setText(QCoreApplication.translate("MainWindow", u"Update", None))
         self.groupBox_objective_response.setTitle(QCoreApplication.translate("MainWindow", u"Objective Response Plot", None))
         self.label_17.setText(QCoreApplication.translate("MainWindow", u"Set Obj. Response Color", None))
         self.label_14.setText(QCoreApplication.translate("MainWindow", u"PD", None))
