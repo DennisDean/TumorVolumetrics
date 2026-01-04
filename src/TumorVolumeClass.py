@@ -495,6 +495,16 @@ class TumorVolumeStudyClass():
                                   "Percent Prgress/Regress": self.tv_percent_prog_regres_endpoint}
         self.tv_transform_reccomended_labels = ["Tumor Volume", "Percent Change", f"% Change from $V_0$",
                                                 r"$\log_2(V/V_0)$", f"% Progress/Regress from $V_0$"]
+        self.tv_transform_label_dict = {
+                                  "No Transform": "Tumor Volume",
+                                  "Percent Change": "Percent Change",
+                                  "Prop. Vol. Change": f"Proportional TV Change",
+                                  "Percent Prgress/Regress": "Percent Prgress/Regress"}
+        self.tv_transform_units_dict = {
+                                  "No Transform": "Tmm*3",
+                                  "Percent Change": "%",
+                                  "Prop. Vol. Change": f"",
+                                  "Percent Prgress/Regress": "%"}
         self.tv_transform_str = "No Transform"
         self.tv_transform_f = self.tv_to_tv
 
@@ -806,7 +816,7 @@ class TumorVolumeStudyClass():
     # Visualization
     def plot_spider(self, plot_style=None, figsize=(10, 6), volume_label="Tumor Volume", volume_units="mm^3",
             weight_label="Weight", weight_units="mg", title=None, plot_weight=True, show_individual=True,
-            show_aggregate=True, aggregate_sem=True, error_bars=False, aggregate_marker=None,
+            show_aggregate=True, aggregate_sem=True, error_bars=False, aggregate_marker='o',
             tv_transform_str="No Transform", parent_widget=None):
         """
         Spider plot for tumor volume study data with optional aggregation curves.
@@ -878,7 +888,14 @@ class TumorVolumeStudyClass():
         # Get transform function
         if tv_transform_str not in self.tv_transform_dict:
             raise ValueError(f"Invalid transform: {tv_transform_str}. Options: {self.tv_transform_options}")
+        print(self.tv_transform_dict)
+        print(self.tv_transform_options)
+
         tv_transform_f = self.tv_transform_dict[tv_transform_str]
+        tv_transform_label = self.tv_transform_label_dict [tv_transform_str]
+        print(f"tv_transform_str {tv_transform_str}, tv_transform_label {tv_transform_label}")
+        tv_transform_units = self.tv_transform_units_dict [tv_transform_str]
+        tv_transform_units = volume_units if  tv_transform_str=="No Transform" else tv_transform_units
 
         # Determine if any time-series contains weight
         has_weight_data = any(
@@ -1034,7 +1051,7 @@ class TumorVolumeStudyClass():
                         ax_vol.errorbar(time_points, mean_vol,
                                         yerr=sem_vol,
                                         marker='o' if aggregate_marker is None else aggregate_marker,
-                                        markersize=6,
+                                        markersize=10,
                                         linewidth=2.8,
                                         capsize=4,
                                         capthick=2,
@@ -1044,7 +1061,7 @@ class TumorVolumeStudyClass():
                         # Line style (with optional markers)
                         ax_vol.plot(time_points, mean_vol,
                                     marker=aggregate_marker,
-                                    markersize=6 if aggregate_marker else None,
+                                    markersize=10 if aggregate_marker else None,
                                     linewidth=2.8,
                                     color=color)
 
@@ -1101,9 +1118,9 @@ class TumorVolumeStudyClass():
             # 3. AXIS FORMATTING
             # ================================
             # Adjust label based on transform
-            volume_label_str = f"{volume_label} ({volume_units})"
-            if not volume_units:
-                volume_label_str = f"{volume_label}"
+            volume_label_str = f"{tv_transform_label} ({tv_transform_units})"
+            if tv_transform_units == "":
+                volume_label_str = f"{tv_transform_label}"
 
             ax_vol.set_ylabel(volume_label_str)
 
