@@ -603,7 +603,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QGroupBox" name="groupBox">
+               <widget class="QGroupBox" name="groupBox_event_free_survival">
                 <property name="title">
                  <string>Event-Free Survivial</string>
                 </property>

@@ -816,7 +816,7 @@ class TumorVolumeStudyClass():
     # Visualization
     def plot_spider(self, plot_style=None, figsize=(10, 6), volume_label="Tumor Volume", volume_units="mm^3",
             weight_label="Weight", weight_units="mg", title=None, plot_weight=True, show_individual=True,
-            show_aggregate=True, aggregate_sem=True, error_bars=False, aggregate_marker='o',
+            show_aggregate=True, aggregate_sem=True, error_bars=False, aggregate_marker='s',
             tv_transform_str="No Transform", parent_widget=None):
         """
         Spider plot for tumor volume study data with optional aggregation curves.
@@ -1049,7 +1049,7 @@ class TumorVolumeStudyClass():
                         ax_vol.errorbar(time_points, mean_vol,
                                         yerr=sem_vol,
                                         marker='o' if aggregate_marker is None else aggregate_marker,
-                                        markersize=10,
+                                        markersize=6,
                                         linewidth=1.5,
                                         capsize=4,
                                         capthick=2,
@@ -1058,8 +1058,8 @@ class TumorVolumeStudyClass():
                     else:
                         # Line style (with optional markers)
                         ax_vol.plot(time_points, mean_vol,
-                                    marker=aggregate_marker,
-                                    markersize=10 if aggregate_marker else None,
+                                    marker= 'o' if aggregate_marker is None else aggregate_marker,
+                                    markersize=6 if aggregate_marker else None,
                                     linewidth=2.8,
                                     color=color)
 

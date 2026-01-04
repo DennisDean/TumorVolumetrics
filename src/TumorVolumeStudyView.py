@@ -363,22 +363,22 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_7.addWidget(self.groupBox_plot_style_sheet, 0, Qt.AlignTop)
 
-        self.groupBox = QGroupBox(self.scrollAreaWidgetContents_3)
-        self.groupBox.setObjectName(u"groupBox")
-        self.groupBox.setCheckable(True)
-        self.groupBox.setChecked(True)
-        self.verticalLayout_8 = QVBoxLayout(self.groupBox)
+        self.groupBox_event_free_survival = QGroupBox(self.scrollAreaWidgetContents_3)
+        self.groupBox_event_free_survival.setObjectName(u"groupBox_event_free_survival")
+        self.groupBox_event_free_survival.setCheckable(True)
+        self.groupBox_event_free_survival.setChecked(True)
+        self.verticalLayout_8 = QVBoxLayout(self.groupBox_event_free_survival)
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.verticalLayout_9 = QVBoxLayout()
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
-        self.label_29 = QLabel(self.groupBox)
+        self.label_29 = QLabel(self.groupBox_event_free_survival)
         self.label_29.setObjectName(u"label_29")
 
         self.verticalLayout_9.addWidget(self.label_29)
 
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.label_27 = QLabel(self.groupBox)
+        self.label_27 = QLabel(self.groupBox_event_free_survival)
         self.label_27.setObjectName(u"label_27")
         self.label_27.setMinimumSize(QSize(50, 0))
         self.label_27.setMaximumSize(QSize(50, 16777215))
@@ -386,7 +386,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_3.addWidget(self.label_27)
 
-        self.comboBox_event_free_delta = QComboBox(self.groupBox)
+        self.comboBox_event_free_delta = QComboBox(self.groupBox_event_free_survival)
         self.comboBox_event_free_delta.setObjectName(u"comboBox_event_free_delta")
 
         self.horizontalLayout_3.addWidget(self.comboBox_event_free_delta)
@@ -396,7 +396,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_20 = QHBoxLayout()
         self.horizontalLayout_20.setObjectName(u"horizontalLayout_20")
-        self.label_28 = QLabel(self.groupBox)
+        self.label_28 = QLabel(self.groupBox_event_free_survival)
         self.label_28.setObjectName(u"label_28")
         self.label_28.setMinimumSize(QSize(50, 0))
         self.label_28.setMaximumSize(QSize(50, 16777215))
@@ -404,7 +404,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_20.addWidget(self.label_28)
 
-        self.comboBox_event_free_cutoff = QComboBox(self.groupBox)
+        self.comboBox_event_free_cutoff = QComboBox(self.groupBox_event_free_survival)
         self.comboBox_event_free_cutoff.setObjectName(u"comboBox_event_free_cutoff")
 
         self.horizontalLayout_20.addWidget(self.comboBox_event_free_cutoff)
@@ -412,14 +412,14 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_9.addLayout(self.horizontalLayout_20)
 
-        self.label_30 = QLabel(self.groupBox)
+        self.label_30 = QLabel(self.groupBox_event_free_survival)
         self.label_30.setObjectName(u"label_30")
 
         self.verticalLayout_9.addWidget(self.label_30)
 
         self.horizontalLayout_21 = QHBoxLayout()
         self.horizontalLayout_21.setObjectName(u"horizontalLayout_21")
-        self.label_31 = QLabel(self.groupBox)
+        self.label_31 = QLabel(self.groupBox_event_free_survival)
         self.label_31.setObjectName(u"label_31")
         self.label_31.setMinimumSize(QSize(50, 0))
         self.label_31.setMaximumSize(QSize(50, 16777215))
@@ -427,7 +427,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_21.addWidget(self.label_31)
 
-        self.comboBox_event_free_show_risk_plot = QComboBox(self.groupBox)
+        self.comboBox_event_free_show_risk_plot = QComboBox(self.groupBox_event_free_survival)
         self.comboBox_event_free_show_risk_plot.setObjectName(u"comboBox_event_free_show_risk_plot")
 
         self.horizontalLayout_21.addWidget(self.comboBox_event_free_show_risk_plot)
@@ -437,7 +437,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_25 = QHBoxLayout()
         self.horizontalLayout_25.setObjectName(u"horizontalLayout_25")
-        self.label_32 = QLabel(self.groupBox)
+        self.label_32 = QLabel(self.groupBox_event_free_survival)
         self.label_32.setObjectName(u"label_32")
         self.label_32.setMinimumSize(QSize(50, 0))
         self.label_32.setMaximumSize(QSize(50, 16777215))
@@ -445,7 +445,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_25.addWidget(self.label_32)
 
-        self.comboBox_event_free_show_risk_table = QComboBox(self.groupBox)
+        self.comboBox_event_free_show_risk_table = QComboBox(self.groupBox_event_free_survival)
         self.comboBox_event_free_show_risk_table.setObjectName(u"comboBox_event_free_show_risk_table")
 
         self.horizontalLayout_25.addWidget(self.comboBox_event_free_show_risk_table)
@@ -453,7 +453,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_9.addLayout(self.horizontalLayout_25)
 
-        self.pushButton_event_free_update = QPushButton(self.groupBox)
+        self.pushButton_event_free_update = QPushButton(self.groupBox_event_free_survival)
         self.pushButton_event_free_update.setObjectName(u"pushButton_event_free_update")
 
         self.verticalLayout_9.addWidget(self.pushButton_event_free_update)
@@ -462,7 +462,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_8.addLayout(self.verticalLayout_9)
 
 
-        self.verticalLayout_7.addWidget(self.groupBox)
+        self.verticalLayout_7.addWidget(self.groupBox_event_free_survival)
 
         self.groupBox_configuration_spider = QGroupBox(self.scrollAreaWidgetContents_3)
         self.groupBox_configuration_spider.setObjectName(u"groupBox_configuration_spider")
@@ -832,7 +832,7 @@ class Ui_MainWindow(object):
         self.label_12.setText(QCoreApplication.translate("MainWindow", u"Color", None))
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Grid", None))
         self.pushButton_plot_uodate_style.setText(QCoreApplication.translate("MainWindow", u"Update", None))
-        self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Event-Free Survivial", None))
+        self.groupBox_event_free_survival.setTitle(QCoreApplication.translate("MainWindow", u"Event-Free Survivial", None))
         self.label_29.setText(QCoreApplication.translate("MainWindow", u"Parameters", None))
         self.label_27.setText(QCoreApplication.translate("MainWindow", u"delta", None))
         self.label_28.setText(QCoreApplication.translate("MainWindow", u"cutoff", None))

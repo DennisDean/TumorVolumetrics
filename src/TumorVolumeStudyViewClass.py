@@ -91,7 +91,16 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.tv_transform_dict:dict|None = None
         self.spider_show_options = ["True", "False"]
         self.spider_show_dict = {"True": True, "False": False}
+        self.marker_values = ['Default', '.', 'o', "s", "D"]
+        self.marker_dict = {'Default': None, ".": ".", "o": "o", "s": "s", "D": "D"}
         self.initialize_spider_plot_group_box()
+
+        # Initialize Event Free Survival
+        self.event_free_delta_values = ['0.5', '1.0', '1.5', '2.0']
+        self.event_free_delta_default_index = 1
+        self.show_true_false_options = ["True", "False"]
+        self.show_true_false_dict = {"True": True, "False": False}
+        self.initialize_event_free_group_box()
 
         # Set plot configurations
         self.initial_configuration = '4'
@@ -262,6 +271,10 @@ class TumorVolumeStudyWindow(QMainWindow):
         self._gb_confg_anim.setDuration(180)
         self._gb_confg_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
+        self._gb_evfre_anim = QPropertyAnimation(self.ui.groupBox_event_free_survival, b"maximumHeight")
+        self._gb_evfre_anim.setDuration(180)
+        self._gb_evfre_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
         self._gb_spidr_anim = QPropertyAnimation(self.ui.groupBox_configuration_spider, b"maximumHeight")
         self._gb_spidr_anim.setDuration(180)
         self._gb_spidr_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
@@ -273,13 +286,15 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Set checked
         self.ui.groupBox_plot_configurations.setChecked(True)
         self.ui.groupBox_plot_style_sheet.setChecked(False)
+        self.ui.groupBox_event_free_survival.setChecked(False)
         self.ui.groupBox_configuration_spider.setChecked(False)
         self.ui.groupBox_objective_response.setChecked(False)
 
         # Set initial group box settings
         group_boxes = [self.ui.groupBox_plot_configurations, self.ui.groupBox_plot_style_sheet,
+                       self.ui.groupBox_event_free_survival,
                        self.ui.groupBox_configuration_spider, self.ui.groupBox_objective_response]
-        init_group_box_state = [True, False, False, False]
+        init_group_box_state = [True, False, False, False, False]
         for gbox, gstate in zip(group_boxes, init_group_box_state):
             gbox.setChecked(gstate)
             gbox.layout().activate()
@@ -290,6 +305,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Conenct to toggle function
         self.ui.groupBox_plot_style_sheet.toggled.connect(lambda checked: self._animate_style_groupbox(self.ui.groupBox_plot_style_sheet, checked))
         self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
+        self.ui.groupBox_event_free_survival.toggled.connect(lambda checked: self._animate_event_free_groupbox(self.ui.groupBox_event_free_survival, checked))
         self.ui.groupBox_configuration_spider.toggled.connect(lambda checked: self._animate_spider_groupbox(self.ui.groupBox_configuration_spider, checked))
         self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
     def initialize_objective_response_plot_groupbox(self):
@@ -316,7 +332,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_spider_weight.addItems(self.spider_show_options)
 
         # Aggregate variables
-        self.ui.comboBox_spider_marker.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_marker.addItems(self.marker_values)
         self.ui.comboBox_spider_sem.addItems(self.spider_show_options)
         self.ui.comboBox_spider_err_bars.addItems(self.spider_show_options)
         self.ui.comboBox_spider_err_bars.setCurrentIndex(1) #set to false
@@ -329,6 +345,19 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_spider_marker.currentTextChanged.connect(self.update_study_view)
         self.ui.comboBox_spider_sem.currentTextChanged.connect(self.update_study_view)
         self.ui.comboBox_spider_err_bars.currentTextChanged.connect(self.update_study_view)
+    def initialize_event_free_group_box(self):
+        # Set parameters
+        self.ui.comboBox_event_free_delta.addItems(self.event_free_delta_values)
+        self.ui.comboBox_event_free_delta.setCurrentIndex(self.event_free_delta_default_index )
+
+        # Set study dependent value
+        self.ui.comboBox_event_free_cutoff
+
+        # Set true or  false combo boxes
+        self.show_true_false_options = ["True", "False"]
+        self.show_true_false_dict = {"True": True, "False": False}
+        self.ui.comboBox_event_free_show_risk_plot.addItems(self.show_true_false_options)
+        self.ui.comboBox_event_free_show_risk_table.addItems(self.show_true_false_options)
 
     # Update Figure
     def get_plot_style(self):
@@ -614,6 +643,24 @@ class TumorVolumeStudyWindow(QMainWindow):
             self._gb_objrp_anim.setEndValue(header_height)
 
         self._gb_objrp_anim.start()
+    def _animate_event_free_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_evfre_anim.stop()
+
+        if expanded:
+            self._gb_evfre_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_evfre_anim.setEndValue(expanded_height)
+        else:
+            self._gb_evfre_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_evfre_anim.setEndValue(header_height)
+
+        self._gb_evfre_anim.start()
     def _animate_spider_groupbox(self, groupbox: QGroupBox, expanded: bool):
         header_height = groupbox.fontMetrics().height() + 16
 
@@ -698,7 +745,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         time_series = self.spider_show_dict[self.ui.comboBox_spider_time_series.currentText()]
         aggregate = self.spider_show_dict[self.ui.comboBox_spider_aggregate.currentText()]
         weight = self.spider_show_dict[self.ui.comboBox_spider_weight.currentText()]
-        marker = self.spider_show_dict[self.ui.comboBox_spider_marker.currentText()]
+        marker = self.marker_dict[self.ui.comboBox_spider_marker.currentText()]
         sem = self.spider_show_dict[self.ui.comboBox_spider_sem.currentText()]
         err_bars = self.spider_show_dict[self.ui.comboBox_spider_err_bars.currentText()]
 
