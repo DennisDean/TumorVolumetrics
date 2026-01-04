@@ -74,7 +74,7 @@
                <x>0</x>
                <y>0</y>
                <width>231</width>
-               <height>1217</height>
+               <height>1448</height>
               </rect>
              </property>
              <property name="sizePolicy">
@@ -602,6 +602,162 @@
                 </layout>
                </widget>
               </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox">
+                <property name="title">
+                 <string>Event-Free Survivial</string>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_8">
+                 <item>
+                  <layout class="QVBoxLayout" name="verticalLayout_9">
+                   <item>
+                    <widget class="QLabel" name="label_29">
+                     <property name="text">
+                      <string>Parameters</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_3">
+                     <item>
+                      <widget class="QLabel" name="label_27">
+                       <property name="minimumSize">
+                        <size>
+                         <width>50</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>50</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>delta</string>
+                       </property>
+                       <property name="alignment">
+                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="comboBox_event_free_delta"/>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_20">
+                     <item>
+                      <widget class="QLabel" name="label_28">
+                       <property name="minimumSize">
+                        <size>
+                         <width>50</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>50</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>cutoff</string>
+                       </property>
+                       <property name="alignment">
+                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="comboBox_event_free_cutoff"/>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_30">
+                     <property name="text">
+                      <string>Show Risk</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_21">
+                     <item>
+                      <widget class="QLabel" name="label_31">
+                       <property name="minimumSize">
+                        <size>
+                         <width>50</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>50</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>Plot</string>
+                       </property>
+                       <property name="alignment">
+                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="comboBox_event_free_show_risk_plot"/>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_25">
+                     <item>
+                      <widget class="QLabel" name="label_32">
+                       <property name="minimumSize">
+                        <size>
+                         <width>50</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>50</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>Table</string>
+                       </property>
+                       <property name="alignment">
+                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="comboBox_event_free_show_risk_table"/>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="pushButton_event_free_update">
+                     <property name="text">
+                      <string>Update</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
               <item alignment="Qt::AlignTop">
                <widget class="QGroupBox" name="groupBox_configuration_spider">
                 <property name="sizePolicy">
@@ -988,13 +1144,6 @@
                       <widget class="QComboBox" name="comboBox_spider_err_bars"/>
                      </item>
                     </layout>
-                   </item>
-                   <item>
-                    <widget class="QPushButton" name="pushButton_update_spider">
-                     <property name="text">
-                      <string>Update</string>
-                     </property>
-                    </widget>
                    </item>
                   </layout>
                  </item>

@@ -888,12 +888,10 @@ class TumorVolumeStudyClass():
         # Get transform function
         if tv_transform_str not in self.tv_transform_dict:
             raise ValueError(f"Invalid transform: {tv_transform_str}. Options: {self.tv_transform_options}")
-        print(self.tv_transform_dict)
-        print(self.tv_transform_options)
 
         tv_transform_f = self.tv_transform_dict[tv_transform_str]
         tv_transform_label = self.tv_transform_label_dict [tv_transform_str]
-        print(f"tv_transform_str {tv_transform_str}, tv_transform_label {tv_transform_label}")
+
         tv_transform_units = self.tv_transform_units_dict [tv_transform_str]
         tv_transform_units = volume_units if  tv_transform_str=="No Transform" else tv_transform_units
 
@@ -1052,7 +1050,7 @@ class TumorVolumeStudyClass():
                                         yerr=sem_vol,
                                         marker='o' if aggregate_marker is None else aggregate_marker,
                                         markersize=10,
-                                        linewidth=2.8,
+                                        linewidth=1.5,
                                         capsize=4,
                                         capthick=2,
                                         color=color,
