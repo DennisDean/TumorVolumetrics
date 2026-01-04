@@ -12,6 +12,9 @@ from FigureGraphicsViewClass import FigureGraphicsView
 
 # Import
 
+# Computing
+import numpy as np
+
 # Plotting
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -236,7 +239,7 @@ class TumorVolumeStudyWindow(QMainWindow):
             cbox.currentTextChanged.connect(self.update_study_view)
 
         # Initialize study selection
-        self.ui.comboBox_configuration_study.currentTextChanged.connect(self.update_study_view)
+        self.ui.comboBox_configuration_study.currentTextChanged.connect(self.update_study_configuration)
     def initialize_style_sheets_functions(self):
         # Set up highlevel options
         self.current_plot_style = 0
@@ -347,17 +350,39 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_spider_err_bars.currentTextChanged.connect(self.update_study_view)
     def initialize_event_free_group_box(self):
         # Set parameters
+        self.ui.comboBox_event_free_delta.clear()
         self.ui.comboBox_event_free_delta.addItems(self.event_free_delta_values)
         self.ui.comboBox_event_free_delta.setCurrentIndex(self.event_free_delta_default_index )
 
         # Set study dependent value
-        self.ui.comboBox_event_free_cutoff
+        self.get_study_min_of_max_timepoints()
+        self.cutoff_options = [f"Common Across Arms - Day {self.get_study_min_of_max_timepoints()}",
+                               "Full Follow-up"]
+        self.ui.comboBox_event_free_cutoff.clear()
+        self.ui.comboBox_event_free_cutoff.addItems(self.cutoff_options)
 
         # Set true or  false combo boxes
         self.show_true_false_options = ["True", "False"]
         self.show_true_false_dict = {"True": True, "False": False}
+        self.ui.comboBox_event_free_show_risk_plot.clear()
         self.ui.comboBox_event_free_show_risk_plot.addItems(self.show_true_false_options)
+        self.ui.comboBox_event_free_show_risk_table.clear()
         self.ui.comboBox_event_free_show_risk_table.addItems(self.show_true_false_options)
+    def get_study_min_of_max_timepoints(self):
+        # Get current study
+        current_study_label = self.ui.comboBox_configuration_study.currentText()
+        study_obj = self.tv_data_obj.tumor_vol_study_dict[current_study_label]
+        study_tv_time_dict = study_obj.study_tv_time_dict
+
+        # Scan time series
+        tv_labels = study_tv_time_dict.keys()
+        max_time_array = []
+        for tv_label in tv_labels:
+            tv_data = study_tv_time_dict[tv_label]
+            max_time_array.append(np.max(tv_data.time_day))
+        min_of_max_time_array = np.min(max_time_array)
+        print(max_time_array)
+        return min_of_max_time_array
 
     # Update Figure
     def get_plot_style(self):
@@ -434,6 +459,12 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style = plot_style)
+    def update_study_configuration(self):
+        # Update Study View
+        self.update_study_view()
+
+        # Update Event Free Options
+        self.initialize_event_free_group_box()
     def update_plot_style(self):
         # Update figures
         plot_style = self.get_plot_style()
