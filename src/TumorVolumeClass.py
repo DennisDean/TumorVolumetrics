@@ -141,6 +141,12 @@ def remove_alpha(text):
         String with alphabetic characters removed
     """
     return ''.join(char for char in text if not char.isalpha())
+def set_xaxis_visible(ax, visible: bool, label: str | None = None):
+    ax.tick_params(axis="x", which="both",
+                   bottom=visible, labelbottom=visible)
+    ax.xaxis.label.set_visible(visible)
+    if visible and label is not None:
+        ax.set_xlabel(label)
 
 # Main class
 class TumorVolumeTimeSeriesClass():
@@ -1304,9 +1310,14 @@ class TumorVolumeStudyClass():
         import numpy as np
         from contextlib import nullcontext
 
+        print(cutoff, show_risk_plot, show_risk_table)
+
         # Variable name transition
+        cutoff = None
         show_number_at_risk_plot = show_risk_plot
         show_at_risk_table = show_risk_table
+
+
 
         # -----------------------------------------------------
         # Compute survival data
@@ -1332,8 +1343,11 @@ class TumorVolumeStudyClass():
         at_risk_table_proportion = 1.0 if show_at_risk_table else 0
 
         # Determine number of subplots
-        show_spacer = True if show_number_at_risk_plot else False
-        num_of_subplots = int(show_kaplan_meier_curve) + int(show_number_at_risk_plot) + int(show_at_risk_table) + int(show_spacer)
+        show_spacer = show_number_at_risk_plot and show_at_risk_table
+        num_of_subplots = (int(show_kaplan_meier_curve) + int(show_number_at_risk_plot)
+                         + int(show_spacer) + int(show_at_risk_table) )
+
+        print(f'num_of_subplots={num_of_subplots}')
 
         # Set up height proportions
         height_ratios = []
@@ -1341,9 +1355,14 @@ class TumorVolumeStudyClass():
             height_ratios.append(km_subplot_proportion)
         if show_number_at_risk_plot:
             height_ratios.append(num_at_risk_plot_proportion)
-        if show_at_risk_table:
+        if show_spacer:
             height_ratios.append(spacer_proportion)
+        if show_at_risk_table:
             height_ratios.append(at_risk_table_proportion)
+
+        # Check ratio calculation since there was a previous bug
+        assert len(height_ratios) == num_of_subplots, (
+            f"Layout mismatch: num_of_subplots={num_of_subplots}, height_ratios={height_ratios}")
 
         # Create figure
         if parent_widget:
@@ -1357,21 +1376,24 @@ class TumorVolumeStudyClass():
         # Create subplots
         current_sub_plot = 0
         axes_dict = {}
-
+        ax_list = []  # Repeated for axis
         if show_kaplan_meier_curve:
             ax_km = fig.add_subplot(gs[current_sub_plot])
             axes_dict['km'] = ax_km
             current_sub_plot += 1
+            ax_list.append(ax_km)
 
         if show_number_at_risk_plot:
             ax_labels = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
             axes_dict['labels'] = ax_labels
             current_sub_plot += 1
+            ax_list.append(ax_labels)
 
         if show_at_risk_table:
             current_sub_plot += 1
             ax_risk = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
             axes_dict['risk'] = ax_risk
+            ax_list.append(ax_risk)
 
         # Apply style colors to all axes
         if plot_style:
@@ -1507,30 +1529,13 @@ class TumorVolumeStudyClass():
             # Conditional x-axis ownership logic
             # ----------------------------------------------------
             if show_number_at_risk_plot:
-                # Middle subplot owns the x-axis
-                ax_labels.tick_params(axis="x", which="both",
-                                      bottom=True, labelbottom=True)
-                ax_labels.set_xlabel("Time (days)")
-
-                # Ensure others are off
-                ax_km.tick_params(axis="x", which="both",
-                                  bottom=True, labelbottom=False)
-                ax_km.xaxis.label.set_visible(False)
-
-                ax_risk.tick_params(axis="x", which="both",
-                                    bottom=False, labelbottom=False)
-                ax_risk.xaxis.label.set_visible(False)
-
+                xaxis_owner = ax_labels
             else:
-                # Top subplot owns the x-axis
-                ax_km.tick_params(axis="x", which="both",
-                                  bottom=True, labelbottom=True)
-                ax_km.set_xlabel("Time (days)")
+                xaxis_owner = ax_km
 
-                # Ensure others are off
-                ax_risk.tick_params(axis="x", which="both",
-                                    bottom=False, labelbottom=False)
-                ax_risk.xaxis.label.set_visible(False)
+            for ax in (ax_list):
+                set_xaxis_visible(ax, ax is xaxis_owner, label="Time (days)")
+
 
         # Handle widget integration
         if parent_widget:

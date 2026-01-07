@@ -384,8 +384,14 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_event_free_show_risk_table.addItems(self.show_true_false_options)
 
 
-        # Create connections
+        # Create Option Connection
         self.ui.comboBox_event_free_cutoff.currentIndexChanged.connect(self.toggle_event_free_cutoff_options)
+
+        # Create Update Connection
+        self.ui.comboBox_event_free_delta.currentIndexChanged.connect(self.update_study_view)
+        self.ui.comboBox_event_free_show_risk_plot.currentIndexChanged.connect(self.update_study_view)
+        self.ui.comboBox_event_free_show_risk_table.currentIndexChanged.connect(self.update_study_view)
+        self.ui.comboBox_event_free_cutoff_days.currentIndexChanged.connect(self.update_study_view)
 
     # Group Box Utilities
     def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
@@ -437,6 +443,20 @@ class TumorVolumeStudyWindow(QMainWindow):
             max_time_array.append(np.max(tv_data.time_day))
         min_of_max_time_array = np.min(max_time_array)
         return min_of_max_time_array
+    def get_study_max_of_max_timepoints(self):
+        # Get current study
+        current_study_label = self.ui.comboBox_configuration_study.currentText()
+        study_obj = self.tv_data_obj.tumor_vol_study_dict[current_study_label]
+        study_tv_time_dict = study_obj.study_tv_time_dict
+
+        # Scan time series
+        tv_labels = study_tv_time_dict.keys()
+        max_time_array = []
+        for tv_label in tv_labels:
+            tv_data = study_tv_time_dict[tv_label]
+            max_time_array.append(np.max(tv_data.time_day))
+        max_of_max_time_array = np.max(max_time_array)
+        return max_of_max_time_array
 
     # Update Figure
     def get_plot_style(self):
@@ -538,7 +558,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
                            True if current_cutoff_index == 2 else False)
 
-    # Custom Figure
+    # Custom Figure (first approach should be replaced with update framework)
     def update_objective_response_bar_plot(self):
         # Create new dictionary
         current_colors = self.get_style_colors_2()
@@ -585,11 +605,30 @@ class TumorVolumeStudyWindow(QMainWindow):
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
     def toggle_event_free_cutoff_options(self, new_index):
         # Handle fixed cutoff options
+        common_across_arms = 0
+        full_follow_up = 1
         fixed_option_value = 2
         if fixed_option_value == new_index:
             set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day, True)
-        else:
+        elif full_follow_up == new_index:
+            # Set cutoff to maximum number of days
+            option_index = self.ui.comboBox_event_free_cutoff_days.count()-1
+            self.ui.comboBox_event_free_cutoff_days.setCurrentIndex(option_index)
+
+            # Hide cutoff day visability
             set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day, False)
+        elif common_across_arms == new_index:
+            # Set cutof day to minimmum of maximum number of days per time series
+            study_min_of_max_days = get_study_min_of_max_timepoints
+            cutoff_options = [int(self.combo.itemText(i)) for i in range(self.combo.count())]
+            option_index = [v for v in cutoff_options if v == study_min_of_max_days]
+            option_index = option_index[0]
+            self.ui.comboBox_event_free_cutoff_days.setCurrentIndex(option_index)
+
+            # Hide cuttoff day visability
+            set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day, False)
+        else:
+            logger.info('Event Free cutoff option changed. Option not supported.')
 
     # Group box animation code (could be consolidated with a dictionary)
     def _animate_style_groupbox_3(self, groupbox: QGroupBox, expanded: bool):
@@ -788,6 +827,8 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         if plot_name == "plot_spider":
             custom_params = self.get_spider_group_box_parameters()
+        elif plot_name == "plot_event_free_survival":
+            custom_params = self. get_event_free_group_box_parameters()
 
         return custom_params
     def get_spider_group_box_parameters(self):
@@ -806,17 +847,19 @@ class TumorVolumeStudyWindow(QMainWindow):
                          "tv_transform_str":data_transform}
         return custom_params
     def get_event_free_group_box_parameters(self):
-
         # Get values
-        delta = float(self.ui.comboBox_configuration_delta.currentText())
-        show_risk_plot = True if self.ui.comboBox_configuration_risk_plot.currentText() == "True" else False
-        show_risk_table = True if self.ui.comboBox_configuration_risk_table.currentText() == "True" else False
+        delta = float(self.ui.comboBox_event_free_delta.currentText())
+        show_risk_plot = True if self.ui.comboBox_event_free_show_risk_plot.currentText() == "True" else False
+        show_risk_table = True if self.ui.comboBox_event_free_show_risk_table.currentText() == "True" else False
 
         # Set cutoff directly, not using None option to transparency
         # Assumes interface appropraitely sets cutoff value based on selection option
-        cutoff_type = self.ui.comboBox_configuration_cutoff_type.currentText()
-        cutoff_value = int(self.ui.comboBox_configuration_cutoff_value.currentText())
-        cutoff = cutoff_value
+        cutoff_type = self.ui.comboBox_event_free_cutoff.currentText()
+        if cutoff_type == "Full Follow-up":
+            cutoff = None
+        else:
+            cutoff_value = int(self.ui.comboBox_event_free_cutoff_days.currentText())
+            cutoff = cutoff_value
 
         # Construct custom parameter dictionary
         custom_params = {"delta": delta, "cutoff": cutoff, "show_risk_plot": show_risk_plot,
