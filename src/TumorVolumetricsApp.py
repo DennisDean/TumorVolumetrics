@@ -135,10 +135,15 @@ def latex_available():
 class MainApp(QMainWindow):
     # Initialize
     def __init__(self):
+        # Initialize widow
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Tumor Volumetrics")
+
+
+        #-------------------------------------------------------------
+        # Move window to upper left is screen information is available
 
         # Position window at upper left corner
         self.move(0, 0)
@@ -154,6 +159,7 @@ class MainApp(QMainWindow):
             # Position window at the top-left of that screen
             self.move(geo.topLeft())
 
+        #------------------------------------------------------------
         # Turn off show and navigate groups
         set_layout_visible(self.ui.verticalLayout_navigate, False)
         set_layout_visible(self.ui.verticalLayout_show, False)
@@ -162,6 +168,7 @@ class MainApp(QMainWindow):
         # Resize window
         self.adjustSize()
 
+        #------------------------------------------------------------
         # Define variables
         self.tumor_volume_file_path:str|None = None
         self.tumor_volume_data_obj:TumorVolumeDataClass|None = None
@@ -171,6 +178,17 @@ class MainApp(QMainWindow):
         self.unique_studies:list[str]|None = None
         self.unique_arms:list[str]|None = None
         self.unique_time_series:list[str]|None = None
+
+        # Store file Information
+        self.tv_file_path:str|None = None
+        self.tv_fn:str|None = None
+        self.tumor_volume_file_window:TumorVolumeFileWindow|None = None
+        self.tumor_volume_experiment_window:TumorVolumeExperimentViewClass|None = None
+        self.tumor_volume_study_window:TumorVolumeStudyViewClass|None = None
+
+        #-------------------------------------------------------------
+        # Connect buttons to response, default if file view during development
+        # Enabling buttons that have appropriate view
 
         # Load Buttons
         self.ui.pushButton_load_select_file.clicked.connect(self.pushbutton_load_csv_file)
@@ -185,22 +203,27 @@ class MainApp(QMainWindow):
         self.ui.pushButton_show_arm.clicked.connect(self.pushbutton_show_csv_file)
         self.ui.pushButton_show_curves.clicked.connect(self.pushbutton_show_csv_file)
 
-        # Store file Information
-        self.tv_file_path:str|None = None
-        self.tv_fn:str|None = None
-        self.tumor_volume_file_window:TumorVolumeFileWindow|None = None
-        self.tumor_volume_experiment_window:TumorVolumeExperimentViewClass|None = None
-        self.tumor_volume_study_window:TumorVolumeStudyViewClass|None = None
+        # Enable high level buttons
+        self.ui.pushButton_load_select_file.setEnabled(True)
+        self.ui.pushButton_load_show_file.setEnabled(False)
+        self.ui.pushButton_load_saveas.setEnabled(False)
+
+        # Enable viewing buttons
+        self.ui.pushButton_show_contributor.setEnabled(False)
+        self.ui.pushButton_show_disease.setEnabled(False)
+        self.ui.pushButton_show_experiment.setEnabled(True)
+        self.ui.pushButton_show_study.setEnabled(True)
+        self.ui.pushButton_show_arm.setEnabled(False)
+        self.ui.pushButton_show_curves.setEnabled(False)
+
+        #----------------------------------------------------
+        # Full data check
 
         # Check if Latex is available
         self.use_latex = latex_available()
         if self.use_latex == False:
             logger.info(f'Full style sheet functionality requires Latex installed')
 
-        # Enable buttongs
-        self.ui.pushButton_load_select_file.setEnabled(True)
-        self.ui.pushButton_load_show_file.setEnabled(False)
-        self.ui.pushButton_load_saveas.setEnabled(False)
 
     # Major Commands
     def pushbutton_load_csv_file(self):
