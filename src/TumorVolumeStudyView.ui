@@ -74,7 +74,7 @@
                <x>0</x>
                <y>0</y>
                <width>231</width>
-               <height>1448</height>
+               <height>1482</height>
               </rect>
              </property>
              <property name="sizePolicy">
@@ -678,6 +678,20 @@
                      </item>
                      <item>
                       <widget class="QComboBox" name="comboBox_event_free_cutoff"/>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_event_free_cutoff_day">
+                     <item>
+                      <widget class="QLabel" name="label_33">
+                       <property name="text">
+                        <string/>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="comboBox_event_free_cutoff_days"/>
                      </item>
                     </layout>
                    </item>

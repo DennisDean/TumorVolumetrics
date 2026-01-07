@@ -357,9 +357,14 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Set study dependent value
         self.get_study_min_of_max_timepoints()
         self.cutoff_options = [f"Common Across Arms - Day {self.get_study_min_of_max_timepoints()}",
-                               "Full Follow-up"]
+                               "Full Follow-up", "Fixed"]
         self.ui.comboBox_event_free_cutoff.clear()
         self.ui.comboBox_event_free_cutoff.addItems(self.cutoff_options)
+
+        # Set
+        current_cutoff_index = self.ui.comboBox_event_free_cutoff_days.currentIndex()
+        set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
+                           True if current_cutoff_index==2 else False)
 
         # Set true or  false combo boxes
         self.show_true_false_options = ["True", "False"]
@@ -476,6 +481,11 @@ class TumorVolumeStudyWindow(QMainWindow):
                        self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         available_style_colors = self.get_style_colors()
         self._populate_color_comboboxes(combo_boxes, available_style_colors)
+    def update_event_free_cutoff_type(self):
+        # Set
+        current_cutoff_index = self.ui.comboBox_event_free_cutoff_days.currentIndex()
+        set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
+                           True if current_cutoff_index == 2 else False)
     def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
         """Populate ALL combo boxes with ALL available colors from the current style.
 

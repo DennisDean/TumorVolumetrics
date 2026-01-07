@@ -85,7 +85,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents_3 = QWidget()
         self.scrollAreaWidgetContents_3.setObjectName(u"scrollAreaWidgetContents_3")
-        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 231, 1448))
+        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 231, 1482))
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
@@ -411,6 +411,21 @@ class Ui_MainWindow(object):
 
 
         self.verticalLayout_9.addLayout(self.horizontalLayout_20)
+
+        self.horizontalLayout_event_free_cutoff_day = QHBoxLayout()
+        self.horizontalLayout_event_free_cutoff_day.setObjectName(u"horizontalLayout_event_free_cutoff_day")
+        self.label_33 = QLabel(self.groupBox_event_free_survival)
+        self.label_33.setObjectName(u"label_33")
+
+        self.horizontalLayout_event_free_cutoff_day.addWidget(self.label_33)
+
+        self.comboBox_event_free_cutoff_days = QComboBox(self.groupBox_event_free_survival)
+        self.comboBox_event_free_cutoff_days.setObjectName(u"comboBox_event_free_cutoff_days")
+
+        self.horizontalLayout_event_free_cutoff_day.addWidget(self.comboBox_event_free_cutoff_days)
+
+
+        self.verticalLayout_9.addLayout(self.horizontalLayout_event_free_cutoff_day)
 
         self.label_30 = QLabel(self.groupBox_event_free_survival)
         self.label_30.setObjectName(u"label_30")
@@ -836,6 +851,7 @@ class Ui_MainWindow(object):
         self.label_29.setText(QCoreApplication.translate("MainWindow", u"Parameters", None))
         self.label_27.setText(QCoreApplication.translate("MainWindow", u"delta", None))
         self.label_28.setText(QCoreApplication.translate("MainWindow", u"cutoff", None))
+        self.label_33.setText("")
         self.label_30.setText(QCoreApplication.translate("MainWindow", u"Show Risk", None))
         self.label_31.setText(QCoreApplication.translate("MainWindow", u"Plot", None))
         self.label_32.setText(QCoreApplication.translate("MainWindow", u"Table", None))
