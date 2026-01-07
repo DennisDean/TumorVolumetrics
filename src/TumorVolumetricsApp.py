@@ -366,12 +366,12 @@ class MainApp(QMainWindow):
         logger.info(f'Displaying tumor volume experiment viewer: {self.tumor_volume_file_path}')
 
         if self.tumor_volume_experiment_window is None:
-            self.tumor_volume_study_window = TumorVolumeExperimentWindow(self.tumor_volume_data_obj)
+            self.tumor_volume_experiment_window = TumorVolumeExperimentWindow(self.tumor_volume_data_obj)
 
         # Let the window populate itself
-        self.tumor_volume_study_window.show()
-        self.tumor_volume_study_window.raise_()
-        self.tumor_volume_study_window.activateWindow()
+        self.tumor_volume_experiment_window.show()
+        self.tumor_volume_experiment_window.raise_()
+        self.tumor_volume_experiment_window.activateWindow()
     def pushbutton_show_study_viewer(self):
         logger.info(f'Displaying tumor volume study viewer: {self.tumor_volume_file_path}')
 

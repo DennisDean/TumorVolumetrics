@@ -311,6 +311,8 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.groupBox_event_free_survival.toggled.connect(lambda checked: self._animate_event_free_groupbox(self.ui.groupBox_event_free_survival, checked))
         self.ui.groupBox_configuration_spider.toggled.connect(lambda checked: self._animate_spider_groupbox(self.ui.groupBox_configuration_spider, checked))
         self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
+
+    # Initialize Groupboxes
     def initialize_objective_response_plot_groupbox(self):
         # Get current style color selection
         available_style_colors = self.get_style_colors()
@@ -355,24 +357,72 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_event_free_delta.setCurrentIndex(self.event_free_delta_default_index )
 
         # Set study dependent value
-        self.get_study_min_of_max_timepoints()
+        min_of_max_cutoff = self.get_study_min_of_max_timepoints()
         self.cutoff_options = [f"Common Across Arms - Day {self.get_study_min_of_max_timepoints()}",
                                "Full Follow-up", "Fixed"]
         self.ui.comboBox_event_free_cutoff.clear()
         self.ui.comboBox_event_free_cutoff.addItems(self.cutoff_options)
+        minimum_allowable_cutoff_options = 5
+        fixed_cutoff_options = [ str(cutoff_val)
+            for cutoff_val in range(minimum_allowable_cutoff_options, min_of_max_cutoff+1)]
+        self.ui.comboBox_event_free_cutoff_days.clear()
+        self.ui.comboBox_event_free_cutoff_days.addItems(fixed_cutoff_options)
+        self.ui.comboBox_event_free_cutoff_days.setCurrentIndex(self.ui.comboBox_event_free_cutoff_days.count()-1)
 
-        # Set
+        # Set fixed day option visability
         current_cutoff_index = self.ui.comboBox_event_free_cutoff_days.currentIndex()
         set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
                            True if current_cutoff_index==2 else False)
 
-        # Set true or  false combo boxes
+
+        # Set combo box options
         self.show_true_false_options = ["True", "False"]
         self.show_true_false_dict = {"True": True, "False": False}
         self.ui.comboBox_event_free_show_risk_plot.clear()
         self.ui.comboBox_event_free_show_risk_plot.addItems(self.show_true_false_options)
         self.ui.comboBox_event_free_show_risk_table.clear()
         self.ui.comboBox_event_free_show_risk_table.addItems(self.show_true_false_options)
+
+
+        # Create connections
+        self.ui.comboBox_event_free_cutoff.currentIndexChanged.connect(self.toggle_event_free_cutoff_options)
+
+    # Group Box Utilities
+    def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
+        """Populate ALL combo boxes with ALL available colors from the current style.
+
+        Args:
+            combo_boxes: List of combo box objects to populate. If None, attempts to
+                         find combo boxes using default naming convention.
+        """
+
+        # If no combo boxes provided, try default naming convention
+        if combo_boxes is None:
+            combo_boxes = []
+            response_types = ['PD', 'SD', 'PR', 'CR']
+
+            for response in response_types:
+                combo_box_name = f'comboBox_{response}_color'
+                if hasattr(self.ui, combo_box_name):
+                    combo_boxes.append(getattr(self.ui, combo_box_name))
+
+        # Populate EACH combo box with ALL available colors
+        count = 0
+        for idx, combo_box in enumerate(combo_boxes):
+            combo_box.clear()
+
+            # Add ALL colors from the style to this combo box
+            for i, color in enumerate(self.available_style_colors):
+                # Create a colored icon for visual reference
+                pixmap = QPixmap(20, 20)
+                pixmap.fill(QColor(color))
+                icon = QIcon(pixmap)
+
+                # Add to combo box with color name/hex
+                color_name = f"Color {i+1} ({color})"
+                combo_box.addItem(icon, color_name, userData=color)
+            combo_box.setCurrentIndex(count)
+            count += 1
     def get_study_min_of_max_timepoints(self):
         # Get current study
         current_study_label = self.ui.comboBox_configuration_study.currentText()
@@ -386,7 +436,6 @@ class TumorVolumeStudyWindow(QMainWindow):
             tv_data = study_tv_time_dict[tv_label]
             max_time_array.append(np.max(tv_data.time_day))
         min_of_max_time_array = np.min(max_time_array)
-        print(max_time_array)
         return min_of_max_time_array
 
     # Update Figure
@@ -464,6 +513,8 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style = plot_style)
+
+    # Update Group Box Parameters
     def update_study_configuration(self):
         # Update Study View
         self.update_study_view()
@@ -486,41 +537,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         current_cutoff_index = self.ui.comboBox_event_free_cutoff_days.currentIndex()
         set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
                            True if current_cutoff_index == 2 else False)
-    def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
-        """Populate ALL combo boxes with ALL available colors from the current style.
-
-        Args:
-            combo_boxes: List of combo box objects to populate. If None, attempts to
-                         find combo boxes using default naming convention.
-        """
-
-        # If no combo boxes provided, try default naming convention
-        if combo_boxes is None:
-            combo_boxes = []
-            response_types = ['PD', 'SD', 'PR', 'CR']
-
-            for response in response_types:
-                combo_box_name = f'comboBox_{response}_color'
-                if hasattr(self.ui, combo_box_name):
-                    combo_boxes.append(getattr(self.ui, combo_box_name))
-
-        # Populate EACH combo box with ALL available colors
-        count = 0
-        for idx, combo_box in enumerate(combo_boxes):
-            combo_box.clear()
-
-            # Add ALL colors from the style to this combo box
-            for i, color in enumerate(self.available_style_colors):
-                # Create a colored icon for visual reference
-                pixmap = QPixmap(20, 20)
-                pixmap.fill(QColor(color))
-                icon = QIcon(pixmap)
-
-                # Add to combo box with color name/hex
-                color_name = f"Color {i+1} ({color})"
-                combo_box.addItem(icon, color_name, userData=color)
-            combo_box.setCurrentIndex(count)
-            count += 1
 
     # Custom Figure
     def update_objective_response_bar_plot(self):
@@ -567,6 +583,13 @@ class TumorVolumeStudyWindow(QMainWindow):
         set_layout_visible(self.ui.verticalLayout_plot_scienceplot_options, bool(new_index))
         set_layout_visible(self.ui.verticalLayout_matplotlib_options,not bool(new_index))
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
+    def toggle_event_free_cutoff_options(self, new_index):
+        # Handle fixed cutoff options
+        fixed_option_value = 2
+        if fixed_option_value == new_index:
+            set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day, True)
+        else:
+            set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day, False)
 
     # Group box animation code (could be consolidated with a dictionary)
     def _animate_style_groupbox_3(self, groupbox: QGroupBox, expanded: bool):
@@ -733,19 +756,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         expanded_height = header_height + content_height
 
         groupbox.setMaximumHeight(expanded_height)
-    def _recompute_groupbox_height_2(self, groupbox):
-        layout = groupbox.layout()
-        if not layout:
-            return
-
-        layout.activate()
-
-        header_height = groupbox.fontMetrics().height() + 16
-        content_height = layout.sizeHint().height()
-
-        expanded_height = header_height + content_height
-
-        groupbox.setMaximumHeight(expanded_height)
 
     # Plot Figure
     def draw_figure_group(self, plot_style = None):
@@ -777,10 +787,10 @@ class TumorVolumeStudyWindow(QMainWindow):
         custom_params = {}
 
         if plot_name == "plot_spider":
-            custom_params = self.get_spider_group_box()
+            custom_params = self.get_spider_group_box_parameters()
 
         return custom_params
-    def get_spider_group_box(self):
+    def get_spider_group_box_parameters(self):
         # Get information from group box
         data_transform = self.ui.comboBox_config_data_transform.currentText()
         time_series = self.spider_show_dict[self.ui.comboBox_spider_time_series.currentText()]
@@ -794,4 +804,21 @@ class TumorVolumeStudyWindow(QMainWindow):
         custom_params = {"plot_weight": weight, "show_individual": time_series, "show_aggregate": aggregate,
                          "aggregate_sem": sem, "error_bars": err_bars, "aggregate_marker":marker,
                          "tv_transform_str":data_transform}
+        return custom_params
+    def get_event_free_group_box_parameters(self):
+
+        # Get values
+        delta = float(self.ui.comboBox_configuration_delta.currentText())
+        show_risk_plot = True if self.ui.comboBox_configuration_risk_plot.currentText() == "True" else False
+        show_risk_table = True if self.ui.comboBox_configuration_risk_table.currentText() == "True" else False
+
+        # Set cutoff directly, not using None option to transparency
+        # Assumes interface appropraitely sets cutoff value based on selection option
+        cutoff_type = self.ui.comboBox_configuration_cutoff_type.currentText()
+        cutoff_value = int(self.ui.comboBox_configuration_cutoff_value.currentText())
+        cutoff = cutoff_value
+
+        # Construct custom parameter dictionary
+        custom_params = {"delta": delta, "cutoff": cutoff, "show_risk_plot": show_risk_plot,
+                         "show_risk_table": show_risk_table}
         return custom_params

@@ -1256,7 +1256,7 @@ class TumorVolumeStudyClass():
         else:
             return fig, ax_vol
     def plot_event_free_survival(self, plot_style=None, delta=1.0, cutoff=None, figsize=(10, 8),
-            title="Event-Free Survival (Tumor Volume Doubling)", show_number_at_risk_plot=True, show_at_risk_table=True,
+            title="Event-Free Survival (Tumor Volume Doubling)", show_risk_plot = True, show_risk_table=True,
             parent_widget=None):
         """
         Event-free survival analysis with Kaplan-Meier curves and risk tables.
@@ -1278,9 +1278,9 @@ class TumorVolumeStudyClass():
             Only applies to standalone mode.
         title : str
             Plot title. Defaults to "Event-Free Survival (Tumor Volume Doubling)".
-        show_number_at_risk_plot : bool
+        show_risk_plot : bool
             Whether to show the middle panel with line plot of numbers at risk. Defaults to True.
-        show_at_risk_table : bool
+        show_risk_table : bool
             Whether to show the bottom panel with table of numbers at risk. Defaults to False.
         parent_widget : QWidget or None
             Optional Qt widget to embed the plot. If provided, renders as
@@ -1303,6 +1303,10 @@ class TumorVolumeStudyClass():
         """
         import numpy as np
         from contextlib import nullcontext
+
+        # Variable name transition
+        show_number_at_risk_plot = show_risk_plot
+        show_at_risk_table = show_risk_table
 
         # -----------------------------------------------------
         # Compute survival data
