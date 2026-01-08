@@ -85,7 +85,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents_3 = QWidget()
         self.scrollAreaWidgetContents_3.setObjectName(u"scrollAreaWidgetContents_3")
-        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 231, 1482))
+        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 231, 1450))
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
@@ -467,11 +467,6 @@ class Ui_MainWindow(object):
 
 
         self.verticalLayout_9.addLayout(self.horizontalLayout_25)
-
-        self.pushButton_event_free_update = QPushButton(self.groupBox_event_free_survival)
-        self.pushButton_event_free_update.setObjectName(u"pushButton_event_free_update")
-
-        self.verticalLayout_9.addWidget(self.pushButton_event_free_update)
 
 
         self.verticalLayout_8.addLayout(self.verticalLayout_9)
@@ -855,7 +850,6 @@ class Ui_MainWindow(object):
         self.label_30.setText(QCoreApplication.translate("MainWindow", u"Show Risk", None))
         self.label_31.setText(QCoreApplication.translate("MainWindow", u"Plot", None))
         self.label_32.setText(QCoreApplication.translate("MainWindow", u"Table", None))
-        self.pushButton_event_free_update.setText(QCoreApplication.translate("MainWindow", u"Update", None))
         self.groupBox_configuration_spider.setTitle(QCoreApplication.translate("MainWindow", u"Spider Plot", None))
         self.label_6.setText(QCoreApplication.translate("MainWindow", u"Data Transform", None))
         self.label_8.setText(QCoreApplication.translate("MainWindow", u"Show:", None))

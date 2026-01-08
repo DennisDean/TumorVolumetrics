@@ -619,6 +619,56 @@ class TumorVolumeStudyClass():
 
     # Computation
     def compute_event_time(self, time_day, volume, delta=1.0, cutoff=None):
+        """
+        Compute the event time for one mouse.
+
+        Event defined as tumor volume increasing by factor (1+delta).
+
+        Parameters
+        ----------
+        time_day : array-like
+            Time points in days
+        volume : array-like
+            Tumor volumes
+        delta : float
+            Threshold for event (volume increase factor)
+        cutoff : float or None
+            Time cutoff for censoring (in days)
+
+        Returns
+        -------
+        tuple : (event_time, event_flag)
+            event_time: time of event or censoring
+            event_flag: 1 if event occurred, 0 if censored
+        """
+        if len(volume) == 0:
+            return None, 0
+
+        baseline = volume[0]
+        doubling_threshold = baseline * (1 + delta)
+
+        for t, v in zip(time_day, volume):
+            # If we've passed the time cutoff, censor here
+            if cutoff is not None and t > cutoff:
+                return cutoff, 0  # Censored at cutoff time
+
+            # Check if event occurred
+            if v >= doubling_threshold:
+                # If event is before cutoff, it's a real event
+                if cutoff is None or t <= cutoff:
+                    return t, 1
+                else:
+                    # Event happened after cutoff, so censor at cutoff
+                    return cutoff, 0
+
+        # No event occurred during observation period
+        # Censor at the cutoff time or last observation time
+        if cutoff is not None:
+            last_time = time_day[-1]
+            return min(last_time, cutoff), 0
+        else:
+            return time_day[-1], 0
+    def compute_event_time_2(self, time_day, volume, delta=1.0, cutoff=None):
         # Compute the event time for one mouse
         """
         Event defined as tumor volume increasing by factor (1+delta)
@@ -654,12 +704,7 @@ class TumorVolumeStudyClass():
                 if ts is None:
                     continue
 
-                t, e = self.compute_event_time(
-                    ts.time_day,
-                    ts.tumor_volume,
-                    delta=delta,
-                    cutoff=cutoff
-                )
+                t, e = self.compute_event_time(ts.time_day,ts.tumor_volume,delta=delta,cutoff=cutoff)
 
                 if t is not None:
                     times.append(t)
@@ -1313,11 +1358,9 @@ class TumorVolumeStudyClass():
         print(cutoff, show_risk_plot, show_risk_table)
 
         # Variable name transition
-        cutoff = None
+        cutoff = cutoff
         show_number_at_risk_plot = show_risk_plot
         show_at_risk_table = show_risk_table
-
-
 
         # -----------------------------------------------------
         # Compute survival data
@@ -1343,7 +1386,7 @@ class TumorVolumeStudyClass():
         at_risk_table_proportion = 1.0 if show_at_risk_table else 0
 
         # Determine number of subplots
-        show_spacer = show_number_at_risk_plot and show_at_risk_table
+        show_spacer = show_number_at_risk_plot or show_at_risk_table
         num_of_subplots = (int(show_kaplan_meier_curve) + int(show_number_at_risk_plot)
                          + int(show_spacer) + int(show_at_risk_table) )
 
@@ -1376,24 +1419,41 @@ class TumorVolumeStudyClass():
         # Create subplots
         current_sub_plot = 0
         axes_dict = {}
-        ax_list = []  # Repeated for axis
+        ax_list = []
+
+        # --- KM plot ---
         if show_kaplan_meier_curve:
             ax_km = fig.add_subplot(gs[current_sub_plot])
             axes_dict['km'] = ax_km
-            current_sub_plot += 1
             ax_list.append(ax_km)
+            current_sub_plot += 1
+        else:
+            ax_km = None  # safety
 
+        # --- Number at risk plot ---
         if show_number_at_risk_plot:
             ax_labels = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
             axes_dict['labels'] = ax_labels
-            current_sub_plot += 1
             ax_list.append(ax_labels)
-
-        if show_at_risk_table:
             current_sub_plot += 1
+        else:
+            ax_labels = None
+
+        # --- Spacer ---
+        if show_spacer:
+            ax_spacer = fig.add_subplot(gs[current_sub_plot])
+            ax_spacer.axis("off")
+            axes_dict['spacer'] = ax_spacer
+            current_sub_plot += 1
+
+        # --- At risk table ---
+        if show_at_risk_table:
             ax_risk = fig.add_subplot(gs[current_sub_plot], sharex=ax_km)
             axes_dict['risk'] = ax_risk
             ax_list.append(ax_risk)
+            current_sub_plot += 1
+        else:
+            ax_risk = None
 
         # Apply style colors to all axes
         if plot_style:

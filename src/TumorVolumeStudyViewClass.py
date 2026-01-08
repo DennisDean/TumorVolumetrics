@@ -84,7 +84,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Save data object
         self.tv_data_obj = tv_data_obj
 
-
         # Get Studies
         self.studies = tv_data_obj.unique_studies
         self.ui.comboBox_configuration_study.addItems(self.studies)
@@ -619,10 +618,15 @@ class TumorVolumeStudyWindow(QMainWindow):
             set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day, False)
         elif common_across_arms == new_index:
             # Set cutof day to minimmum of maximum number of days per time series
-            study_min_of_max_days = get_study_min_of_max_timepoints
-            cutoff_options = [int(self.combo.itemText(i)) for i in range(self.combo.count())]
-            option_index = [v for v in cutoff_options if v == study_min_of_max_days]
+            study_min_of_max_days = self.get_study_min_of_max_timepoints()
+            print(study_min_of_max_days)
+            cutoff_options = [int(self.ui.comboBox_event_free_cutoff_days.itemText(i))
+                              for i in range(self.ui.comboBox_event_free_cutoff_days.count())]
+            print(cutoff_options)
+            option_index = [idx for idx, v in enumerate(cutoff_options) if v == study_min_of_max_days]
+            print(option_index)
             option_index = option_index[0]
+
             self.ui.comboBox_event_free_cutoff_days.setCurrentIndex(option_index)
 
             # Hide cuttoff day visability

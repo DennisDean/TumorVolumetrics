@@ -74,7 +74,7 @@
                <x>0</x>
                <y>0</y>
                <width>231</width>
-               <height>1482</height>
+               <height>1450</height>
               </rect>
              </property>
              <property name="sizePolicy">
@@ -759,13 +759,6 @@
                       <widget class="QComboBox" name="comboBox_event_free_show_risk_table"/>
                      </item>
                     </layout>
-                   </item>
-                   <item>
-                    <widget class="QPushButton" name="pushButton_event_free_update">
-                     <property name="text">
-                      <string>Update</string>
-                     </property>
-                    </widget>
                    </item>
                   </layout>
                  </item>
