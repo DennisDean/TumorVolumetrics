@@ -668,26 +668,6 @@ class TumorVolumeStudyClass():
             return min(last_time, cutoff), 0
         else:
             return time_day[-1], 0
-    def compute_event_time_2(self, time_day, volume, delta=1.0, cutoff=None):
-        # Compute the event time for one mouse
-        """
-        Event defined as tumor volume increasing by factor (1+delta)
-        or exceeding 'cutoff'. Returns (event_time, event_flag).
-        """
-        if len(volume) == 0:
-            return None, 0
-
-        baseline = volume[0]
-        doubling_threshold = baseline * (1 + delta)
-
-        for t, v in zip(time_day, volume):
-            if v >= doubling_threshold:
-                return t, 1
-            if cutoff is not None and v >= cutoff:
-                return t, 1
-
-        # Censored at last time point
-        return time_day[-1], 0
     def build_survival_data(self, delta=1.0, cutoff=None):
         # Build per-arm survival data
         """

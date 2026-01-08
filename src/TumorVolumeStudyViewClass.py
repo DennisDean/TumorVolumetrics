@@ -104,6 +104,13 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.show_true_false_dict = {"True": True, "False": False}
         self.initialize_event_free_group_box()
 
+        # Connect Event Free signals
+        self.ui.comboBox_event_free_cutoff.currentIndexChanged.connect(self.toggle_event_free_cutoff_options)
+        self.ui.comboBox_event_free_delta.currentIndexChanged.connect(self.update_study_view)
+        self.ui.comboBox_event_free_show_risk_plot.currentIndexChanged.connect(self.update_study_view)
+        self.ui.comboBox_event_free_show_risk_table.currentIndexChanged.connect(self.update_study_view)
+        self.ui.comboBox_event_free_cutoff_days.currentIndexChanged.connect(self.update_study_view)
+
         # Set plot configurations
         self.initial_configuration = '4'
         self.plot_config_to_index = lambda x: int(x)-1
@@ -161,6 +168,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Initialize objection response plot
         self.available_style_colors = None
         self.initialize_objective_response_plot_groupbox()
+
 
     # Figure utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
@@ -349,7 +357,93 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_spider_marker.currentTextChanged.connect(self.update_study_view)
         self.ui.comboBox_spider_sem.currentTextChanged.connect(self.update_study_view)
         self.ui.comboBox_spider_err_bars.currentTextChanged.connect(self.update_study_view)
+
     def initialize_event_free_group_box(self):
+        # Block signals during initialization to prevent intermediate updates
+        self.ui.comboBox_event_free_delta.blockSignals(True)
+        self.ui.comboBox_event_free_cutoff.blockSignals(True)
+        self.ui.comboBox_event_free_cutoff_days.blockSignals(True)
+        self.ui.comboBox_event_free_show_risk_plot.blockSignals(True)
+        self.ui.comboBox_event_free_show_risk_table.blockSignals(True)
+
+        try:
+            # Set parameters
+            self.ui.comboBox_event_free_delta.clear()
+            self.ui.comboBox_event_free_delta.addItems(self.event_free_delta_values)
+            self.ui.comboBox_event_free_delta.setCurrentIndex(self.event_free_delta_default_index)
+
+            # Set study dependent value
+            min_of_max_cutoff = self.get_study_min_of_max_timepoints()
+            self.cutoff_options = [f"Common Across Arms - Day {int(min_of_max_cutoff)}",
+                                   "Full Follow-up", "Fixed"]
+            self.ui.comboBox_event_free_cutoff.clear()
+            self.ui.comboBox_event_free_cutoff.addItems(self.cutoff_options)
+
+            minimum_allowable_cutoff_options = 5
+            fixed_cutoff_options = [str(cutoff_val)
+                                    for cutoff_val in
+                                    range(minimum_allowable_cutoff_options, int(min_of_max_cutoff) + 1)]
+            self.ui.comboBox_event_free_cutoff_days.clear()
+            self.ui.comboBox_event_free_cutoff_days.addItems(fixed_cutoff_options)
+            self.ui.comboBox_event_free_cutoff_days.setCurrentIndex(self.ui.comboBox_event_free_cutoff_days.count() - 1)
+
+            # Set fixed day option visibility - FIXED: Check the cutoff TYPE combobox
+            current_cutoff_type_index = self.ui.comboBox_event_free_cutoff.currentIndex()
+            set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
+                               True if current_cutoff_type_index == 2 else False)
+
+            # Set combo box options
+            self.ui.comboBox_event_free_show_risk_plot.clear()
+            self.ui.comboBox_event_free_show_risk_plot.addItems(self.show_true_false_options)
+            self.ui.comboBox_event_free_show_risk_table.clear()
+            self.ui.comboBox_event_free_show_risk_table.addItems(self.show_true_false_options)
+
+        finally:
+            # Always unblock signals, even if there's an error
+            self.ui.comboBox_event_free_delta.blockSignals(False)
+            self.ui.comboBox_event_free_cutoff.blockSignals(False)
+            self.ui.comboBox_event_free_cutoff_days.blockSignals(False)
+            self.ui.comboBox_event_free_show_risk_plot.blockSignals(False)
+            self.ui.comboBox_event_free_show_risk_table.blockSignals(False)
+    def initialize_event_free_group_box_3(self):
+        # Set parameters
+        self.ui.comboBox_event_free_delta.clear()
+        self.ui.comboBox_event_free_delta.addItems(self.event_free_delta_values)
+        self.ui.comboBox_event_free_delta.setCurrentIndex(self.event_free_delta_default_index)
+
+        # Set study dependent value
+        min_of_max_cutoff = self.get_study_min_of_max_timepoints()
+        self.cutoff_options = [f"Common Across Arms - Day {min_of_max_cutoff}",
+                               "Full Follow-up", "Fixed"]
+        self.ui.comboBox_event_free_cutoff.clear()
+        self.ui.comboBox_event_free_cutoff.addItems(self.cutoff_options)
+
+        minimum_allowable_cutoff_options = 5
+        fixed_cutoff_options = [str(cutoff_val)
+                                for cutoff_val in range(minimum_allowable_cutoff_options, int(min_of_max_cutoff) + 1)]
+        self.ui.comboBox_event_free_cutoff_days.clear()
+        self.ui.comboBox_event_free_cutoff_days.addItems(fixed_cutoff_options)
+        self.ui.comboBox_event_free_cutoff_days.setCurrentIndex(self.ui.comboBox_event_free_cutoff_days.count() - 1)
+
+        # Set fixed day option visibility - FIX: Check the cutoff TYPE combobox, not cutoff_days
+        current_cutoff_type_index = self.ui.comboBox_event_free_cutoff.currentIndex()
+        set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
+                           True if current_cutoff_type_index == 2 else False)
+
+        # Set combo box options
+        self.show_true_false_options = ["True", "False"]
+        self.show_true_false_dict = {"True": True, "False": False}
+        self.ui.comboBox_event_free_show_risk_plot.clear()
+        self.ui.comboBox_event_free_show_risk_plot.addItems(self.show_true_false_options)
+        self.ui.comboBox_event_free_show_risk_table.clear()
+        self.ui.comboBox_event_free_show_risk_table.addItems(self.show_true_false_options)
+
+        # Create Option Connection - Only connect once during __init__
+        # Move this to __init__ or use try/disconnect pattern to avoid multiple connections
+        if not hasattr(self, '_event_free_connections_made'):
+            self.ui.comboBox_event_free_cutoff.currentIndexChanged.connect(self.toggle_event_free_cutoff_options)
+            self._event_free_connections_made = True
+    def initialize_event_free_group_box_2(self):
         # Set parameters
         self.ui.comboBox_event_free_delta.clear()
         self.ui.comboBox_event_free_delta.addItems(self.event_free_delta_values)
@@ -540,6 +634,7 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Update Event Free Options
         self.initialize_event_free_group_box()
+
     def update_plot_style(self):
         # Update figures
         plot_style = self.get_plot_style()
