@@ -88,6 +88,9 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.studies = tv_data_obj.unique_studies
         self.ui.comboBox_configuration_study.addItems(self.studies)
 
+        # Initialize AUC by Arm
+        self.initialize_auc_by_arm_group_box()
+
         # Intialize Spider Plot Group Box
         self.tv_transform_options:list|None = None
         self.tv_transform_dict:dict|None = None
@@ -163,12 +166,17 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Set up group boxes
         self._gb_animation:QPropertyAnimation|None = None
+        self._gb_style_anim:QPropertyAnimation|None = None
+        self._gb_confg_anim:QPropertyAnimation|None = None
+        self._gb_aucam_anim:QPropertyAnimation|None = None
+        self._gb_evfre_anim:QPropertyAnimation|None = None
+        self._gb_spidr_anim:QPropertyAnimation|None = None
+        self._gb_objrp_anim:QPropertyAnimation|None = None
         self.initialize_collapsable_group_boxes()
 
         # Initialize objection response plot
         self.available_style_colors = None
         self.initialize_objective_response_plot_groupbox()
-
 
     # Figure utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
@@ -272,92 +280,81 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Connect plot style selection
         self.ui.pushButton_plot_uodate_style.clicked.connect(self.update_plot_style)
     def initialize_collapsable_group_boxes(self):
-        # Define box animation
-        self._gb_style_anim = QPropertyAnimation(self.ui.groupBox_plot_style_sheet, b"maximumHeight")
-        self._gb_style_anim.setDuration(180)
-        self._gb_style_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        # -----------------------------------------------------
+        # Set animation parameters
+        # -----------------------------------------------------
+        animation_duration = 180
+        easing = QEasingCurve.Type.InOutCubic
 
-        self._gb_confg_anim = QPropertyAnimation(self.ui.groupBox_plot_configurations, b"maximumHeight")
-        self._gb_confg_anim.setDuration(180)
-        self._gb_confg_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        # -----------------------------------------------------
+        # Group box + attribute mapping
+        # -----------------------------------------------------
+        self._groupbox_anim_map = {
+            self.ui.groupBox_plot_configurations: "_gb_confg_anim",
+            self.ui.groupBox_plot_style_sheet: "_gb_style_anim",
+            self.ui.groupBox_auc_by_arm: "_gb_aucam_anim",
+            self.ui.groupBox_event_free_survival: "_gb_evfre_anim",
+            self.ui.groupBox_configuration_spider: "_gb_spidr_anim",
+            self.ui.groupBox_objective_response: "_gb_objrp_anim",
+        }
 
-        self._gb_evfre_anim = QPropertyAnimation(self.ui.groupBox_event_free_survival, b"maximumHeight")
-        self._gb_evfre_anim.setDuration(180)
-        self._gb_evfre_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        # -----------------------------------------------------
+        # Create animations and store on self
+        # -----------------------------------------------------
+        for gbox, attr_name in self._groupbox_anim_map.items():
+            anim = QPropertyAnimation(gbox, b"maximumHeight")
+            anim.setDuration(animation_duration)
+            anim.setEasingCurve(easing)
+            setattr(self, attr_name, anim)
 
-        self._gb_spidr_anim = QPropertyAnimation(self.ui.groupBox_configuration_spider, b"maximumHeight")
-        self._gb_spidr_anim.setDuration(180)
-        self._gb_spidr_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
-
-        self._gb_objrp_anim = QPropertyAnimation(self.ui.groupBox_objective_response, b"maximumHeight")
-        self._gb_objrp_anim.setDuration(180)
-        self._gb_objrp_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
-
-        # Set checked
-        self.ui.groupBox_plot_configurations.setChecked(True)
-        self.ui.groupBox_plot_style_sheet.setChecked(False)
-        self.ui.groupBox_event_free_survival.setChecked(False)
-        self.ui.groupBox_configuration_spider.setChecked(False)
-        self.ui.groupBox_objective_response.setChecked(False)
-
+        # -----------------------------------------------------
         # Set initial group box settings
-        group_boxes = [self.ui.groupBox_plot_configurations, self.ui.groupBox_plot_style_sheet,
-                       self.ui.groupBox_event_free_survival,
-                       self.ui.groupBox_configuration_spider, self.ui.groupBox_objective_response]
-        init_group_box_state = [True, False, False, False, False]
-        for gbox, gstate in zip(group_boxes, init_group_box_state):
-            gbox.setChecked(gstate)
+        # -----------------------------------------------------
+        for gbox in self._groupbox_anim_map.keys():
+            gbox.setChecked(False)
             gbox.layout().activate()
-            header_height = gbox.fontMetrics().height()+16
-            if gstate == False:
-                gbox.setMaximumHeight(header_height)
 
-        # Conenct to toggle function
-        self.ui.groupBox_plot_style_sheet.toggled.connect(lambda checked: self._animate_style_groupbox(self.ui.groupBox_plot_style_sheet, checked))
-        self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
-        self.ui.groupBox_event_free_survival.toggled.connect(lambda checked: self._animate_event_free_groupbox(self.ui.groupBox_event_free_survival, checked))
-        self.ui.groupBox_configuration_spider.toggled.connect(lambda checked: self._animate_spider_groupbox(self.ui.groupBox_configuration_spider, checked))
-        self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
+            header_height = gbox.fontMetrics().height() + 16
+            gbox.setMaximumHeight(header_height)
+
+        # -----------------------------------------------------
+        # Connect toggles to animation handlers
+        # -----------------------------------------------------
+        self.ui.groupBox_plot_style_sheet.toggled.connect(
+            lambda checked, gb=self.ui.groupBox_plot_style_sheet: self._animate_style_groupbox(gb, checked))
+        self.ui.groupBox_plot_configurations.toggled.connect(
+            lambda checked, gb=self.ui.groupBox_plot_configurations: self._animate_confg_groupbox(gb, checked))
+        self.ui.groupBox_auc_by_arm.toggled.connect(
+            lambda checked, gb=self.ui.groupBox_auc_by_arm: self._animate_auc_by_arm_groupbox(gb, checked))
+        self.ui.groupBox_event_free_survival.toggled.connect(
+            lambda checked, gb=self.ui.groupBox_event_free_survival: self._animate_event_free_groupbox(gb, checked))
+        self.ui.groupBox_configuration_spider.toggled.connect(
+            lambda checked, gb=self.ui.groupBox_configuration_spider: self._animate_spider_groupbox(gb, checked))
+        self.ui.groupBox_objective_response.toggled.connect(
+            lambda checked, gb=self.ui.groupBox_objective_response: self._animate_objrp_groupbox(gb, checked))
 
     # Initialize Groupboxes
-    def initialize_objective_response_plot_groupbox(self):
-        # Get current style color selection
-        available_style_colors = self.get_style_colors()
-        orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
-                      self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
-        self._populate_color_comboboxes(orc_cboxes, available_style_colors)
-        self.available_style_colors = available_style_colors
+    def initialize_auc_by_arm_group_box(self):
+        # Combo box values
+        cbox_values = ["True", "False"]
 
-        # Connect pushbutton to update objective response plot
-        self.ui.pushButton_objective_response_update.clicked.connect(self.update_objective_response_bar_plot)
-    def initialize_spider_plot_group_box(self):
-        # Get transform information
-        unique_studies = self.tv_data_obj.unique_studies
-        first_study = self.tv_data_obj.tumor_vol_study_dict[unique_studies[0]]
-        self.tv_transform_options = first_study.tv_transform_options
-        self.tv_transform_dict = first_study.tv_transform_dict
-        self.ui.comboBox_config_data_transform.addItems(self.tv_transform_options)
+        # Define the boxes
+        self.ui.comboBox_auc_normalize.addItems(cbox_values)
+        self.ui.comboBox_auc_normalize.setCurrentIndex(1)
 
-        # Set show varaibles
-        self.ui.comboBox_spider_time_series.addItems(self.spider_show_options)
-        self.ui.comboBox_spider_aggregate.addItems(self.spider_show_options)
-        self.ui.comboBox_spider_weight.addItems(self.spider_show_options)
+        self.ui.comboBox_auc_show_labels.addItems(cbox_values)
+        self.ui.comboBox_auc_show_labels.setCurrentIndex(0)
 
-        # Aggregate variables
-        self.ui.comboBox_spider_marker.addItems(self.marker_values)
-        self.ui.comboBox_spider_sem.addItems(self.spider_show_options)
-        self.ui.comboBox_spider_err_bars.addItems(self.spider_show_options)
-        self.ui.comboBox_spider_err_bars.setCurrentIndex(1) #set to false
+        self.ui.comboBox_auc_shorten_labels.addItems(cbox_values)
+        self.ui.comboBox_auc_shorten_labels.setCurrentIndex(1)
 
-        # Connect update buttong to graph plot
-        self.ui.comboBox_config_data_transform.currentTextChanged.connect(self.update_study_view)
-        self.ui.comboBox_spider_time_series.currentTextChanged.connect(self.update_study_view)
-        self.ui.comboBox_spider_aggregate.currentTextChanged.connect(self.update_study_view)
-        self.ui.comboBox_spider_weight.currentTextChanged.connect(self.update_study_view)
-        self.ui.comboBox_spider_marker.currentTextChanged.connect(self.update_study_view)
-        self.ui.comboBox_spider_sem.currentTextChanged.connect(self.update_study_view)
-        self.ui.comboBox_spider_err_bars.currentTextChanged.connect(self.update_study_view)
+        # Set connections
+        self.ui.comboBox_auc_normalize.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_auc_show_labels.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_auc_shorten_labels.currentTextChanged.connect(self.update_study_view_text)
 
+        # Some checking
+        print('initialize_auc_by_arm_group_box')
     def initialize_event_free_group_box(self):
         # Block signals during initialization to prevent intermediate updates
         self.ui.comboBox_event_free_delta.blockSignals(True)
@@ -405,86 +402,43 @@ class TumorVolumeStudyWindow(QMainWindow):
             self.ui.comboBox_event_free_cutoff_days.blockSignals(False)
             self.ui.comboBox_event_free_show_risk_plot.blockSignals(False)
             self.ui.comboBox_event_free_show_risk_table.blockSignals(False)
-    def initialize_event_free_group_box_3(self):
-        # Set parameters
-        self.ui.comboBox_event_free_delta.clear()
-        self.ui.comboBox_event_free_delta.addItems(self.event_free_delta_values)
-        self.ui.comboBox_event_free_delta.setCurrentIndex(self.event_free_delta_default_index)
+    def initialize_spider_plot_group_box(self):
+        # Get transform information
+        unique_studies = self.tv_data_obj.unique_studies
+        first_study = self.tv_data_obj.tumor_vol_study_dict[unique_studies[0]]
+        self.tv_transform_options = first_study.tv_transform_options
+        self.tv_transform_dict = first_study.tv_transform_dict
+        self.ui.comboBox_config_data_transform.addItems(self.tv_transform_options)
 
-        # Set study dependent value
-        min_of_max_cutoff = self.get_study_min_of_max_timepoints()
-        self.cutoff_options = [f"Common Across Arms - Day {min_of_max_cutoff}",
-                               "Full Follow-up", "Fixed"]
-        self.ui.comboBox_event_free_cutoff.clear()
-        self.ui.comboBox_event_free_cutoff.addItems(self.cutoff_options)
+        # Set show varaibles
+        self.ui.comboBox_spider_time_series.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_aggregate.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_weight.addItems(self.spider_show_options)
 
-        minimum_allowable_cutoff_options = 5
-        fixed_cutoff_options = [str(cutoff_val)
-                                for cutoff_val in range(minimum_allowable_cutoff_options, int(min_of_max_cutoff) + 1)]
-        self.ui.comboBox_event_free_cutoff_days.clear()
-        self.ui.comboBox_event_free_cutoff_days.addItems(fixed_cutoff_options)
-        self.ui.comboBox_event_free_cutoff_days.setCurrentIndex(self.ui.comboBox_event_free_cutoff_days.count() - 1)
+        # Aggregate variables
+        self.ui.comboBox_spider_marker.addItems(self.marker_values)
+        self.ui.comboBox_spider_sem.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_err_bars.addItems(self.spider_show_options)
+        self.ui.comboBox_spider_err_bars.setCurrentIndex(1) #set to false
 
-        # Set fixed day option visibility - FIX: Check the cutoff TYPE combobox, not cutoff_days
-        current_cutoff_type_index = self.ui.comboBox_event_free_cutoff.currentIndex()
-        set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
-                           True if current_cutoff_type_index == 2 else False)
+        # Connect update buttong to graph plot
+        self.ui.comboBox_config_data_transform.currentTextChanged.connect(self.update_study_view)
+        self.ui.comboBox_spider_time_series.currentTextChanged.connect(self.update_study_view)
+        self.ui.comboBox_spider_aggregate.currentTextChanged.connect(self.update_study_view)
+        self.ui.comboBox_spider_weight.currentTextChanged.connect(self.update_study_view)
+        self.ui.comboBox_spider_marker.currentTextChanged.connect(self.update_study_view)
+        self.ui.comboBox_spider_sem.currentTextChanged.connect(self.update_study_view)
+        self.ui.comboBox_spider_err_bars.currentTextChanged.connect(self.update_study_view)
+    def initialize_objective_response_plot_groupbox(self):
+        # Get current style color selection
+        available_style_colors = self.get_style_colors()
+        orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
+                      self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
+        self._populate_color_comboboxes(orc_cboxes, available_style_colors)
+        self.available_style_colors = available_style_colors
 
-        # Set combo box options
-        self.show_true_false_options = ["True", "False"]
-        self.show_true_false_dict = {"True": True, "False": False}
-        self.ui.comboBox_event_free_show_risk_plot.clear()
-        self.ui.comboBox_event_free_show_risk_plot.addItems(self.show_true_false_options)
-        self.ui.comboBox_event_free_show_risk_table.clear()
-        self.ui.comboBox_event_free_show_risk_table.addItems(self.show_true_false_options)
-
-        # Create Option Connection - Only connect once during __init__
-        # Move this to __init__ or use try/disconnect pattern to avoid multiple connections
-        if not hasattr(self, '_event_free_connections_made'):
-            self.ui.comboBox_event_free_cutoff.currentIndexChanged.connect(self.toggle_event_free_cutoff_options)
-            self._event_free_connections_made = True
-    def initialize_event_free_group_box_2(self):
-        # Set parameters
-        self.ui.comboBox_event_free_delta.clear()
-        self.ui.comboBox_event_free_delta.addItems(self.event_free_delta_values)
-        self.ui.comboBox_event_free_delta.setCurrentIndex(self.event_free_delta_default_index )
-
-        # Set study dependent value
-        min_of_max_cutoff = self.get_study_min_of_max_timepoints()
-        self.cutoff_options = [f"Common Across Arms - Day {self.get_study_min_of_max_timepoints()}",
-                               "Full Follow-up", "Fixed"]
-        self.ui.comboBox_event_free_cutoff.clear()
-        self.ui.comboBox_event_free_cutoff.addItems(self.cutoff_options)
-        minimum_allowable_cutoff_options = 5
-        fixed_cutoff_options = [ str(cutoff_val)
-            for cutoff_val in range(minimum_allowable_cutoff_options, min_of_max_cutoff+1)]
-        self.ui.comboBox_event_free_cutoff_days.clear()
-        self.ui.comboBox_event_free_cutoff_days.addItems(fixed_cutoff_options)
-        self.ui.comboBox_event_free_cutoff_days.setCurrentIndex(self.ui.comboBox_event_free_cutoff_days.count()-1)
-
-        # Set fixed day option visability
-        current_cutoff_index = self.ui.comboBox_event_free_cutoff_days.currentIndex()
-        set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
-                           True if current_cutoff_index==2 else False)
-
-
-        # Set combo box options
-        self.show_true_false_options = ["True", "False"]
-        self.show_true_false_dict = {"True": True, "False": False}
-        self.ui.comboBox_event_free_show_risk_plot.clear()
-        self.ui.comboBox_event_free_show_risk_plot.addItems(self.show_true_false_options)
-        self.ui.comboBox_event_free_show_risk_table.clear()
-        self.ui.comboBox_event_free_show_risk_table.addItems(self.show_true_false_options)
-
-
-        # Create Option Connection
-        self.ui.comboBox_event_free_cutoff.currentIndexChanged.connect(self.toggle_event_free_cutoff_options)
-
-        # Create Update Connection
-        self.ui.comboBox_event_free_delta.currentIndexChanged.connect(self.update_study_view)
-        self.ui.comboBox_event_free_show_risk_plot.currentIndexChanged.connect(self.update_study_view)
-        self.ui.comboBox_event_free_show_risk_table.currentIndexChanged.connect(self.update_study_view)
-        self.ui.comboBox_event_free_cutoff_days.currentIndexChanged.connect(self.update_study_view)
+        # Connect pushbutton to update objective response plot
+        self.ui.pushButton_objective_response_update.clicked.connect(self.update_objective_response_bar_plot)
 
     # Group Box Utilities
     def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
@@ -626,6 +580,12 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style = plot_style)
+        print("Updated study view")
+    def update_study_view_text(self, *_):
+        # Respond to figure comboBox change
+        plot_style = self.get_plot_style()
+        self.draw_figure_group(plot_style = plot_style)
+        print("Updated study view text")
 
     # Update Group Box Parameters
     def update_study_configuration(self):
@@ -634,7 +594,6 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Update Event Free Options
         self.initialize_event_free_group_box()
-
     def update_plot_style(self):
         # Update figures
         plot_style = self.get_plot_style()
@@ -714,12 +673,9 @@ class TumorVolumeStudyWindow(QMainWindow):
         elif common_across_arms == new_index:
             # Set cutof day to minimmum of maximum number of days per time series
             study_min_of_max_days = self.get_study_min_of_max_timepoints()
-            print(study_min_of_max_days)
             cutoff_options = [int(self.ui.comboBox_event_free_cutoff_days.itemText(i))
                               for i in range(self.ui.comboBox_event_free_cutoff_days.count())]
-            print(cutoff_options)
             option_index = [idx for idx, v in enumerate(cutoff_options) if v == study_min_of_max_days]
-            print(option_index)
             option_index = option_index[0]
 
             self.ui.comboBox_event_free_cutoff_days.setCurrentIndex(option_index)
@@ -827,7 +783,7 @@ class TumorVolumeStudyWindow(QMainWindow):
             self._gb_confg_anim.setEndValue(header_height)
 
         self._gb_confg_anim.start()
-    def _animate_objrp_groupbox(self, groupbox: QGroupBox, expanded: bool):
+    def _animate_auc_by_arm_groupbox(self, groupbox: QGroupBox, expanded: bool):
         header_height = groupbox.fontMetrics().height() + 16
 
         layout = groupbox.layout()
@@ -835,16 +791,16 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         expanded_height = header_height + content_height
 
-        self._gb_objrp_anim.stop()
+        self._gb_aucam_anim.stop()
 
         if expanded:
-            self._gb_objrp_anim.setStartValue(groupbox.maximumHeight())
-            self._gb_objrp_anim.setEndValue(expanded_height)
+            self._gb_aucam_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_aucam_anim.setEndValue(expanded_height)
         else:
-            self._gb_objrp_anim.setStartValue(groupbox.maximumHeight())
-            self._gb_objrp_anim.setEndValue(header_height)
+            self._gb_aucam_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_aucam_anim.setEndValue(header_height)
 
-        self._gb_objrp_anim.start()
+        self._gb_aucam_anim.start()
     def _animate_event_free_groupbox(self, groupbox: QGroupBox, expanded: bool):
         header_height = groupbox.fontMetrics().height() + 16
 
@@ -894,9 +850,30 @@ class TumorVolumeStudyWindow(QMainWindow):
         expanded_height = header_height + content_height
 
         groupbox.setMaximumHeight(expanded_height)
+    def _animate_objrp_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_objrp_anim.stop()
+
+        if expanded:
+            self._gb_objrp_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_objrp_anim.setEndValue(expanded_height)
+        else:
+            self._gb_objrp_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_objrp_anim.setEndValue(header_height)
+
+        self._gb_objrp_anim.start()
 
     # Plot Figure
     def draw_figure_group(self, plot_style = None):
+        # Log draw
+        logger.info('Drawing figure group')
+
         # Get style information
         updated_style = plot_style
 
@@ -904,6 +881,8 @@ class TumorVolumeStudyWindow(QMainWindow):
         study_id = self.ui.comboBox_configuration_study.currentText()
         num_figures = int(self.ui.comboBox_configuration_num_of_plots.currentText())
         study_obj = self.tv_data_obj.tumor_vol_study_dict[study_id]
+
+        print(num_figures)
 
         # Update each plot
         for idx in range(num_figures):
@@ -924,26 +903,28 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Define custom parameters
         custom_params = {}
 
-        if plot_name == "plot_spider":
-            custom_params = self.get_spider_group_box_parameters()
+        print(plot_name)
+        if plot_name == "plot_auc_bar":
+            logger.info('Returning auc by arm group box parameters')
+            custom_params = self.get_auc_by_arm_group_box_parameters()
         elif plot_name == "plot_event_free_survival":
             custom_params = self. get_event_free_group_box_parameters()
+        elif plot_name == "plot_spider":
+            custom_params = self.get_spider_group_box_parameters()
 
         return custom_params
-    def get_spider_group_box_parameters(self):
-        # Get information from group box
-        data_transform = self.ui.comboBox_config_data_transform.currentText()
-        time_series = self.spider_show_dict[self.ui.comboBox_spider_time_series.currentText()]
-        aggregate = self.spider_show_dict[self.ui.comboBox_spider_aggregate.currentText()]
-        weight = self.spider_show_dict[self.ui.comboBox_spider_weight.currentText()]
-        marker = self.marker_dict[self.ui.comboBox_spider_marker.currentText()]
-        sem = self.spider_show_dict[self.ui.comboBox_spider_sem.currentText()]
-        err_bars = self.spider_show_dict[self.ui.comboBox_spider_err_bars.currentText()]
+    def get_auc_by_arm_group_box_parameters(self):
+        # log parameter query
+        logger.info('Getting auc by arm group box parameters')
+
+        # Get values
+        plot_normalized_auc = True if self.ui.comboBox_auc_normalize.currentText() == "True" else False
+        show_axis_labels = True if self.ui.comboBox_auc_show_labels.currentText() == "True" else False
+        shorten_x_labels = True if self.ui.comboBox_auc_shorten_labels.currentText() == "True" else False
 
         # Construct custom parameter dictionary
-        custom_params = {"plot_weight": weight, "show_individual": time_series, "show_aggregate": aggregate,
-                         "aggregate_sem": sem, "error_bars": err_bars, "aggregate_marker":marker,
-                         "tv_transform_str":data_transform}
+        custom_params = {"plot_normalized_auc": plot_normalized_auc, "show_axis_labels": show_axis_labels,
+                         "shorten_x_labels": shorten_x_labels}
         return custom_params
     def get_event_free_group_box_parameters(self):
         # Get values
@@ -964,3 +945,19 @@ class TumorVolumeStudyWindow(QMainWindow):
         custom_params = {"delta": delta, "cutoff": cutoff, "show_risk_plot": show_risk_plot,
                          "show_risk_table": show_risk_table}
         return custom_params
+    def get_spider_group_box_parameters(self):
+        # Get information from group box
+        data_transform = self.ui.comboBox_config_data_transform.currentText()
+        time_series = self.spider_show_dict[self.ui.comboBox_spider_time_series.currentText()]
+        aggregate = self.spider_show_dict[self.ui.comboBox_spider_aggregate.currentText()]
+        weight = self.spider_show_dict[self.ui.comboBox_spider_weight.currentText()]
+        marker = self.marker_dict[self.ui.comboBox_spider_marker.currentText()]
+        sem = self.spider_show_dict[self.ui.comboBox_spider_sem.currentText()]
+        err_bars = self.spider_show_dict[self.ui.comboBox_spider_err_bars.currentText()]
+
+        # Construct custom parameter dictionary
+        custom_params = {"plot_weight": weight, "show_individual": time_series, "show_aggregate": aggregate,
+                         "aggregate_sem": sem, "error_bars": err_bars, "aggregate_marker":marker,
+                         "tv_transform_str":data_transform}
+        return custom_params
+

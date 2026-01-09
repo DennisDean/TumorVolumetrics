@@ -22,6 +22,7 @@ import copy
 import logging
 import os
 import re
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
@@ -1332,10 +1333,6 @@ class TumorVolumeStudyClass():
         - Sets self.current_tumor_volume_canvas to FigureCanvas
         - Replaces parent_widget's layout contents
         """
-        import numpy as np
-        from contextlib import nullcontext
-
-        print(cutoff, show_risk_plot, show_risk_table)
 
         # Variable name transition
         cutoff = cutoff
@@ -1369,8 +1366,6 @@ class TumorVolumeStudyClass():
         show_spacer = show_number_at_risk_plot or show_at_risk_table
         num_of_subplots = (int(show_kaplan_meier_curve) + int(show_number_at_risk_plot)
                          + int(show_spacer) + int(show_at_risk_table) )
-
-        print(f'num_of_subplots={num_of_subplots}')
 
         # Set up height proportions
         height_ratios = []
@@ -1632,11 +1627,10 @@ class TumorVolumeStudyClass():
             plt.show()
 
         return fig, axes_dict
-    def plot_auc_bar(self, compute_day: int | None = None,
-            figsize=(12, 6), sort_descending=True, control_arms=("control", "vehicle", "placebo"),bar_alpha=0.85,
-            bar_edgecolor="black", show_bar_labels=False, title="AUC by Arm", color_cycle=None,
-            show_axis_labels: bool = True, plot_normalized_auc=False, show_legend: bool = True, plot_style=None,
-            parent_widget=None, remove_text_x_labels = True):
+    def plot_auc_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
+            control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
+            title="AUC by Arm", color_cycle=None, show_axis_labels: bool = True, plot_normalized_auc=False,
+            show_legend: bool = False, plot_style=None,parent_widget=None, shorten_x_labels=False):
         """
         Vertical bar plot of AUC values for each time-series.
         Controls are plotted first, followed by experimental arms.
@@ -1644,6 +1638,10 @@ class TumorVolumeStudyClass():
         Supports matplotlib styles and embedding into a PySide6 Graphics/View widget.
         """
 
+        # Debug: verify parameters are received
+        print(
+            f"DEBUG - plot_normalized_auc: {plot_normalized_auc}, show_axis_labels: {show_axis_labels}, shorten_x_labels: {shorten_x_labels}")
+        print(parent_widget)
         # -------------------------------------------
         # 1. COLLECT AUC PER ARM
         # -------------------------------------------
@@ -1658,8 +1656,12 @@ class TumorVolumeStudyClass():
                 ts = self.study_tv_time_dict[ts_id]
                 auc_val, normalized_auc = ts.compute_auc(compute_day=compute_day)
 
+                # Use the parameter to select which value
                 value = normalized_auc if plot_normalized_auc else auc_val
                 arm_auc.append((ts_id, value))
+
+            print(
+                f"DEBUG - Arm {arm}: collected {len(arm_auc)} values, first value: {arm_auc[0] if arm_auc else 'none'}")
 
             arm_auc.sort(key=lambda x: x[1], reverse=sort_descending)
             auc_dict[arm] = arm_auc
@@ -1671,41 +1673,8 @@ class TumorVolumeStudyClass():
         experimental = [a for a in unique_arms if a not in controls]
         ordered_arms = controls + experimental
 
-        # # -------------------------------------------
-        # # 3. COLOR MAP FOR ARMS
-        # # -------------------------------------------
-        # if color_cycle is None:
-        #     color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        #
-        # arm_colors = {
-        #     arm: color_cycle[i % len(color_cycle)]
-        #     for i, arm in enumerate(ordered_arms)
-        # }
-
-        # # -------------------------------------------
-        # # 4. FLATTEN BAR DATA
-        # # -------------------------------------------
-        # bar_x_positions = []
-        # bar_heights = []
-        # bar_colors = []
-        # bar_labels = []
-        #
-        # idx = 0
-        # for arm in ordered_arms:
-        #     for ts_id, auc_val in auc_dict[arm]:
-        #         bar_x_positions.append(idx)
-        #         bar_heights.append(auc_val)
-        #         bar_colors.append(arm_colors[arm])
-        #         bar_labels.append(remove_alpha(str(ts_id)))
-        #         idx += 1
-        #     idx += 1
-        #
-        # if not bar_heights:
-        #     logger.info("No AUC values to plot")
-        #     return None
-
         # -------------------------------------------
-        # 5. PLOTTING (STYLE + QT SUPPORT)
+        # 3. PLOTTING (STYLE + QT SUPPORT)
         # -------------------------------------------
         fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
 
@@ -1739,16 +1708,19 @@ class TumorVolumeStudyClass():
                     bar_x_positions.append(idx)
                     bar_heights.append(auc_val)
                     bar_colors.append(arm_colors[arm])
-                    bar_labels.append(remove_alpha(str(ts_id)))
+                    # Apply label shortening based on parameter
+                    if shorten_x_labels==True:
+                        bar_labels.append(remove_alpha(str(ts_id)))
+                    else:
+                        bar_labels.append(str(ts_id))
                     idx += 1
                 idx += 1
+
+            print(f"DEBUG - Created {len(bar_heights)} bars, first label: {bar_labels[0] if bar_labels else 'none'}")
 
             if not bar_heights:
                 logger.info("No AUC values to plot")
                 return None
-
-
-
 
             # Create bar graph
             bars = ax.bar(
@@ -1759,18 +1731,21 @@ class TumorVolumeStudyClass():
                 edgecolor=bar_edgecolor,
             )
 
-            # X ticks
+            # X ticks - apply show_axis_labels parameter
             if show_axis_labels:
                 ax.set_xticks(bar_x_positions)
                 ax.set_xticklabels(bar_labels, rotation=75, ha="right", fontsize=8)
+                print(bar_labels)
+                print(f"DEBUG - Set {len(bar_labels)} x-axis labels")
             else:
                 ax.set_xticks([])
                 ax.set_xticklabels([])
+                print("DEBUG - Hiding x-axis labels")
 
-            # Labels and title
+            # Labels and title - use parameter for y-label
             y_label = "Normalized AUC" if plot_normalized_auc else "AUC"
-            if show_axis_labels:
-                ax.set_ylabel(y_label)
+            ax.set_ylabel(y_label)
+            print(f"DEBUG - Set y-label to: {y_label}")
 
             if title:
                 ax.set_title(f'{title} - {self.study_id}')
@@ -1786,7 +1761,7 @@ class TumorVolumeStudyClass():
                 ax.grid(True, axis="y", alpha=0.3)
 
             # ---------------------------------------
-            # 6. OPTIONAL: Annotate Bars
+            # 4. OPTIONAL: Annotate Bars
             # ---------------------------------------
             if show_bar_labels:
                 for rect in bars:
@@ -1801,7 +1776,7 @@ class TumorVolumeStudyClass():
                     )
 
             # ---------------------------------------
-            # 7. LEGEND
+            # 5. LEGEND
             # ---------------------------------------
             if show_legend:
                 handles = [
@@ -1811,26 +1786,31 @@ class TumorVolumeStudyClass():
                 ax.legend(handles, ordered_arms, title="Arms", loc="best")
 
         # -------------------------------------------
-        # 8. QT WIDGET INTEGRATION
+        # 6. QT WIDGET INTEGRATION (MATCHING WORKING VERSION)
         # -------------------------------------------
         if parent_widget:
+            # Create a new Figure Canvas
             canvas = FigureCanvas(fig)
             canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             canvas.updateGeometry()
 
-            # Match Qt background to matplotlib figure
+            # Get matplotlib's figure background color and convert to hex for Qt
             fig_facecolor = fig.get_facecolor()
             hex_color = mcolors.to_hex(fig_facecolor)
             canvas.setStyleSheet(f"background-color: {hex_color};")
 
-            # Context menu
+            # Enable right-click menu
             canvas.setContextMenuPolicy(Qt.CustomContextMenu)
             canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
 
+            # Assign figure to parent_widget so save dialog knows what to save
             parent_widget.figure = fig
             parent_widget.canvas_item = canvas
+
+            # Store canvas reference
             self.current_auc_canvas = canvas
 
+            # Clear existing layout
             layout = parent_widget.layout()
             if layout:
                 while layout.count():
@@ -1844,10 +1824,16 @@ class TumorVolumeStudyClass():
 
             layout.setContentsMargins(0, 0, 0, 0)
             layout.addWidget(canvas)
+
+            # Ensure proper sizing (matching working version)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+            # Draw the canvas (matching working version - no flush_events or parent updates)
             canvas.draw()
 
         else:
             plt.show()
+
         return fig, ax
     def plot_percent_tumor_vol_change_bar( self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
