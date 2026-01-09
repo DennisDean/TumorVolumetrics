@@ -358,9 +358,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_auc_normalize.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_auc_show_labels.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_auc_shorten_labels.currentTextChanged.connect(self.update_study_view_text)
-
-        # Some checking
-        print('initialize_auc_by_arm_group_box')
     def initialize_event_free_group_box(self):
         # Block signals during initialization to prevent intermediate updates
         self.ui.comboBox_event_free_delta.blockSignals(True)
@@ -436,9 +433,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_tv_change_normalize.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tv_change_show_labels.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tv_change_shorten_labels.currentTextChanged.connect(self.update_study_view_text)
-
-        # Some checking
-        print('initialize_percent_tv_change_groupbox')
     def initialize_spider_plot_group_box(self):
         # Get transform information
         unique_studies = self.tv_data_obj.unique_studies
@@ -607,12 +601,10 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style = plot_style)
-        print("Updated study view")
     def update_study_view_text(self, *_):
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style = plot_style)
-        print("Updated study view text")
 
     # Update Group Box Parameters
     def update_study_configuration(self):
@@ -927,8 +919,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         num_figures = int(self.ui.comboBox_configuration_num_of_plots.currentText())
         study_obj = self.tv_data_obj.tumor_vol_study_dict[study_id]
 
-        print(num_figures)
-
         # Update each plot
         for idx in range(num_figures):
             # Get plot information
@@ -948,7 +938,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Define custom parameters
         custom_params = {}
 
-        print(plot_name)
         if plot_name == "plot_auc_bar":
             logger.info('Returning auc by arm group box parameters')
             custom_params = self.get_auc_by_arm_group_box_parameters()

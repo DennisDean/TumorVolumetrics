@@ -1638,10 +1638,6 @@ class TumorVolumeStudyClass():
         Supports matplotlib styles and embedding into a PySide6 Graphics/View widget.
         """
 
-        # Debug: verify parameters are received
-        print(
-            f"DEBUG - plot_normalized_auc: {plot_normalized_auc}, show_axis_labels: {show_axis_labels}, shorten_x_labels: {shorten_x_labels}")
-        print(parent_widget)
         # -------------------------------------------
         # 1. COLLECT AUC PER ARM
         # -------------------------------------------
@@ -1659,9 +1655,6 @@ class TumorVolumeStudyClass():
                 # Use the parameter to select which value
                 value = normalized_auc if plot_normalized_auc else auc_val
                 arm_auc.append((ts_id, value))
-
-            print(
-                f"DEBUG - Arm {arm}: collected {len(arm_auc)} values, first value: {arm_auc[0] if arm_auc else 'none'}")
 
             arm_auc.sort(key=lambda x: x[1], reverse=sort_descending)
             auc_dict[arm] = arm_auc
@@ -1716,8 +1709,6 @@ class TumorVolumeStudyClass():
                     idx += 1
                 idx += 1
 
-            print(f"DEBUG - Created {len(bar_heights)} bars, first label: {bar_labels[0] if bar_labels else 'none'}")
-
             if not bar_heights:
                 logger.info("No AUC values to plot")
                 return None
@@ -1735,17 +1726,13 @@ class TumorVolumeStudyClass():
             if show_axis_labels:
                 ax.set_xticks(bar_x_positions)
                 ax.set_xticklabels(bar_labels, rotation=75, ha="right", fontsize=8)
-                print(bar_labels)
-                print(f"DEBUG - Set {len(bar_labels)} x-axis labels")
             else:
                 ax.set_xticks([])
                 ax.set_xticklabels([])
-                print("DEBUG - Hiding x-axis labels")
 
             # Labels and title - use parameter for y-label
             y_label = "Normalized AUC" if plot_normalized_auc else "AUC"
             ax.set_ylabel(y_label)
-            print(f"DEBUG - Set y-label to: {y_label}")
 
             if title:
                 ax.set_title(f'{title} - {self.study_id}')
