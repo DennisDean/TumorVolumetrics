@@ -91,6 +91,9 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Initialize AUC by Arm
         self.initialize_auc_by_arm_group_box()
 
+        # Initialize Percent TV Change
+        self.initialize_percent_tv_change_groupbox()
+
         # Intialize Spider Plot Group Box
         self.tv_transform_options:list|None = None
         self.tv_transform_dict:dict|None = None
@@ -296,6 +299,7 @@ class TumorVolumeStudyWindow(QMainWindow):
             self.ui.groupBox_event_free_survival: "_gb_evfre_anim",
             self.ui.groupBox_configuration_spider: "_gb_spidr_anim",
             self.ui.groupBox_objective_response: "_gb_objrp_anim",
+            self.ui.groupBox_percent_tv_change: "_gb_pertv_anim",
         }
 
         # -----------------------------------------------------
@@ -332,6 +336,8 @@ class TumorVolumeStudyWindow(QMainWindow):
             lambda checked, gb=self.ui.groupBox_configuration_spider: self._animate_spider_groupbox(gb, checked))
         self.ui.groupBox_objective_response.toggled.connect(
             lambda checked, gb=self.ui.groupBox_objective_response: self._animate_objrp_groupbox(gb, checked))
+        self.ui.groupBox_percent_tv_change.toggled.connect(
+            lambda checked, gb=self.ui.groupBox_percent_tv_change: self._animate_pertv_groupbox(gb, checked))
 
     # Initialize Groupboxes
     def initialize_auc_by_arm_group_box(self):
@@ -402,6 +408,37 @@ class TumorVolumeStudyWindow(QMainWindow):
             self.ui.comboBox_event_free_cutoff_days.blockSignals(False)
             self.ui.comboBox_event_free_show_risk_plot.blockSignals(False)
             self.ui.comboBox_event_free_show_risk_table.blockSignals(False)
+    def initialize_objective_response_plot_groupbox(self):
+        # Get current style color selection
+        available_style_colors = self.get_style_colors()
+        orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
+                      self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
+        self._populate_color_comboboxes(orc_cboxes, available_style_colors)
+        self.available_style_colors = available_style_colors
+
+        # Connect pushbutton to update objective response plot
+        self.ui.pushButton_objective_response_update.clicked.connect(self.update_objective_response_bar_plot)
+    def initialize_percent_tv_change_groupbox(self):
+        # Combo box values
+        cbox_values = ["True", "False"]
+
+        # Define the boxes
+        self.ui.comboBox_tv_change_normalize.addItems(cbox_values)
+        self.ui.comboBox_tv_change_normalize.setCurrentIndex(1)
+
+        self.ui.comboBox_tv_change_show_labels.addItems(cbox_values)
+        self.ui.comboBox_tv_change_show_labels.setCurrentIndex(0)
+
+        self.ui.comboBox_tv_change_shorten_labels.addItems(cbox_values)
+        self.ui.comboBox_tv_change_shorten_labels.setCurrentIndex(1)
+
+        # Set connections
+        self.ui.comboBox_tv_change_normalize.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_tv_change_show_labels.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_tv_change_shorten_labels.currentTextChanged.connect(self.update_study_view_text)
+
+        # Some checking
+        print('initialize_percent_tv_change_groupbox')
     def initialize_spider_plot_group_box(self):
         # Get transform information
         unique_studies = self.tv_data_obj.unique_studies
@@ -429,16 +466,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_spider_marker.currentTextChanged.connect(self.update_study_view)
         self.ui.comboBox_spider_sem.currentTextChanged.connect(self.update_study_view)
         self.ui.comboBox_spider_err_bars.currentTextChanged.connect(self.update_study_view)
-    def initialize_objective_response_plot_groupbox(self):
-        # Get current style color selection
-        available_style_colors = self.get_style_colors()
-        orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
-                      self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
-        self._populate_color_comboboxes(orc_cboxes, available_style_colors)
-        self.available_style_colors = available_style_colors
-
-        # Connect pushbutton to update objective response plot
-        self.ui.pushButton_objective_response_update.clicked.connect(self.update_objective_response_bar_plot)
 
     # Group Box Utilities
     def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
@@ -837,19 +864,6 @@ class TumorVolumeStudyWindow(QMainWindow):
             self._gb_spidr_anim.setEndValue(header_height)
 
         self._gb_spidr_anim.start()
-    def _recompute_groupbox_height(self, groupbox):
-        layout = groupbox.layout()
-        if not layout:
-            return
-
-        layout.activate()
-
-        header_height = groupbox.fontMetrics().height() + 16
-        content_height = layout.sizeHint().height()
-
-        expanded_height = header_height + content_height
-
-        groupbox.setMaximumHeight(expanded_height)
     def _animate_objrp_groupbox(self, groupbox: QGroupBox, expanded: bool):
         header_height = groupbox.fontMetrics().height() + 16
 
@@ -868,6 +882,37 @@ class TumorVolumeStudyWindow(QMainWindow):
             self._gb_objrp_anim.setEndValue(header_height)
 
         self._gb_objrp_anim.start()
+    def _animate_pertv_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_pertv_anim.stop()
+
+        if expanded:
+            self._gb_pertv_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_pertv_anim.setEndValue(expanded_height)
+        else:
+            self._gb_pertv_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_pertv_anim.setEndValue(header_height)
+
+        self._gb_pertv_anim.start()
+    def _recompute_groupbox_height(self, groupbox):
+        layout = groupbox.layout()
+        if not layout:
+            return
+
+        layout.activate()
+
+        header_height = groupbox.fontMetrics().height() + 16
+        content_height = layout.sizeHint().height()
+
+        expanded_height = header_height + content_height
+
+        groupbox.setMaximumHeight(expanded_height)
 
     # Plot Figure
     def draw_figure_group(self, plot_style = None):
@@ -909,6 +954,8 @@ class TumorVolumeStudyWindow(QMainWindow):
             custom_params = self.get_auc_by_arm_group_box_parameters()
         elif plot_name == "plot_event_free_survival":
             custom_params = self. get_event_free_group_box_parameters()
+        elif plot_name == "plot_percent_tumor_vol_change_bar":
+            custom_params = self. get_percent_tv_change_group_box_parameters()
         elif plot_name == "plot_spider":
             custom_params = self.get_spider_group_box_parameters()
 
@@ -960,4 +1007,16 @@ class TumorVolumeStudyWindow(QMainWindow):
                          "aggregate_sem": sem, "error_bars": err_bars, "aggregate_marker":marker,
                          "tv_transform_str":data_transform}
         return custom_params
+    def get_percent_tv_change_group_box_parameters(self):
+        # log parameter query
+        logger.info('Getting percent tv change group box parameters')
 
+        # Get values
+        plot_normalized_tv_change = True if self.ui.comboBox_tv_change_normalize.currentText() == "True" else False
+        show_axis_labels = True if self.ui.comboBox_tv_change_show_labels.currentText() == "True" else False
+        shorten_x_labels = True if self.ui.comboBox_tv_change_shorten_labels.currentText() == "True" else False
+
+        # Construct custom parameter dictionary
+        custom_params = {"plot_normalized_tv_change": plot_normalized_tv_change, "show_axis_labels": show_axis_labels,
+                         "shorten_x_labels": shorten_x_labels}
+        return custom_params

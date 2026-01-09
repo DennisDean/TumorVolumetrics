@@ -1838,7 +1838,7 @@ class TumorVolumeStudyClass():
     def plot_percent_tumor_vol_change_bar( self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
             title="Tumor Volume Change (%)", color_cycle=None, show_axis_labels: bool = True, plot_normalized_tv_change=False,
-            show_legend: bool = True, plot_style=None, parent_widget=None):
+            shorten_x_labels:bool=True, show_legend: bool = True, plot_style=None, parent_widget=None):
         """
         Vertical bar plot of percent tumor volume change per time-series.
         Controls are plotted first, followed by experimental arms.
