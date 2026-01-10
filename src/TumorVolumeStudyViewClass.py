@@ -420,7 +420,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         else:
             available_style_colors = self.get_style_colors()  # Lazy loading
         self.available_style_colors = available_style_colors
-        print(self.available_style_colors)
+        print(f"initialize_objective_response_plot_groupbox- self.available_style_colors {self.available_style_colors}")
 
         orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
@@ -489,9 +489,9 @@ class TumorVolumeStudyWindow(QMainWindow):
         """
 
         # Convert to hex
-        print(available_style_colors)
+        print(f"available_style_colors = ({available_style_colors})")
         if not self._is_hex_color(available_style_colors[0]):
-            available_style_colors = [ self.mpl_code_to_hex(c) for c in available_style_colors]
+            available_style_colors = [ self._mpl_code_to_hex(c) for c in available_style_colors]
 
         # If no combo boxes provided, try default naming convention
         if combo_boxes is None:
@@ -520,37 +520,6 @@ class TumorVolumeStudyWindow(QMainWindow):
                 combo_box.addItem(icon, color_name, userData=color)
             combo_box.setCurrentIndex(count+color_shift)
             count += 1
-    def mpl_code_to_hex(self,code: str) -> str:
-        base_map = {
-            "b": "#0000FF",
-            "g": "#008000",
-            "r": "#FF0000",
-            "c": "#00FFFF",
-            "m": "#FF00FF",
-            "y": "#FFFF00",
-            "k": "#000000",
-            "w": "#FFFFFF",
-        }
-
-        tab_map = {
-            "tab:blue": "#1f77b4",
-            "tab:orange": "#ff7f0e",
-            "tab:green": "#2ca02c",
-            "tab:red": "#d62728",
-            "tab:purple": "#9467bd",
-            "tab:brown": "#8c564b",
-            "tab:pink": "#e377c2",
-            "tab:gray": "#7f7f7f",
-            "tab:olive": "#bcbd22",
-            "tab:cyan": "#17becf",
-        }
-
-        if code in base_map:
-            return base_map[code]
-        if code in tab_map:
-            return tab_map[code]
-
-        raise ValueError(f"Unknown matplotlib color code: {code}")
     def get_study_min_of_max_timepoints(self):
         # Get current study
         current_study_label = self.ui.comboBox_configuration_study.currentText()
@@ -599,6 +568,56 @@ class TumorVolumeStudyWindow(QMainWindow):
             return True
         except ValueError:
             return False
+    def _mpl_code_to_hex(self,code: str) -> str:
+        base_map = {
+            "b": "#0000FF",
+            "g": "#008000",
+            "r": "#FF0000",
+            "c": "#00FFFF",
+            "m": "#FF00FF",
+            "y": "#FFFF00",
+            "k": "#000000",
+            "w": "#FFFFFF",
+        }
+
+        tab_map = {
+            "tab:blue": "#1f77b4",
+            "tab:orange": "#ff7f0e",
+            "tab:green": "#2ca02c",
+            "tab:red": "#d62728",
+            "tab:purple": "#9467bd",
+            "tab:brown": "#8c564b",
+            "tab:pink": "#e377c2",
+            "tab:gray": "#7f7f7f",
+            "tab:olive": "#bcbd22",
+            "tab:cyan": "#17becf",
+        }
+
+        gray_map = {
+            "0.00": "#000000",
+            "0.40": "#666666",
+            "0.60": "#999999",
+            "0.70": "#b2b2b2"
+        }
+
+        gray_map_numeric = {
+            0.00: "#000000",
+            0.40: "#666666",
+            0.60: "#999999",
+            0.70: "#b2b2b2"
+        }
+
+        print(code)
+        if code in base_map:
+            return base_map[code]
+        if code in tab_map:
+            return tab_map[code]
+        if code in gray_map:
+            return gray_map[code]
+        if code in gray_map_numeric:
+            return gray_map[code]
+
+        raise ValueError(f"Unknown matplotlib color code: {code}")
 
     # Update Figure
     def get_plot_style(self):
@@ -639,9 +658,24 @@ class TumorVolumeStudyWindow(QMainWindow):
             return plt.rcParams['axes.prop_cycle'].by_key()['color']
         print('Getting style colors')
 
+        # module = ("Matplotlib", "Science Plots")
+        plot_style_module = self.ui.comboBox_plot_style_module.currentText()
+        plot_style = self.get_plot_style()
 
+        # Apply the style temporarily to extract colors
+        with plt.style.context(plot_style):
+            # Get the color cycle from the current style
+            prop_cycle = plt.rcParams['axes.prop_cycle']
+            colors = prop_cycle.by_key()['color']
 
-
+        return colors
+    def get_obj_response_color_from_style_colors(self):
+        # Default fallback
+        if not self.plot_style_module or not self.plot_matplotlib_style:
+            # Use matplotlib default if style not configured
+            print("Returning matplot lib default colors")
+            return plt.rcParams['axes.prop_cycle'].by_key()['color']
+        print('Getting style colors')
 
         # module = ("Matplotlib", "Science Plots")
         plot_style_module = self.ui.comboBox_plot_style_module.currentText()
@@ -695,8 +729,8 @@ class TumorVolumeStudyWindow(QMainWindow):
         combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                        self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         available_style_colors = self.get_style_colors()
-        print(f"available_style_colors = {available_style_colors}")
-        self._populate_color_comboboxes(combo_boxes, available_style_colors)
+        print(f"update_plot style available_style_colors = {available_style_colors}")
+        self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=2)
     def update_event_free_cutoff_type(self):
         # Set
         current_cutoff_index = self.ui.comboBox_event_free_cutoff_days.currentIndex()

@@ -2197,10 +2197,17 @@ class TumorVolumeStudyClass():
             # 6. Legend for objective response
             # ---------------------------------------------------
             if show_legend:
-                handles = [
-                    plt.Line2D([], [], color=self.objective_response_colors[k], lw=6)
-                    for k in ["CR", "PR", "SD", "PD"]
-                ]
+                if objective_response_colors is None:
+                    handles = [
+                        plt.Line2D([], [], color=self.objective_response_colors[k], lw=6)
+                        for k in ["CR", "PR", "SD", "PD"]
+                    ]
+                else:
+                    handles = [
+                        plt.Line2D([], [], color=objective_response_colors[k], lw=6)
+                        for k in ["CR", "PR", "SD", "PD"]
+                    ]
+
                 labels = [
                     k #self.objective_response_names[k]
                     for k in ["CR", "PR", "SD", "PD"]
