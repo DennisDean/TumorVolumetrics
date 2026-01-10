@@ -1937,17 +1937,16 @@ class TumorVolumeStudyClass():
                     bar_x_positions.append(idx)
                     bar_heights.append(tv_change_val)
                     bar_colors.append(arm_colors[arm])
-                    bar_labels.append(remove_alpha(str(ts_id)))
+                    if shorten_x_labels == True:
+                        bar_labels.append(remove_alpha(str(ts_id)))
+                    else:
+                        bar_labels.append((str(ts_id)))
                     idx += 1
                 idx += 1
 
             if not bar_heights:
                 logger.info("No tumor volume change values to plot")
                 return None
-
-
-
-
 
             bars = ax.bar(
                 bar_x_positions,
@@ -1973,6 +1972,9 @@ class TumorVolumeStudyClass():
             )
             if show_axis_labels:
                 ax.set_ylabel(y_label)
+            else:
+                ax.set_yticks([])
+                ax.set_yticklabels([])
 
             if title:
                 ax.set_title(f'{title} - {self.study_id}')
@@ -2054,7 +2056,7 @@ class TumorVolumeStudyClass():
     def plot_vol_change_as_objective_response_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
             title="Objective Response", color_cycle=None, show_axis_labels: bool = True, show_legend: bool = True,
-            y_range: list | None = None, plot_style=None, parent_widget=None):
+            objective_response_colors:dict|None = None, y_range: list | None = None, plot_style=None, parent_widget=None):
         """
         Bar plot of percent tumor volume change colored by objective response category.
         Supports matplotlib styles and embedding into a PySide6 widget.
@@ -2122,7 +2124,10 @@ class TumorVolumeStudyClass():
             ):
                 bar_x_positions.append(idx)
                 bar_heights.append(tv_val)
-                bar_colors.append(self.objective_response_colors[resp_code])
+                if objective_response_colors == None:
+                    bar_colors.append(self.objective_response_colors[resp_code])
+                else:
+                    bar_colors.append(objective_response_colors[resp_code])
                 bar_labels.append(remove_alpha(str(ts_id)))
                 idx += 1
 

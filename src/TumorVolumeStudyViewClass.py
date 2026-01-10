@@ -14,6 +14,7 @@ from FigureGraphicsViewClass import FigureGraphicsView
 
 # Computing
 import numpy as np
+import re
 
 # Plotting
 import matplotlib as mpl
@@ -71,78 +72,39 @@ class TumorVolumeStudyWindow(QMainWindow):
     def __init__(self, tv_data_obj:TumorVolumeDataClass , parent=None):
         super().__init__(parent)
 
-        # Setup and Draw Window
+        # 1. CORE SETUP - UI and data
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Tumor Volume Study")
-
-        # Show plotting configuration layout
-        initial_configuration_show_status = False
-        self.ui.actionPlot_Configuration.triggered.connect(self.toggle_graph_configuration_group)
-        set_layout_visible(self.ui.verticalLayout_visual_graph_settings, initial_configuration_show_status)
-
-        # Save data object
         self.tv_data_obj = tv_data_obj
-
-        # Get Studies
         self.studies = tv_data_obj.unique_studies
-        self.ui.comboBox_configuration_study.addItems(self.studies)
 
-        # Initialize AUC by Arm
-        self.initialize_auc_by_arm_group_box()
+        # 2. SYSTEM-LEVEL CONFIGURATION
+        self.use_latex = latex_available()
 
-        # Initialize Percent TV Change
-        self.initialize_percent_tv_change_groupbox()
-
-        # Intialize Spider Plot Group Box
-        self.tv_transform_options:list|None = None
-        self.tv_transform_dict:dict|None = None
+        # 3. DATA STRUCTURES & OPTIONS (before UI population)
+        # Initialize all the options lists and dicts
+        self.tv_transform_options = None
+        self.tv_transform_dict = None
         self.spider_show_options = ["True", "False"]
         self.spider_show_dict = {"True": True, "False": False}
         self.marker_values = ['Default', '.', 'o', "s", "D"]
         self.marker_dict = {'Default': None, ".": ".", "o": "o", "s": "s", "D": "D"}
-        self.initialize_spider_plot_group_box()
-
-        # Initialize Event Free Survival
         self.event_free_delta_values = ['0.5', '1.0', '1.5', '2.0']
         self.event_free_delta_default_index = 1
         self.show_true_false_options = ["True", "False"]
         self.show_true_false_dict = {"True": True, "False": False}
-        self.initialize_event_free_group_box()
 
-        # Connect Event Free signals
-        self.ui.comboBox_event_free_cutoff.currentIndexChanged.connect(self.toggle_event_free_cutoff_options)
-        self.ui.comboBox_event_free_delta.currentIndexChanged.connect(self.update_study_view)
-        self.ui.comboBox_event_free_show_risk_plot.currentIndexChanged.connect(self.update_study_view)
-        self.ui.comboBox_event_free_show_risk_table.currentIndexChanged.connect(self.update_study_view)
-        self.ui.comboBox_event_free_cutoff_days.currentIndexChanged.connect(self.update_study_view)
-
-        # Set plot configurations
+        # Plot configuration data structures
         self.initial_configuration = '4'
-        self.plot_config_to_index = lambda x: int(x)-1
-        self.num_of_plot_option_list = ['1','2','3','4']
-        self.graphic_view_plot_dict = {'1':[True, False, False, False], '2':[True, True, False, False],
-                                       '3':[True, True, True, False],   '4':[True, True, True, True]}
-        self.ui.comboBox_configuration_num_of_plots.addItems(self.num_of_plot_option_list)
-        self.ui.comboBox_configuration_num_of_plots.setCurrentIndex(self.plot_config_to_index(self.initial_configuration))
-        self.ui.comboBox_configuration_num_of_plots.currentTextChanged.connect(self.toggle_plot_graphics_view)
+        self.plot_config_to_index = lambda x: int(x) - 1
+        self.num_of_plot_option_list = ['1', '2', '3', '4']
+        self.graphic_view_plot_dict = {'1': [True, False, False, False],
+                                       '2': [True, True, False, False],
+                                       '3': [True, True, True, False],
+                                       '4': [True, True, True, True]}
 
-        # Overide Graphic View to Support Context Menus (Right Click)
-        self.graphicsView_visual_top_left: QGraphicsView | None = None
-        self.graphicsView_visual_top_right: QGraphicsView | None = None
-        self.graphicsView_visual_bottom_left: QGraphicsView | None = None
-        self.graphicsView_visual_bottom_right: QGraphicsView | None = None
-        self.original_graphics_views: QGraphicsView | None = None
-        self.add_context_menu_support_to_graphic_view()
-
-        # Setup plotting
-        self.plot_types:                list|None = None
-        self.plot_select_comboBox:      list|None = None
-        self.plotting_functions:        list|None = None
-        self.experiment_graphics_views: list|None = None
-        self.initialize_plotting()
-
-        # Initialize style sheet
+        # Style configuration data structures
         self.current_plot_style = 0
         self.style_modules_supported = ['Matplotlib', 'Science Plots']
         self.matplotlib_style_sheets_options = [
@@ -157,29 +119,74 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.scienceplots_style_sheets = ["No Journal", "Nature", "IEEE", "Science"]
         self.scienceplots_color_palletes = ["No Palette", "bright", "vibrant", "muted", "retro", "high-vis", "high-contrast"]
         self.scienceplots_grid_options = ["No Grid", "Grid"]
-        self.plot_style_module:str|None = None
-        self.plot_matplotlib_style:str|None = None
-        self.plot_scienceplot_journal:str|None = None
-        self.plot_scienceplot_color:str|None = None
-        self.plot_scienceplot_grid:str|None = None
-        self.initialize_style_sheets_functions()
+        self.plot_style_module = None
+        self.plot_matplotlib_style = None
+        self.plot_scienceplot_journal = None
+        self.plot_scienceplot_color = None
+        self.plot_scienceplot_grid = None
 
-        # Check if Latex is avaialble
-        self.use_latex = latex_available()
+        # Graphics view references
+        self.graphicsView_visual_top_left = None
+        self.graphicsView_visual_top_right = None
+        self.graphicsView_visual_bottom_left = None
+        self.graphicsView_visual_bottom_right = None
+        self.original_graphics_views = None
 
-        # Set up group boxes
-        self._gb_animation:QPropertyAnimation|None = None
-        self._gb_style_anim:QPropertyAnimation|None = None
-        self._gb_confg_anim:QPropertyAnimation|None = None
-        self._gb_aucam_anim:QPropertyAnimation|None = None
-        self._gb_evfre_anim:QPropertyAnimation|None = None
-        self._gb_spidr_anim:QPropertyAnimation|None = None
-        self._gb_objrp_anim:QPropertyAnimation|None = None
+        # Animation references
+        self._gb_animation = None
+        self._gb_style_anim = None
+        self._gb_confg_anim = None
+        self._gb_aucam_anim = None
+        self._gb_evfre_anim = None
+        self._gb_spidr_anim = None
+        self._gb_objrp_anim = None
+
+        # Plotting infrastructure (initialize to None before setup)
+        self.plot_types = None
+        self.plot_select_comboBox = None
+        self.plotting_functions = None
+        self.experiment_graphics_views = None
+        self.available_style_colors = None
+
+        # 4. WIDGET POPULATION (populate combo boxes)
+        self.ui.comboBox_configuration_study.addItems(self.studies)
+        self.ui.comboBox_configuration_num_of_plots.addItems(self.num_of_plot_option_list)
+        self.ui.comboBox_configuration_num_of_plots.setCurrentIndex(
+            self.plot_config_to_index(self.initial_configuration))
+
+        # 5. INITIALIZE COMPONENT GROUP BOXES (order matters!)
+        self.initialize_style_sheets_functions()  # First - sets up style system
+        self.initialize_auc_by_arm_group_box()
+        self.initialize_percent_tv_change_groupbox()
+        self.initialize_spider_plot_group_box()
+        self.initialize_event_free_group_box()
+        self.initialize_objective_response_plot_groupbox()  # UNCOMMENT and place before plotting
+
+        # 6. UI CUSTOMIZATION
+        self.add_context_menu_support_to_graphic_view()
         self.initialize_collapsable_group_boxes()
 
-        # Initialize objection response plot
-        self.available_style_colors = None
-        self.initialize_objective_response_plot_groupbox()
+        # 7. SIGNAL CONNECTIONS (after all widgets are initialized)
+        initial_configuration_show_status = False
+        self.ui.actionPlot_Configuration.triggered.connect(self.toggle_graph_configuration_group)
+        set_layout_visible(self.ui.verticalLayout_visual_graph_settings,
+                           initial_configuration_show_status)
+
+        self.ui.comboBox_event_free_cutoff.currentIndexChanged.connect(
+            self.toggle_event_free_cutoff_options)
+        self.ui.comboBox_event_free_delta.currentIndexChanged.connect(
+            self.update_study_view)
+        self.ui.comboBox_event_free_show_risk_plot.currentIndexChanged.connect(
+            self.update_study_view)
+        self.ui.comboBox_event_free_show_risk_table.currentIndexChanged.connect(
+            self.update_study_view)
+        self.ui.comboBox_event_free_cutoff_days.currentIndexChanged.connect(
+            self.update_study_view)
+        self.ui.comboBox_configuration_num_of_plots.currentTextChanged.connect(
+            self.toggle_plot_graphics_view)
+
+        # 8. FINAL SETUP - Initialize plotting system (MUST BE LAST)
+        self.initialize_plotting()
 
     # Figure utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
@@ -259,6 +266,13 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Initialize study selection
         self.ui.comboBox_configuration_study.currentTextChanged.connect(self.update_study_configuration)
     def initialize_style_sheets_functions(self):
+        # Set defaults explicitly
+        # self.plot_style_module = 'Matplotlib'
+        # self.plot_matplotlib_style = 'default'
+        # self.plot_scienceplot_journal = 'No Journal'
+        # self.plot_scienceplot_color = 'No Palette'
+        # self.plot_scienceplot_grid = 'No Grid'
+
         # Set up highlevel options
         self.current_plot_style = 0
         self.style_modules_supported = ['Matplotlib', 'Science Plots']
@@ -407,14 +421,24 @@ class TumorVolumeStudyWindow(QMainWindow):
             self.ui.comboBox_event_free_show_risk_table.blockSignals(False)
     def initialize_objective_response_plot_groupbox(self):
         # Get current style color selection
-        available_style_colors = self.get_style_colors()
+        if self.available_style_colors == None:
+            # First initialization add default color
+            available_style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        else:
+            available_style_colors = self.get_style_colors()  # Lazy loading
+        self.available_style_colors = available_style_colors
+        print(self.available_style_colors)
+
         orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         self._populate_color_comboboxes(orc_cboxes, available_style_colors)
-        self.available_style_colors = available_style_colors
+
+        # Set Index
+        for idx, cbox in enumerate(orc_cboxes):
+            cbox.setCurrentIndex(idx)
 
         # Connect pushbutton to update objective response plot
-        self.ui.pushButton_objective_response_update.clicked.connect(self.update_objective_response_bar_plot)
+        self.ui.pushButton_objective_response_update.clicked.connect(self.update_study_view)
     def initialize_percent_tv_change_groupbox(self):
         # Combo box values
         cbox_values = ["True", "False"]
@@ -525,6 +549,13 @@ class TumorVolumeStudyWindow(QMainWindow):
             max_time_array.append(np.max(tv_data.time_day))
         max_of_max_time_array = np.max(max_time_array)
         return max_of_max_time_array
+    def _extract_color_from_label(self, color_label):
+        """Extract hex color from a label like 'Color 1 (#1f77b4)'"""
+        match = re.search(r'#[0-9a-fA-F]{6}', color_label)
+        if match:
+            return match.group(0)
+        # If no hex code found, assume it's already a valid color
+        return color_label
 
     # Update Figure
     def get_plot_style(self):
@@ -571,6 +602,17 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         return colors
     def get_style_colors(self):
+        # Default fallback
+        if not self.plot_style_module or not self.plot_matplotlib_style:
+            # Use matplotlib default if style not configured
+            print("Returning matplot lib default colors")
+            return plt.rcParams['axes.prop_cycle'].by_key()['color']
+        print('Getting style colors')
+
+
+
+
+
         # module = ("Matplotlib", "Science Plots")
         plot_style_module = self.ui.comboBox_plot_style_module.currentText()
         plot_style = self.get_plot_style()
@@ -630,34 +672,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         set_layout_visible(self.ui.horizontalLayout_event_free_cutoff_day,
                            True if current_cutoff_index == 2 else False)
 
-    # Custom Figure (first approach should be replaced with update framework)
-    def update_objective_response_bar_plot(self):
-        # Create new dictionary
-        current_colors = self.get_style_colors_2()
-        pd_color = current_colors[self.ui.comboBox_objective_plot_pd.currentIndex()]
-        sd_color = current_colors[self.ui.comboBox_objective_plot_sd.currentIndex()]
-        pr_color = current_colors[self.ui.comboBox_objective_plot_pr.currentIndex()]
-        cr_color = current_colors[self.ui.comboBox_objective_plot_cr.currentIndex()]
-
-        # Create new color dictionary
-        objective_response_color_dict = {'PD':pd_color, 'SD':sd_color, 'PR':pr_color, 'CR':cr_color}
-        self.tv_data_obj.objective_response_colors = objective_response_color_dict.copy()
-
-        # Check if Objective Response Curve is present
-        updated_style = self.get_plot_style()
-        selected_plot_cbox  = [self.ui.comboBox_configuration_plot_upper_left, self.ui.comboBox_configuration_plot_upper_right,
-                               self.ui.comboBox_configuration_plot_lower_left, self.ui.comboBox_configuration_plot_lower_right]
-        selected_gviews = [self.graphicsView_visual_top_left,    self.graphicsView_visual_top_right,
-                           self.graphicsView_visual_bottom_left, self.graphicsView_visual_bottom_right]
-        for splot_cbox, s_gview in zip(selected_plot_cbox, selected_gviews):
-            plot_name = splot_cbox.currentText()
-            if plot_name == 'Objective_Response_Bar':
-                experiment_name = self.ui.comboBox_configuration_experiments.currentText()
-                plot_function_name = self.plotting_function_dict[plot_name]
-                experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_name]
-                experiment_obj.plot_to_widget_by_name(plot_function_name, s_gview, plot_style=updated_style,
-                    objective_response_color_dict = objective_response_color_dict)
-
     # Interface Utilities
     def toggle_graph_configuration_group(self):
         # Add/remove plot selection parmaeters
@@ -675,7 +689,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         set_layout_visible(self.ui.verticalLayout_plot_scienceplot_options, bool(new_index))
         set_layout_visible(self.ui.verticalLayout_matplotlib_options,not bool(new_index))
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
-    def toggle_event_free_cutoff_options(self, new_index):
+    def toggle_event_free_cutoff_options(new_index):
         # Handle fixed cutoff options
         common_across_arms = 0
         full_follow_up = 1
@@ -943,6 +957,8 @@ class TumorVolumeStudyWindow(QMainWindow):
             custom_params = self.get_auc_by_arm_group_box_parameters()
         elif plot_name == "plot_event_free_survival":
             custom_params = self. get_event_free_group_box_parameters()
+        elif plot_name == "plot_vol_change_as_objective_response_bar":
+            custom_params = self. get_objective_response_group_box_parameters()
         elif plot_name == "plot_percent_tumor_vol_change_bar":
             custom_params = self. get_percent_tv_change_group_box_parameters()
         elif plot_name == "plot_spider":
@@ -995,6 +1011,25 @@ class TumorVolumeStudyWindow(QMainWindow):
         custom_params = {"plot_weight": weight, "show_individual": time_series, "show_aggregate": aggregate,
                          "aggregate_sem": sem, "error_bars": err_bars, "aggregate_marker":marker,
                          "tv_transform_str":data_transform}
+        return custom_params
+    def get_objective_response_group_box_parameters(self):
+        # Get Color parameters
+        pd_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_pd.currentText())
+        sd_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_sd.currentText())
+        pr_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_pr.currentText())
+        cr_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_cr.currentText())
+
+        pd_index = self.ui.comboBox_objective_plot_pd.currentIndex()
+        sd_index = self.ui.comboBox_objective_plot_sd.currentIndex()
+        pr_index = self.ui.comboBox_objective_plot_pr.currentIndex()
+        cr_index = self.ui.comboBox_objective_plot_cr.currentIndex()
+
+        print(pd_color, sd_color, pr_color, cr_color)
+        print(pd_index, sd_index, pr_index, cr_index)
+
+        # Construct custom parameter dictionary
+        custom_params = {"objective_response_colors":
+                             {"PD": pd_color, "SD": sd_color, "PR": pr_color,"CR": cr_color}}
         return custom_params
     def get_percent_tv_change_group_box_parameters(self):
         # log parameter query
