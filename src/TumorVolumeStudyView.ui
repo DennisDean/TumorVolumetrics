@@ -74,7 +74,7 @@
                <x>0</x>
                <y>0</y>
                <width>231</width>
-               <height>1849</height>
+               <height>1941</height>
               </rect>
              </property>
              <property name="sizePolicy">
@@ -904,10 +904,75 @@
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_groupbox_objective_response_2">
                  <item>
+                  <widget class="QLabel" name="label_46">
+                   <property name="text">
+                    <string>Labels</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
                   <layout class="QVBoxLayout" name="verticalLayout_groupbox_objective_response">
                    <property name="sizeConstraint">
                     <enum>QLayout::SetMinimumSize</enum>
                    </property>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_32">
+                     <item>
+                      <widget class="QLabel" name="label_45">
+                       <property name="minimumSize">
+                        <size>
+                         <width>70</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>70</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>Show</string>
+                       </property>
+                       <property name="alignment">
+                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="comboBox_obj_res_show_labels"/>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_31">
+                     <item>
+                      <widget class="QLabel" name="label_44">
+                       <property name="minimumSize">
+                        <size>
+                         <width>70</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>70</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>Shorten</string>
+                       </property>
+                       <property name="alignment">
+                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="comboBox_obj_res_shorten_labels"/>
+                     </item>
+                    </layout>
+                   </item>
                    <item>
                     <widget class="QLabel" name="label_17">
                      <property name="sizePolicy">
