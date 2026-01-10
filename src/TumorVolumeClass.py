@@ -83,7 +83,6 @@ def _mpl_code_to_hex(self, code: str) -> str:
         0.70: "#b2b2b2"
     }
 
-    print(code)
     if code in base_map:
         return base_map[code]
     if code in tab_map:
@@ -2128,16 +2127,13 @@ class TumorVolumeStudyClass():
             fig.set_size_inches(figsize)
 
         with style_ctx:
-            print('#################3')
             # get style colors
             prop_cycle = plt.rcParams['axes.prop_cycle']
             colors = prop_cycle.by_key()['color']
 
             if objective_response_colors is not None:
-                print('############## using dictionary')
                 objective_response_colors = objective_response_colors
             elif plot_style is not None:
-                print('#############33plot style set in objective response')
                 # Standardize matplotlib colors
                 colors = list(map(_mpl_code_to_hex, colors))
 
@@ -2148,10 +2144,7 @@ class TumorVolumeStudyClass():
                 objective_response_colors = {'PD':colors[(0+shift)%num_colors], 'SD':colors[(1+shift)%num_colors],
                                              'PR':colors[(2+shift)%num_colors], 'CR':colors[(3+shift)%num_colors]}
             else:
-                print('########### using global dictionary')
                 objective_response_colors = self.objective_response_colors
-
-
 
             # -------------------------------------------------------
             # 3. Flatten bar data + compute arm spans

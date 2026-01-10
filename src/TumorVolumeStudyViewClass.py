@@ -433,7 +433,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         else:
             available_style_colors = self.get_style_colors()  # Lazy loading
         self.available_style_colors = available_style_colors
-        print(f"initialize_objective_response_plot_groupbox- self.available_style_colors {self.available_style_colors}")
 
         orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
@@ -530,7 +529,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         """
 
         # Convert to hex
-        print(f"available_style_colors = ({available_style_colors})")
         if not self._is_hex_color(available_style_colors[0]):
             available_style_colors = [ self._mpl_code_to_hex(c) for c in available_style_colors]
 
@@ -621,7 +619,6 @@ class TumorVolumeStudyWindow(QMainWindow):
             0.70: "#b2b2b2"
         }
 
-        print(code)
         if code in base_map:
             return base_map[code]
         if code in tab_map:
@@ -668,9 +665,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Default fallback
         if not self.plot_style_module or not self.plot_matplotlib_style:
             # Use matplotlib default if style not configured
-            print("Returning matplot lib default colors")
             return plt.rcParams['axes.prop_cycle'].by_key()['color']
-        print('Getting style colors')
 
         # module = ("Matplotlib", "Science Plots")
         plot_style_module = self.ui.comboBox_plot_style_module.currentText()
@@ -687,9 +682,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Default fallback
         if not self.plot_style_module or not self.plot_matplotlib_style:
             # Use matplotlib default if style not configured
-            print("Returning matplot lib default colors")
             return plt.rcParams['axes.prop_cycle'].by_key()['color']
-        print('Getting style colors')
 
         # module = ("Matplotlib", "Science Plots")
         plot_style_module = self.ui.comboBox_plot_style_module.currentText()
@@ -742,7 +735,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                        self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         available_style_colors = self.get_style_colors()
-        print(f"update_plot style available_style_colors = {available_style_colors}")
         self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=2)
 
         # Update Study View
@@ -1108,9 +1100,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         sd_index = self.ui.comboBox_objective_plot_sd.currentIndex()
         pr_index = self.ui.comboBox_objective_plot_pr.currentIndex()
         cr_index = self.ui.comboBox_objective_plot_cr.currentIndex()
-
-        print(pd_color, sd_color, pr_color, cr_color)
-        print(pd_index, sd_index, pr_index, cr_index)
 
         # Construct custom parameter dictionary
         custom_params = {"objective_response_colors":
