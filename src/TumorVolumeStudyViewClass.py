@@ -266,13 +266,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Initialize study selection
         self.ui.comboBox_configuration_study.currentTextChanged.connect(self.update_study_configuration)
     def initialize_style_sheets_functions(self):
-        # Set defaults explicitly
-        # self.plot_style_module = 'Matplotlib'
-        # self.plot_matplotlib_style = 'default'
-        # self.plot_scienceplot_journal = 'No Journal'
-        # self.plot_scienceplot_color = 'No Palette'
-        # self.plot_scienceplot_grid = 'No Grid'
-
         # Set up highlevel options
         self.current_plot_style = 0
         self.style_modules_supported = ['Matplotlib', 'Science Plots']
@@ -431,11 +424,12 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
-        self._populate_color_comboboxes(orc_cboxes, available_style_colors)
+        self._populate_color_comboboxes(orc_cboxes, available_style_colors, color_shift=2)
 
         # Set Index
+        color_shift = 2  # don't use the first two colors, assuming two arms
         for idx, cbox in enumerate(orc_cboxes):
-            cbox.setCurrentIndex(idx)
+            cbox.setCurrentIndex(idx+color_shift)
 
         # Connect pushbutton to update objective response plot
         self.ui.pushButton_objective_response_update.clicked.connect(self.update_study_view)
@@ -486,13 +480,18 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_spider_err_bars.currentTextChanged.connect(self.update_study_view)
 
     # Group Box Utilities
-    def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
+    def _populate_color_comboboxes(self, combo_boxes, available_style_colors:list[str]|None, color_shift:int=0):
         """Populate ALL combo boxes with ALL available colors from the current style.
 
         Args:
             combo_boxes: List of combo box objects to populate. If None, attempts to
                          find combo boxes using default naming convention.
         """
+
+        # Convert to hex
+        print(available_style_colors)
+        if not self._is_hex_color(available_style_colors[0]):
+            available_style_colors = [ self.mpl_code_to_hex(c) for c in available_style_colors]
 
         # If no combo boxes provided, try default naming convention
         if combo_boxes is None:
@@ -510,7 +509,7 @@ class TumorVolumeStudyWindow(QMainWindow):
             combo_box.clear()
 
             # Add ALL colors from the style to this combo box
-            for i, color in enumerate(self.available_style_colors):
+            for i, color in enumerate(available_style_colors):
                 # Create a colored icon for visual reference
                 pixmap = QPixmap(20, 20)
                 pixmap.fill(QColor(color))
@@ -519,8 +518,39 @@ class TumorVolumeStudyWindow(QMainWindow):
                 # Add to combo box with color name/hex
                 color_name = f"Color {i+1} ({color})"
                 combo_box.addItem(icon, color_name, userData=color)
-            combo_box.setCurrentIndex(count)
+            combo_box.setCurrentIndex(count+color_shift)
             count += 1
+    def mpl_code_to_hex(self,code: str) -> str:
+        base_map = {
+            "b": "#0000FF",
+            "g": "#008000",
+            "r": "#FF0000",
+            "c": "#00FFFF",
+            "m": "#FF00FF",
+            "y": "#FFFF00",
+            "k": "#000000",
+            "w": "#FFFFFF",
+        }
+
+        tab_map = {
+            "tab:blue": "#1f77b4",
+            "tab:orange": "#ff7f0e",
+            "tab:green": "#2ca02c",
+            "tab:red": "#d62728",
+            "tab:purple": "#9467bd",
+            "tab:brown": "#8c564b",
+            "tab:pink": "#e377c2",
+            "tab:gray": "#7f7f7f",
+            "tab:olive": "#bcbd22",
+            "tab:cyan": "#17becf",
+        }
+
+        if code in base_map:
+            return base_map[code]
+        if code in tab_map:
+            return tab_map[code]
+
+        raise ValueError(f"Unknown matplotlib color code: {code}")
     def get_study_min_of_max_timepoints(self):
         # Get current study
         current_study_label = self.ui.comboBox_configuration_study.currentText()
@@ -556,6 +586,19 @@ class TumorVolumeStudyWindow(QMainWindow):
             return match.group(0)
         # If no hex code found, assume it's already a valid color
         return color_label
+    def _is_hex_color(self,s: str) -> bool:
+        if not isinstance(s, str):
+            return False
+        if not s.startswith("#"):
+            return False
+        if len(s) not in (4, 7, 9):
+            return False
+
+        try:
+            int(s[1:], 16)
+            return True
+        except ValueError:
+            return False
 
     # Update Figure
     def get_plot_style(self):
@@ -588,19 +631,6 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Return Plot Style
         return plot_style
-    def get_style_colors_2(self):
-        # rewrite of generated code to return style colors
-        # module = ("Matplotlib", "Science Plots")
-        plot_style_module = self.ui.comboBox_plot_style_module.currentText()
-        plot_style = self.get_plot_style()
-
-        # Apply the style temporarily to extract colors
-        with plt.style.context(plot_style):
-            # Get the color cycle from the current style
-            prop_cycle = plt.rcParams['axes.prop_cycle']
-            colors = prop_cycle.by_key()['color']
-
-        return colors
     def get_style_colors(self):
         # Default fallback
         if not self.plot_style_module or not self.plot_matplotlib_style:
@@ -665,6 +695,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                        self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         available_style_colors = self.get_style_colors()
+        print(f"available_style_colors = {available_style_colors}")
         self._populate_color_comboboxes(combo_boxes, available_style_colors)
     def update_event_free_cutoff_type(self):
         # Set
