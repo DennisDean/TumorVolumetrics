@@ -1987,11 +1987,8 @@ class TumorVolumeStudyClass():
                 if plot_normalized_tv_change
                 else "Tumor Volume Change (%)"
             )
-            if show_axis_labels:
-                ax.set_ylabel(y_label)
-            else:
-                ax.set_yticks([])
-                ax.set_yticklabels([])
+            ax.set_ylabel(y_label)
+
 
             if title:
                 ax.set_title(f'{title} - {self.study_id}')
@@ -2073,7 +2070,8 @@ class TumorVolumeStudyClass():
     def plot_vol_change_as_objective_response_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
             title="Objective Response", color_cycle=None, show_axis_labels: bool = True, show_legend: bool = True,
-            objective_response_colors:dict|None = None, y_range: list | None = None, plot_style=None, parent_widget=None):
+            objective_response_colors:dict|None = None, y_range: list | None = None, plot_style=None, parent_widget=None,
+            shorten_x_labels:bool=True):
         """
         Bar plot of percent tumor volume change colored by objective response category.
         Supports matplotlib styles and embedding into a PySide6 widget.
@@ -2177,7 +2175,10 @@ class TumorVolumeStudyClass():
                     bar_x_positions.append(idx)
                     bar_heights.append(tv_val)
                     bar_colors.append(objective_response_colors[resp_code])
-                    bar_labels.append(remove_alpha(str(ts_id)))
+                    if shorten_x_labels == True:
+                        bar_labels.append(remove_alpha(str(ts_id)))
+                    else:
+                        bar_labels.append(str(ts_id))
                     idx += 1
 
                 arm_ranges[arm] = (start_idx, idx - 1)
@@ -2202,8 +2203,7 @@ class TumorVolumeStudyClass():
                 ax.set_xticks([])
 
             # Labels + title
-            if show_axis_labels:
-                ax.set_ylabel("Tumor Volume Change (%)")
+            ax.set_ylabel("Tumor Volume Change (%)")
 
             if title:
                 ax.set_title(f'{title} - {self.study_id}')
@@ -2237,22 +2237,23 @@ class TumorVolumeStudyClass():
             # 6. Legend for objective response
             # ---------------------------------------------------
             if show_legend:
-                if objective_response_colors is None:
-                    handles = [
-                        plt.Line2D([], [], color=self.objective_response_colors[k], lw=6)
-                        for k in ["CR", "PR", "SD", "PD"]
-                    ]
-                else:
-                    handles = [
-                        plt.Line2D([], [], color=objective_response_colors[k], lw=6)
-                        for k in ["CR", "PR", "SD", "PD"]
-                    ]
+                # Collect unique response codes that actually appear in the plot
+                unique_responses = set(resp_code for arm in ordered_arms
+                                       for _, resp_code in response_code_dict[arm])
 
-                labels = [
-                    k #self.objective_response_names[k]
-                    for k in ["CR", "PR", "SD", "PD"]
+                # Define the desired order for legend
+                response_order = ["CR", "PR", "SD", "PD"]
+
+                # Filter to only include responses that exist in the data
+                present_responses = [r for r in response_order if r in unique_responses]
+
+                # Create legend entries only for present responses
+                handles = [
+                    plt.Line2D([], [], color=objective_response_colors[k], lw=6)
+                    for k in present_responses
                 ]
-                ax.legend(handles, labels, loc="best")
+
+                ax.legend(handles, present_responses, loc="best")
 
             # ---------------------------------------------------
             # 7. Y-axis limits
