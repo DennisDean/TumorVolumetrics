@@ -416,6 +416,16 @@ class TumorVolumeStudyWindow(QMainWindow):
             self.ui.comboBox_event_free_show_risk_plot.blockSignals(False)
             self.ui.comboBox_event_free_show_risk_table.blockSignals(False)
     def initialize_objective_response_plot_groupbox(self):
+        # Combo box values
+        cbox_values = ["True", "False"]
+
+        # Define the boxes
+        self.ui.comboBox_obj_res_show_labels.addItems(cbox_values)
+        self.ui.comboBox_obj_res_show_labels.setCurrentIndex(0)
+
+        self.ui.comboBox_obj_res_shorten_labels.addItems(cbox_values)
+        self.ui.comboBox_obj_res_shorten_labels.setCurrentIndex(1)
+
         # Get current style color selection
         if self.available_style_colors == None:
             # First initialization add default color
@@ -737,8 +747,6 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Update Study View
         self.update_study_view()
-
-
     def update_event_free_cutoff_type(self):
         # Set
         current_cutoff_index = self.ui.comboBox_event_free_cutoff_days.currentIndex()
@@ -1086,6 +1094,10 @@ class TumorVolumeStudyWindow(QMainWindow):
                          "tv_transform_str":data_transform}
         return custom_params
     def get_objective_response_group_box_parameters(self):
+        # Get label parameters
+        show_axis_labels = True if self.ui.comboBox_obj_res_show_labels.currentText()=='True' else False
+        shorten_x_labels = True if self.ui.comboBox_obj_res_shorten_labels.currentText()=='True' else False
+
         # Get Color parameters
         pd_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_pd.currentText())
         sd_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_sd.currentText())
@@ -1102,7 +1114,8 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         # Construct custom parameter dictionary
         custom_params = {"objective_response_colors":
-                             {"PD": pd_color, "SD": sd_color, "PR": pr_color,"CR": cr_color}}
+                             {"PD": pd_color, "SD": sd_color, "PR": pr_color,"CR": cr_color},
+                         "show_axis_labels": show_axis_labels, "shorten_x_labels": shorten_x_labels}
         return custom_params
     def get_percent_tv_change_group_box_parameters(self):
         # log parameter query
