@@ -20,6 +20,9 @@ import re
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+# Science Plot Styles
+import scienceplots #Needed
+
 # Interface
 from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox, QScrollArea
 from PySide6.QtCore import QPropertyAnimation, QEasingCurve, QSize
@@ -480,6 +483,34 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_spider_err_bars.currentTextChanged.connect(self.update_study_view)
 
     # Group Box Utilities
+    def get_study_min_of_max_timepoints(self):
+        # Get current study
+        current_study_label = self.ui.comboBox_configuration_study.currentText()
+        study_obj = self.tv_data_obj.tumor_vol_study_dict[current_study_label]
+        study_tv_time_dict = study_obj.study_tv_time_dict
+
+        # Scan time series
+        tv_labels = study_tv_time_dict.keys()
+        max_time_array = []
+        for tv_label in tv_labels:
+            tv_data = study_tv_time_dict[tv_label]
+            max_time_array.append(np.max(tv_data.time_day))
+        min_of_max_time_array = np.min(max_time_array)
+        return min_of_max_time_array
+    def get_study_max_of_max_timepoints(self):
+        # Get current study
+        current_study_label = self.ui.comboBox_configuration_study.currentText()
+        study_obj = self.tv_data_obj.tumor_vol_study_dict[current_study_label]
+        study_tv_time_dict = study_obj.study_tv_time_dict
+
+        # Scan time series
+        tv_labels = study_tv_time_dict.keys()
+        max_time_array = []
+        for tv_label in tv_labels:
+            tv_data = study_tv_time_dict[tv_label]
+            max_time_array.append(np.max(tv_data.time_day))
+        max_of_max_time_array = np.max(max_time_array)
+        return max_of_max_time_array
     def _populate_color_comboboxes(self, combo_boxes, available_style_colors:list[str]|None, color_shift:int=0):
         """Populate ALL combo boxes with ALL available colors from the current style.
 
@@ -509,6 +540,7 @@ class TumorVolumeStudyWindow(QMainWindow):
             combo_box.clear()
 
             # Add ALL colors from the style to this combo box
+            num_color = len(available_style_colors)
             for i, color in enumerate(available_style_colors):
                 # Create a colored icon for visual reference
                 pixmap = QPixmap(20, 20)
@@ -518,36 +550,8 @@ class TumorVolumeStudyWindow(QMainWindow):
                 # Add to combo box with color name/hex
                 color_name = f"Color {i+1} ({color})"
                 combo_box.addItem(icon, color_name, userData=color)
-            combo_box.setCurrentIndex(count+color_shift)
+            combo_box.setCurrentIndex((count+color_shift)%num_color)
             count += 1
-    def get_study_min_of_max_timepoints(self):
-        # Get current study
-        current_study_label = self.ui.comboBox_configuration_study.currentText()
-        study_obj = self.tv_data_obj.tumor_vol_study_dict[current_study_label]
-        study_tv_time_dict = study_obj.study_tv_time_dict
-
-        # Scan time series
-        tv_labels = study_tv_time_dict.keys()
-        max_time_array = []
-        for tv_label in tv_labels:
-            tv_data = study_tv_time_dict[tv_label]
-            max_time_array.append(np.max(tv_data.time_day))
-        min_of_max_time_array = np.min(max_time_array)
-        return min_of_max_time_array
-    def get_study_max_of_max_timepoints(self):
-        # Get current study
-        current_study_label = self.ui.comboBox_configuration_study.currentText()
-        study_obj = self.tv_data_obj.tumor_vol_study_dict[current_study_label]
-        study_tv_time_dict = study_obj.study_tv_time_dict
-
-        # Scan time series
-        tv_labels = study_tv_time_dict.keys()
-        max_time_array = []
-        for tv_label in tv_labels:
-            tv_data = study_tv_time_dict[tv_label]
-            max_time_array.append(np.max(tv_data.time_day))
-        max_of_max_time_array = np.max(max_time_array)
-        return max_of_max_time_array
     def _extract_color_from_label(self, color_label):
         """Extract hex color from a label like 'Color 1 (#1f77b4)'"""
         match = re.search(r'#[0-9a-fA-F]{6}', color_label)
@@ -722,7 +726,6 @@ class TumorVolumeStudyWindow(QMainWindow):
     def update_plot_style(self):
         # Update figures
         plot_style = self.get_plot_style()
-        self.update_study_view()
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
 
         # Update Objective Response Plot Options
@@ -731,6 +734,11 @@ class TumorVolumeStudyWindow(QMainWindow):
         available_style_colors = self.get_style_colors()
         print(f"update_plot style available_style_colors = {available_style_colors}")
         self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=2)
+
+        # Update Study View
+        self.update_study_view()
+
+
     def update_event_free_cutoff_type(self):
         # Set
         current_cutoff_index = self.ui.comboBox_event_free_cutoff_days.currentIndex()

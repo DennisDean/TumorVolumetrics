@@ -44,7 +44,57 @@ import matplotlib.colors as mcolors
 from contextlib import nullcontext
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvas
-import scienceplots
+def _mpl_code_to_hex(self, code: str) -> str:
+    base_map = {
+        "b": "#0000FF",
+        "g": "#008000",
+        "r": "#FF0000",
+        "c": "#00FFFF",
+        "m": "#FF00FF",
+        "y": "#FFFF00",
+        "k": "#000000",
+        "w": "#FFFFFF",
+    }
+
+    tab_map = {
+        "tab:blue": "#1f77b4",
+        "tab:orange": "#ff7f0e",
+        "tab:green": "#2ca02c",
+        "tab:red": "#d62728",
+        "tab:purple": "#9467bd",
+        "tab:brown": "#8c564b",
+        "tab:pink": "#e377c2",
+        "tab:gray": "#7f7f7f",
+        "tab:olive": "#bcbd22",
+        "tab:cyan": "#17becf",
+    }
+
+    gray_map = {
+        "0.00": "#000000",
+        "0.40": "#666666",
+        "0.60": "#999999",
+        "0.70": "#b2b2b2"
+    }
+
+    gray_map_numeric = {
+        0.00: "#000000",
+        0.40: "#666666",
+        0.60: "#999999",
+        0.70: "#b2b2b2"
+    }
+
+    print(code)
+    if code in base_map:
+        return base_map[code]
+    if code in tab_map:
+        return tab_map[code]
+    if code in gray_map:
+        return gray_map[code]
+    if code in gray_map_numeric:
+        return gray_map[code]
+
+    raise ValueError(f"Unknown matplotlib color code: {code}")
+
 
 # GUI
 from PySide6.QtCore import Qt
@@ -1863,39 +1913,6 @@ class TumorVolumeStudyClass():
         ordered_arms = controls + experimental
 
         # -------------------------------------------
-        # 3. COLOR MAP FOR ARMS
-        # -------------------------------------------
-        # if color_cycle is None:
-        #     color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        #
-        # arm_colors = {
-        #     arm: color_cycle[i % len(color_cycle)]
-        #     for i, arm in enumerate(ordered_arms)
-        # }
-
-        # # -------------------------------------------
-        # # 4. FLATTEN BAR DATA
-        # # -------------------------------------------
-        # bar_x_positions = []
-        # bar_heights = []
-        # bar_colors = []
-        # bar_labels = []
-        #
-        # idx = 0
-        # for arm in ordered_arms:
-        #     for ts_id, tv_change_val in vol_change_dict[arm]:
-        #         bar_x_positions.append(idx)
-        #         bar_heights.append(tv_change_val)
-        #         bar_colors.append(arm_colors[arm])
-        #         bar_labels.append(remove_alpha(str(ts_id)))
-        #         idx += 1
-        #     idx += 1
-        #
-        # if not bar_heights:
-        #     logger.info("No tumor volume change values to plot")
-        #     return None
-
-        # -------------------------------------------
         # 5. PLOTTING (STYLE + QT SUPPORT)
         # -------------------------------------------
         fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
@@ -2103,39 +2120,6 @@ class TumorVolumeStudyClass():
         experimental = [a for a in unique_arms if a not in controls]
         ordered_arms = controls + experimental
 
-        # -------------------------------------------------------
-        # 3. Flatten bar data + compute arm spans
-        # -------------------------------------------------------
-        bar_x_positions = []
-        bar_heights = []
-        bar_colors = []
-        bar_labels = []
-        arm_ranges = {}
-
-        idx = 0
-        for arm in ordered_arms:
-            if idx > 0:
-                idx += 1  # spacing between arms
-
-            start_idx = idx
-
-            for (ts_id, tv_val), (_, resp_code) in zip(
-                    vol_change_dict[arm], response_code_dict[arm]
-            ):
-                bar_x_positions.append(idx)
-                bar_heights.append(tv_val)
-                if objective_response_colors == None:
-                    bar_colors.append(self.objective_response_colors[resp_code])
-                else:
-                    bar_colors.append(objective_response_colors[resp_code])
-                bar_labels.append(remove_alpha(str(ts_id)))
-                idx += 1
-
-            arm_ranges[arm] = (start_idx, idx - 1)
-
-        if not bar_heights:
-            logger.info("No tumor volume change values to plot")
-            return None
 
         # -------------------------------------------------------
         # 4. Plotting (STYLE + QT SUPPORT)
@@ -2146,6 +2130,62 @@ class TumorVolumeStudyClass():
             fig.set_size_inches(figsize)
 
         with style_ctx:
+            print('#################3')
+            # get style colors
+            prop_cycle = plt.rcParams['axes.prop_cycle']
+            colors = prop_cycle.by_key()['color']
+
+            if objective_response_colors is not None:
+                print('############## using dictionary')
+                objective_response_colors = objective_response_colors
+            elif plot_style is not None:
+                print('#############33plot style set in objective response')
+                # Standardize matplotlib colors
+                colors = list(map(_mpl_code_to_hex, colors))
+
+                # Set reponse color dictionary
+                num_colors = len(colors)
+                shift = 2
+                category = ['PD', 'SD', 'PR', 'CR']
+                objective_response_colors = {'PD':colors[(0+shift)%num_colors], 'SD':colors[(1+shift)%num_colors],
+                                             'PR':colors[(2+shift)%num_colors], 'CR':colors[(3+shift)%num_colors]}
+            else:
+                print('########### using global dictionary')
+                objective_response_colors = self.objective_response_colors
+
+
+
+            # -------------------------------------------------------
+            # 3. Flatten bar data + compute arm spans
+            # -------------------------------------------------------
+            bar_x_positions = []
+            bar_heights = []
+            bar_colors = []
+            bar_labels = []
+            arm_ranges = {}
+
+            idx = 0
+            for arm in ordered_arms:
+                if idx > 0:
+                    idx += 1  # spacing between arms
+
+                start_idx = idx
+
+                for (ts_id, tv_val), (_, resp_code) in zip(
+                        vol_change_dict[arm], response_code_dict[arm]
+                ):
+                    bar_x_positions.append(idx)
+                    bar_heights.append(tv_val)
+                    bar_colors.append(objective_response_colors[resp_code])
+                    bar_labels.append(remove_alpha(str(ts_id)))
+                    idx += 1
+
+                arm_ranges[arm] = (start_idx, idx - 1)
+
+            if not bar_heights:
+                logger.info("No tumor volume change values to plot")
+                return None
+
             bars = ax.bar(
                 bar_x_positions,
                 bar_heights,
