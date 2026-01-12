@@ -5,9 +5,9 @@
 [![License](https://img.shields.io/badge/License-AGPL--3.0-green.svg)]()
 [![GUI](https://img.shields.io/badge/Interface-PySide6-lightgrey.svg)]()
 
-** Tumor Volumetrics ** is a Python application for exploring, summarizing, and visualizing preclinical tumor volume time-series data. It is designed to make it ** fast and consistent to generate standard tumor volume figures ** across experiments and studies.
+**Tumor Volumetrics** is a Python application for exploring, summarizing, and visualizing preclinical tumor volume time-series data. It is designed to make it ** fast and consistent to generate standard tumor volume figures ** across experiments and studies.
 
-The primary focus of the project is now the ** Tumor Experiment Viewer and the Tumor Volume Study Viewer **, which provide interactive, configurable access to common oncology plots such as spider plots, group averages, Kaplan–Meier curves, and objective response visualizations.
+The primary focus of the project is now the **Tumor Experiment Viewer and the Tumor Volume Study Viewer**, which provide interactive, configurable access to common oncology plots such as spider plots, group averages, Kaplan–Meier curves, and objective response visualizations.
 
 This repository is under active development. The user-facing viewers are the most mature components. Internal class structures are evolving and are treated as implementation details. 
 
@@ -66,11 +66,11 @@ This viewer is intended for ** study-level analysis and interpretation **.
 The file-loading panel supports basic access, inspection, and export.
 
 Key actions:
-- ** Open **
+- **Open**
   Select and load a tumor volume CSV following standard conventions.
-- ** Show **
+- **Show**
   Display the entire CSV in a table widget. Sorting, copying, and basic inspection are supported. Additional validation tools are planned.
-- ** Save **
+- **Save**
   Export the dataset as XML following the provided schema, which defines Contributors and Experiments as root elements.
 
 The XML format is intentionally extensible. It supports additional metadata such as units, mouse strain, or tumor-specific details for downstream analysis.
@@ -104,13 +104,13 @@ The intent is to make these figures one or two clicks away once data is loaded a
 
 Tumor Volumetrics is built around a few core ideas:
 
-- ** User first, architecture second **
+- **User first, architecture second**
   The viewers and workflows drive the design. Internal class structure is flexible and evolving.
-- ** Standard plots should be easy **
+- **Standard plots should be easy**
   Common oncology figures should not require custom scripts every time.
-- ** Interactive over batch by default **
+- **Interactive over batch by default**
   The GUI is the primary interface. Programmatic access is supported but not the main focus.
-- ** Extensible, not rigid **
+- **Extensible, not rigid**
   New plot types and lab-specific conventions should be easy to add.
 
 ## Internal Architecture (Background)
