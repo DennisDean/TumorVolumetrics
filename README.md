@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/License-AGPL--3.0-green.svg)]()
 [![GUI](https://img.shields.io/badge/Interface-PySide6-lightgrey.svg)]()
 
-**Tumor Volumetrics** is a Python application for exploring, summarizing, and visualizing preclinical tumor volume time-series data. It is designed to make it ** fast and consistent to generate standard tumor volume figures ** across experiments and studies.
+**Tumor Volumetrics** is a Python application for exploring, summarizing, and visualizing preclinical tumor volume time-series data. It is designed to make it **fast and consistent to generate standard tumor volume figures** across experiments and studies.
 
 The primary focus of the project is now the **Tumor Experiment Viewer and the Tumor Volume Study Viewer**, which provide interactive, configurable access to common oncology plots such as spider plots, group averages, Kaplan–Meier curves, and objective response visualizations.
 
