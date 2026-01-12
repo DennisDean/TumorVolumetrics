@@ -2499,7 +2499,7 @@ class TumorVolumeExperimentClass():
 
     # Plotting Functions
     def plot_average_tumor_volume_change_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
-            error_metric="std", show_axis_labels=True, compute_day: int | None = None,
+            error_metric="std", show_axis_labels=True, compute_day: int | None = None,x_label_rotation=0,
             title="Average % Tumor Volume Change by Study", figsize=(10, 6), parent_widget=None):
         """
         Plot the average percent tumor volume change for each study.
@@ -2637,7 +2637,7 @@ class TumorVolumeExperimentClass():
 
             # Ticks
             ax.set_xticks(x)
-            ax.set_xticklabels(study_labels, rotation=45, ha="right")
+            ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
 
         # fig.tight_layout()
 
@@ -2695,8 +2695,8 @@ class TumorVolumeExperimentClass():
             plt.show()
 
         return fig, ax
-    def plot_tumor_control_ratio_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), error_metric="std", show_axis_labels=True,
-            compute_day: int | None = None, title="T/C Ratio (SE) by Study", figsize=(10, 6), parent_widget=None):
+    def plot_tumor_control_ratio_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), error_metric="std",
+            show_axis_labels=True, x_label_rotation = 0, compute_day: int | None = None, title="T/C Ratio (SE) by Study", figsize=(10, 6), parent_widget=None):
         """
         Plot the T/C (Treatment/Control) ratio for each study with standard error.
 
@@ -2867,7 +2867,7 @@ class TumorVolumeExperimentClass():
 
             # Ticks
             ax.set_xticks(x)
-            ax.set_xticklabels(study_labels, rotation=45, ha="right")
+            ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
 
         # fig.tight_layout()
 
@@ -2926,7 +2926,7 @@ class TumorVolumeExperimentClass():
 
         return fig, ax
     def proportion_in_objective_response_classification_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
-            show_legend=False, show_axis_labels=False, compute_day: int | None = None,
+            show_legend=False, show_axis_labels=False, compute_day: int | None = None, x_label_rotation = 0,
             title="Objective Response Distribution by Study", figsize=(10, 6), parent_widget=None,
             objective_response_color_dict:dict[str,str]|None = None):
         """
@@ -3063,7 +3063,7 @@ class TumorVolumeExperimentClass():
                 ax.set_xlabel("Study")
 
             ax.set_xticks(x)
-            ax.set_xticklabels(study_keys, rotation=45, ha="right")
+            ax.set_xticklabels(study_keys, rotation=x_label_rotation, ha="center")
 
             if title:
                 ax.set_title(title)
@@ -3135,7 +3135,7 @@ class TumorVolumeExperimentClass():
         return fig, ax
     def plot_auc_with_controls_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), error_metric="sem",
             show_legend=True, show_axis_labels=False, compute_day: int | None = None, title="Average AUC by Study",
-            figsize=(12, 6), parent_widget=None):
+            x_label_rotation=0, figsize=(12, 6), parent_widget=None):
         """
         Plot mean AUC for each study with control vs treatment bars.
         If parent_widget is provided, embeds the plot in a Qt widget
@@ -3296,7 +3296,7 @@ class TumorVolumeExperimentClass():
                 ax.set_title(title)
 
             ax.set_xticks(x)
-            ax.set_xticklabels(study_labels, rotation=45, ha="right")
+            ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
 
             if show_legend:
                 ax.legend(loc="upper right", frameon=True, framealpha=0.8)

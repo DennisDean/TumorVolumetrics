@@ -34,6 +34,7 @@ The core component under development is the *[TumorVolumeTimeSeriesClass](src/me
 
 A design requirement for all classes is flexibility: they support **command-line use, interactive workflows, and GUI-driven analysis**.
 
+## Tumor Volume Experiment View 
 <p align="center">    
 <img src="src/media/tv_view.png" /><br>
 <b>Figure 1.</b> Configurable experiment view.
@@ -46,6 +47,19 @@ A design requirement for all classes is flexibility: they support **command-line
 </p>
 
 ---
+## Tumor Volume Study View
+
+<p align="center">    
+<img src="src/media/tumor_volume_study_viewer.png" /><br>
+<b>Figure 3.</b> Tumor Volume Study Viewer.
+</p>
+
+
+<p align="center">    
+<img src="src/media/tumor_volume_study_viewer_with_options.png"  /><br>
+<b>Figure 4.</b> tumor volume Study Viewer with Option Settings Shown.
+</p>
+
 
 ## Load Tumor Volume File Grouping
 
