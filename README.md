@@ -122,8 +122,8 @@ Tumor Volumetrics is built around a few core ideas:
 
 These are designed to support command-line, interactive, and GUI-driven use. They are not currently treated as a stable public API and may change as the viewers continue to mature.
 
-If you are interested in the class structure, see:
-src/media/TumorVolumeClassReadMe.md
+If you are interested in the class structure, see the [Tumor Volume Class Read Me](src/media/TumorVolumeClassReadMe.md). 
+
 
 ## Features in Progress
 - Expanded configuration options in both viewers
@@ -142,7 +142,7 @@ Data loading and QC
 - Rapid generation of publication-quality figures
 - Simple extension points for advanced or lab-specific methods
 
-The emphasis will remain on ** practical workflows used during study review, team discussions, and manuscript preparation**.
+The emphasis will remain on **practical workflows used during study review, team discussions, and manuscript preparation**.
 
 ## License
 

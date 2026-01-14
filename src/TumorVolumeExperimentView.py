@@ -16,10 +16,11 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsView, QGroupBox,
-    QHBoxLayout, QLabel, QLayout, QMainWindow,
-    QMenu, QMenuBar, QPushButton, QSizePolicy,
-    QStatusBar, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGraphicsView,
+    QGroupBox, QHBoxLayout, QLabel, QLayout,
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QScrollArea, QSizePolicy, QStatusBar, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -73,7 +74,18 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_visual_graph_settings = QVBoxLayout()
         self.verticalLayout_visual_graph_settings.setObjectName(u"verticalLayout_visual_graph_settings")
-        self.groupBox_plot_configurations = QGroupBox(self.centralwidget)
+        self.scrollArea = QScrollArea(self.centralwidget)
+        self.scrollArea.setObjectName(u"scrollArea")
+        self.scrollArea.setMinimumSize(QSize(231, 0))
+        self.scrollArea.setMaximumSize(QSize(231, 16777215))
+        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollAreaWidgetContents = QWidget()
+        self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, -114, 231, 924))
+        self.verticalLayout_4 = QVBoxLayout(self.scrollAreaWidgetContents)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.groupBox_plot_configurations = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox_plot_configurations.setObjectName(u"groupBox_plot_configurations")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -81,7 +93,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.groupBox_plot_configurations.sizePolicy().hasHeightForWidth())
         self.groupBox_plot_configurations.setSizePolicy(sizePolicy)
         self.groupBox_plot_configurations.setCheckable(True)
-        self.groupBox_plot_configurations.setChecked(True)
+        self.groupBox_plot_configurations.setChecked(False)
         self.verticalLayout_3 = QVBoxLayout(self.groupBox_plot_configurations)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.verticalLayout_plot_configuration = QVBoxLayout()
@@ -213,9 +225,9 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addLayout(self.verticalLayout_plot_configuration)
 
 
-        self.verticalLayout_visual_graph_settings.addWidget(self.groupBox_plot_configurations)
+        self.verticalLayout_4.addWidget(self.groupBox_plot_configurations)
 
-        self.groupBox_plot_style_sheet = QGroupBox(self.centralwidget)
+        self.groupBox_plot_style_sheet = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox_plot_style_sheet.setObjectName(u"groupBox_plot_style_sheet")
         sizePolicy.setHeightForWidth(self.groupBox_plot_style_sheet.sizePolicy().hasHeightForWidth())
         self.groupBox_plot_style_sheet.setSizePolicy(sizePolicy)
@@ -347,19 +359,67 @@ class Ui_MainWindow(object):
         self.verticalLayout_5.addLayout(self.verticalLayout_plot_style_group)
 
 
-        self.verticalLayout_visual_graph_settings.addWidget(self.groupBox_plot_style_sheet)
+        self.verticalLayout_4.addWidget(self.groupBox_plot_style_sheet)
 
-        self.groupBox_objective_response = QGroupBox(self.centralwidget)
+        self.line = QFrame(self.scrollAreaWidgetContents)
+        self.line.setObjectName(u"line")
+        self.line.setFrameShape(QFrame.Shape.HLine)
+        self.line.setFrameShadow(QFrame.Shadow.Sunken)
+
+        self.verticalLayout_4.addWidget(self.line)
+
+        self.groupBox_objective_response = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox_objective_response.setObjectName(u"groupBox_objective_response")
         sizePolicy.setHeightForWidth(self.groupBox_objective_response.sizePolicy().hasHeightForWidth())
         self.groupBox_objective_response.setSizePolicy(sizePolicy)
         self.groupBox_objective_response.setCheckable(True)
-        self.groupBox_objective_response.setChecked(False)
+        self.groupBox_objective_response.setChecked(True)
         self.verticalLayout_groupbox_objective_response_2 = QVBoxLayout(self.groupBox_objective_response)
         self.verticalLayout_groupbox_objective_response_2.setObjectName(u"verticalLayout_groupbox_objective_response_2")
         self.verticalLayout_groupbox_objective_response = QVBoxLayout()
         self.verticalLayout_groupbox_objective_response.setObjectName(u"verticalLayout_groupbox_objective_response")
         self.verticalLayout_groupbox_objective_response.setSizeConstraint(QLayout.SetMinimumSize)
+        self.label_18 = QLabel(self.groupBox_objective_response)
+        self.label_18.setObjectName(u"label_18")
+
+        self.verticalLayout_groupbox_objective_response.addWidget(self.label_18)
+
+        self.horizontalLayout_14 = QHBoxLayout()
+        self.horizontalLayout_14.setObjectName(u"horizontalLayout_14")
+        self.label_19 = QLabel(self.groupBox_objective_response)
+        self.label_19.setObjectName(u"label_19")
+        self.label_19.setMinimumSize(QSize(70, 0))
+        self.label_19.setMaximumSize(QSize(70, 16777215))
+        self.label_19.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_14.addWidget(self.label_19)
+
+        self.comboBox_obj_res_show_labels = QComboBox(self.groupBox_objective_response)
+        self.comboBox_obj_res_show_labels.setObjectName(u"comboBox_obj_res_show_labels")
+
+        self.horizontalLayout_14.addWidget(self.comboBox_obj_res_show_labels)
+
+
+        self.verticalLayout_groupbox_objective_response.addLayout(self.horizontalLayout_14)
+
+        self.horizontalLayout_15 = QHBoxLayout()
+        self.horizontalLayout_15.setObjectName(u"horizontalLayout_15")
+        self.label_20 = QLabel(self.groupBox_objective_response)
+        self.label_20.setObjectName(u"label_20")
+        self.label_20.setMinimumSize(QSize(70, 0))
+        self.label_20.setMaximumSize(QSize(70, 16777215))
+        self.label_20.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_15.addWidget(self.label_20)
+
+        self.comboBox_obj_res_shorten_labels = QComboBox(self.groupBox_objective_response)
+        self.comboBox_obj_res_shorten_labels.setObjectName(u"comboBox_obj_res_shorten_labels")
+
+        self.horizontalLayout_15.addWidget(self.comboBox_obj_res_shorten_labels)
+
+
+        self.verticalLayout_groupbox_objective_response.addLayout(self.horizontalLayout_15)
+
         self.label_17 = QLabel(self.groupBox_objective_response)
         self.label_17.setObjectName(u"label_17")
         sizePolicy1.setHeightForWidth(self.label_17.sizePolicy().hasHeightForWidth())
@@ -470,12 +530,16 @@ class Ui_MainWindow(object):
         self.verticalLayout_groupbox_objective_response_2.addLayout(self.verticalLayout_groupbox_objective_response)
 
 
-        self.verticalLayout_visual_graph_settings.addWidget(self.groupBox_objective_response)
+        self.verticalLayout_4.addWidget(self.groupBox_objective_response)
 
-        self.label_10 = QLabel(self.centralwidget)
+        self.label_10 = QLabel(self.scrollAreaWidgetContents)
         self.label_10.setObjectName(u"label_10")
 
-        self.verticalLayout_visual_graph_settings.addWidget(self.label_10)
+        self.verticalLayout_4.addWidget(self.label_10)
+
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+
+        self.verticalLayout_visual_graph_settings.addWidget(self.scrollArea, 0, Qt.AlignRight)
 
 
         self.horizontalLayout_figure_grid.addLayout(self.verticalLayout_visual_graph_settings)
@@ -523,6 +587,9 @@ class Ui_MainWindow(object):
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Grid", None))
         self.pushButton_plot_uodate_style.setText(QCoreApplication.translate("MainWindow", u"Update", None))
         self.groupBox_objective_response.setTitle(QCoreApplication.translate("MainWindow", u"Objective Response Plot", None))
+        self.label_18.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
+        self.label_19.setText(QCoreApplication.translate("MainWindow", u"Show", None))
+        self.label_20.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
         self.label_17.setText(QCoreApplication.translate("MainWindow", u"Set Obj. Response Color", None))
         self.label_14.setText(QCoreApplication.translate("MainWindow", u"PD", None))
         self.label_15.setText(QCoreApplication.translate("MainWindow", u"SD", None))

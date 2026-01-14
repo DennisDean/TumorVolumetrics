@@ -12,6 +12,10 @@ from FigureGraphicsViewClass import FigureGraphicsView
 
 # Import
 
+# Computing
+import numpy as np
+import re
+
 # Plotting
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -65,83 +69,93 @@ def latex_available():
 # GUI Class
 class TumorVolumeExperimentWindow(QMainWindow):
     # Intitialize
-    def __init__(self, tv_data_obj:TumorVolumeDataClass , parent=None):
+    def __init__(self, tv_data_obj: TumorVolumeDataClass, parent=None):
         super().__init__(parent)
 
-        # Setup and Draw Window
+        # 1. CORE SETUP - UI and data
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Tumor Volume Experiment")
-
-        # Show plotting configuration layout
-        initial_plot_configuration_visability = False
-        self.ui.actionPlot_Configuration.triggered.connect(self.toggle_graph_configuration_group)
-        set_layout_visible(self.ui.verticalLayout_visual_graph_settings, initial_plot_configuration_visability)
-
-        # Save data object
         self.tv_data_obj = tv_data_obj
-
-        # Get Experiments
         self.experiments = tv_data_obj.unique_experiments
-        self.ui.comboBox_configuration_experiments.addItems(self.experiments)
 
-        # Set plot configurations
+        # 2. SYSTEM-LEVEL CONFIGURATION
+        self.use_latex = latex_available()
+
+        # 3. DATA STRUCTURES & OPTIONS (before UI population)
+        # Plot configuration data structures
         self.initial_configuration = '4'
-        self.plot_config_to_index = lambda x: int(x)-1
-        self.num_of_plot_option_list = ['1','2','3','4']
-        self.graphic_view_plot_dict = {'1':[True, False, False, False], '2':[True, True, False, False],
-                                       '3':[True, True, True, False],   '4':[True, True, True, True]}
-        self.ui.comboBox_configuration_num_of_plots.addItems(self.num_of_plot_option_list)
-        self.ui.comboBox_configuration_num_of_plots.setCurrentIndex(self.plot_config_to_index(self.initial_configuration))
-        self.ui.comboBox_configuration_num_of_plots.currentTextChanged.connect(self.toggle_plot_graphics_view)
+        self.plot_config_to_index = lambda x: int(x) - 1
+        self.num_of_plot_option_list = ['1', '2', '3', '4']
+        self.graphic_view_plot_dict = {'1': [True, False, False, False],
+                                       '2': [True, True, False, False],
+                                       '3': [True, True, True, False],
+                                       '4': [True, True, True, True]}
 
-        # Overide Graphic View to Support Context Menus (Right Click)
-        self.graphicsView_visual_top_left: QGraphicsView | None = None
-        self.graphicsView_visual_top_right: QGraphicsView | None = None
-        self.graphicsView_visual_bottom_left: QGraphicsView | None = None
-        self.graphicsView_visual_bottom_right: QGraphicsView | None = None
-        self.original_graphics_views: QGraphicsView | None = None
-        self.add_context_menu_support_to_graphic_view()
-
-        # Setup plotting
-        self.plot_types:                list|None = None
-        self.plot_select_comboBox:      list|None = None
-        self.plotting_functions:        list|None = None
-        self.experiment_graphics_views: list|None = None
-        self.initialize_plotting()
-
-        # Initialize style sheet
+        # Style configuration data structures
         self.current_plot_style = 0
         self.style_modules_supported = ['Matplotlib', 'Science Plots']
         self.matplotlib_style_sheets_options = [
-            "default",                      "classic",                   "fast",
-            "dark_background",              "grayscale",                 "bmh",
-            "fivethirtyeight",              "ggplot",                    "tableau-colorblind10",
-            "seaborn-v0_8-bright",          "seaborn-v0_8-colorblind",   "seaborn-v0_8-dark",
-            "seaborn-v0_8-dark-palette",    "seaborn-v0_8-darkgrid",     "seaborn-v0_8-deep",
-            "seaborn-v0_8-muted",           "seaborn-v0_8-notebook",     "seaborn-v0_8-paper",
-            "seaborn-v0_8-pastel",          "seaborn-v0_8-poster",       "seaborn-v0_8-talk",
-            "seaborn-v0_8-ticks",           "seaborn-v0_8-white",        "seaborn-v0_8-whitegrid"]
+            "default", "classic", "fast",
+            "dark_background", "grayscale", "bmh",
+            "fivethirtyeight", "ggplot", "tableau-colorblind10",
+            "seaborn-v0_8-bright", "seaborn-v0_8-colorblind", "seaborn-v0_8-dark",
+            "seaborn-v0_8-dark-palette", "seaborn-v0_8-darkgrid", "seaborn-v0_8-deep",
+            "seaborn-v0_8-muted", "seaborn-v0_8-notebook", "seaborn-v0_8-paper",
+            "seaborn-v0_8-pastel", "seaborn-v0_8-poster", "seaborn-v0_8-talk",
+            "seaborn-v0_8-ticks", "seaborn-v0_8-white", "seaborn-v0_8-whitegrid"]
         self.scienceplots_style_sheets = ["No Journal", "Nature", "IEEE", "Science"]
-        self.scienceplots_color_palletes = ["No Palette", "bright", "vibrant", "muted", "retro", "high-vis", "high-contrast"]
+        self.scienceplots_color_palletes = ["No Palette", "bright", "vibrant", "muted", "retro", "high-vis",
+                                            "high-contrast"]
         self.scienceplots_grid_options = ["No Grid", "Grid"]
-        self.plot_style_module:str|None = None
-        self.plot_matplotlib_style:str|None = None
-        self.plot_scienceplot_journal:str|None = None
-        self.plot_scienceplot_color:str|None = None
-        self.plot_scienceplot_grid:str|None = None
-        self.initialize_style_sheets_functions()
+        self.plot_style_module = None
+        self.plot_matplotlib_style = None
+        self.plot_scienceplot_journal = None
+        self.plot_scienceplot_color = None
+        self.plot_scienceplot_grid = None
 
-        # Check if Latex is avaialble
-        self.use_latex = latex_available()
+        # Graphics view references
+        self.graphicsView_visual_top_left = None
+        self.graphicsView_visual_top_right = None
+        self.graphicsView_visual_bottom_left = None
+        self.graphicsView_visual_bottom_right = None
+        self.original_graphics_views = None
 
-        # Set up group boxes
-        self._gb_animation:QPropertyAnimation|None = None
+        # Animation references
+        self._gb_animation = None
+
+        # Plotting infrastructure (initialize to None before setup)
+        self.plot_types = None
+        self.plot_select_comboBox = None
+        self.plotting_functions = None
+        self.experiment_graphics_views = None
+        self.available_style_colors = None
+
+        # 4. WIDGET POPULATION (populate combo boxes)
+        self.ui.comboBox_configuration_experiments.addItems(self.experiments)
+        self.ui.comboBox_configuration_num_of_plots.addItems(self.num_of_plot_option_list)
+        self.ui.comboBox_configuration_num_of_plots.setCurrentIndex(
+            self.plot_config_to_index(self.initial_configuration))
+
+        # 5. INITIALIZE COMPONENT GROUP BOXES (order matters!)
+        self.initialize_style_sheets_functions()  # First - sets up style system
+        self.initialize_objective_response_plot_groupbox()
+
+        # 6. UI CUSTOMIZATION
+        self.add_context_menu_support_to_graphic_view()
         self.initialize_collapsable_group_boxes()
 
-        # Initialize objection response plot
-        self.available_style_colors = None
-        self.initialize_objective_response_plot_groupbox()
+        # 7. SIGNAL CONNECTIONS (after all widgets are initialized)
+        initial_plot_configuration_visability = False
+        self.ui.actionPlot_Configuration.triggered.connect(self.toggle_graph_configuration_group)
+        set_layout_visible(self.ui.verticalLayout_visual_graph_settings,
+                           initial_plot_configuration_visability)
+
+        self.ui.comboBox_configuration_num_of_plots.currentTextChanged.connect(
+            self.toggle_plot_graphics_view)
+
+        # 8. FINAL SETUP - Initialize plotting system (MUST BE LAST)
+        self.initialize_plotting()
 
     # Figure utilities
     def replace_designer_graphic_view_with_custom(self, old_graphic_view: QGraphicsView):
@@ -261,16 +275,168 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.groupBox_plot_style_sheet.toggled.connect(lambda checked: self._animate_style_groupbox(self.ui.groupBox_plot_style_sheet, checked))
         self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
         self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
+
+    # Groupbox Utilities
+    def _populate_color_comboboxes(self, combo_boxes, available_style_colors: list[str] | None,
+                                   color_shift = 0):
+        """Populate ALL combo boxes with ALL available colors from the current style.
+
+        Args:
+            combo_boxes: List of combo box objects to populate. If None, attempts to
+                         find combo boxes using default naming convention.
+        """
+
+        # Convert to hex
+        if not self._is_hex_color(available_style_colors[0]):
+            available_style_colors = [self._mpl_code_to_hex(c) for c in available_style_colors]
+
+        # If no combo boxes provided, try default naming convention
+        if combo_boxes is None:
+            combo_boxes = []
+            response_types = ['PD', 'SD', 'PR', 'CR']
+
+            for response in response_types:
+                combo_box_name = f'comboBox_{response}_color'
+                if hasattr(self.ui, combo_box_name):
+                    combo_boxes.append(getattr(self.ui, combo_box_name))
+
+        # Populate EACH combo box with ALL available colors
+        count = 0
+        for idx, combo_box in enumerate(combo_boxes):
+            combo_box.clear()
+
+            # Add ALL colors from the style to this combo box
+            num_color = len(available_style_colors)
+            for i, color in enumerate(available_style_colors):
+                # Create a colored icon for visual reference
+                pixmap = QPixmap(20, 20)
+                pixmap.fill(QColor(color))
+                icon = QIcon(pixmap)
+
+                # Add to combo box with color name/hex
+                color_name = f"Color {i + 1} ({color})"
+                combo_box.addItem(icon, color_name, userData=color)
+            combo_box.setCurrentIndex((count + color_shift) % num_color)
+            count += 1
+    def _extract_color_from_label(self, color_label):
+        """Extract hex color from a label like 'Color 1 (#1f77b4)'"""
+        match = re.search(r'#[0-9a-fA-F]{6}', color_label)
+        if match:
+            return match.group(0)
+        # If no hex code found, assume it's already a valid color
+        return color_label
+    def _is_hex_color(self,s: str) -> bool:
+        if not isinstance(s, str):
+            return False
+        if not s.startswith("#"):
+            return False
+        if len(s) not in (4, 7, 9):
+            return False
+
+        try:
+            int(s[1:], 16)
+            return True
+        except ValueError:
+            return False
+    def _mpl_code_to_hex(self,code: str) -> str:
+        base_map = {
+            "b": "#0000FF",
+            "g": "#008000",
+            "r": "#FF0000",
+            "c": "#00FFFF",
+            "m": "#FF00FF",
+            "y": "#FFFF00",
+            "k": "#000000",
+            "w": "#FFFFFF",
+        }
+
+        tab_map = {
+            "tab:blue": "#1f77b4",
+            "tab:orange": "#ff7f0e",
+            "tab:green": "#2ca02c",
+            "tab:red": "#d62728",
+            "tab:purple": "#9467bd",
+            "tab:brown": "#8c564b",
+            "tab:pink": "#e377c2",
+            "tab:gray": "#7f7f7f",
+            "tab:olive": "#bcbd22",
+            "tab:cyan": "#17becf",
+        }
+
+        gray_map = {
+            "0.00": "#000000",
+            "0.40": "#666666",
+            "0.60": "#999999",
+            "0.70": "#b2b2b2"
+        }
+
+        gray_map_numeric = {
+            0.00: "#000000",
+            0.40: "#666666",
+            0.60: "#999999",
+            0.70: "#b2b2b2"
+        }
+
+        if code in base_map:
+            return base_map[code]
+        if code in tab_map:
+            return tab_map[code]
+        if code in gray_map:
+            return gray_map[code]
+        if code in gray_map_numeric:
+            return gray_map[code]
+
+        raise ValueError(f"Unknown matplotlib color code: {code}")
+
+    # Initialize GroupBoxes
     def initialize_objective_response_plot_groupbox(self):
+        # Update log file
+        logger.info('Initializing Experiment View Objective Respoonse Plot Groupbox')
+        # Combo box values
+        cbox_values = ["True", "False"]
+
+        # Define the boxes
+        self.ui.comboBox_obj_res_show_labels.addItems(cbox_values)
+        self.ui.comboBox_obj_res_show_labels.setCurrentIndex(0)
+
+        self.ui.comboBox_obj_res_shorten_labels.addItems(cbox_values)
+        self.ui.comboBox_obj_res_shorten_labels.setCurrentIndex(1)
+
         # Get current style color selection
-        available_style_colors = self.get_style_colors()
-        orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
-                      self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
-        self._populate_color_comboboxes(orc_cboxes, available_style_colors)
+        if self.available_style_colors == None:
+            # First initialization add default color
+            available_style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        else:
+            available_style_colors = self.get_style_colors()  # Lazy loading
         self.available_style_colors = available_style_colors
 
+        orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
+                      self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
+        self._populate_color_comboboxes(orc_cboxes, available_style_colors) # Will need to add color shift
+        #self._populate_color_comboboxes(orc_cboxes, available_style_colors, color_shift=2)
+
+        # Set Index
+        color_shift = 2  # don't use the first two colors, assuming two arms
+        for idx, cbox in enumerate(orc_cboxes):
+            cbox.setCurrentIndex(idx+color_shift)
+
         # Connect pushbutton to update objective response plot
-        self.ui.pushButton_objective_response_update.clicked.connect(self.update_objective_response_bar_plot)
+        self.ui.pushButton_objective_response_update.clicked.connect(self.update_study_view)
+
+    # Update Group Box Parameters
+    def update_plot_style(self):
+        # Update figures
+        plot_style = self.get_plot_style()
+        self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
+
+        # Update Objective Response Plot Options
+        combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
+                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
+        available_style_colors = self.get_style_colors()
+        self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=2)
+
+        # Update Study View
+        self.update_study_view()
 
     # Update Figure
     def get_plot_style(self):
@@ -347,18 +513,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style = plot_style)
-    def update_plot_style(self):
-        # Update figures
-        plot_style = self.get_plot_style()
-        self.update_experiment_view()
-        self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
-
-        # Update Objective Response Plot Options
-        combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
-                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
-        available_style_colors = self.get_style_colors()
-        self._populate_color_comboboxes(combo_boxes, available_style_colors)
-    def _populate_color_comboboxes(self, combo_boxes, available_style_colors):
+    def _populate_color_comboboxes2(self, combo_boxes, available_style_colors, color_shift=2):
         """Populate ALL combo boxes with ALL available colors from the current style.
 
         Args:
@@ -393,34 +548,59 @@ class TumorVolumeExperimentWindow(QMainWindow):
                 combo_box.addItem(icon, color_name, userData=color)
             combo_box.setCurrentIndex(count)
             count += 1
+    def _populate_color_comboboxes(self, combo_boxes, available_style_colors:list[str]|None, color_shift:int=0):
+        """Populate ALL combo boxes with ALL available colors from the current style.
+
+        Args:
+            combo_boxes: List of combo box objects to populate. If None, attempts to
+                         find combo boxes using default naming convention.
+        """
+
+        # Convert to hex
+        if not self._is_hex_color(available_style_colors[0]):
+            available_style_colors = [ self._mpl_code_to_hex(c) for c in available_style_colors]
+
+        # If no combo boxes provided, try default naming convention
+        if combo_boxes is None:
+            combo_boxes = []
+            response_types = ['PD', 'SD', 'PR', 'CR']
+
+            for response in response_types:
+                combo_box_name = f'comboBox_{response}_color'
+                if hasattr(self.ui, combo_box_name):
+                    combo_boxes.append(getattr(self.ui, combo_box_name))
+
+        # Populate EACH combo box with ALL available colors
+        count = 0
+        for idx, combo_box in enumerate(combo_boxes):
+            combo_box.clear()
+
+            # Add ALL colors from the style to this combo box
+            num_color = len(available_style_colors)
+            for i, color in enumerate(available_style_colors):
+                # Create a colored icon for visual reference
+                pixmap = QPixmap(20, 20)
+                pixmap.fill(QColor(color))
+                icon = QIcon(pixmap)
+
+                # Add to combo box with color name/hex
+                color_name = f"Color {i+1} ({color})"
+                combo_box.addItem(icon, color_name, userData=color)
+            combo_box.setCurrentIndex((count+color_shift)%num_color)
+            count += 1
 
     # Custom Figure
-    def update_objective_response_bar_plot(self):
-        # Create new dictionary
-        current_colors = self.get_style_colors_2()
-        pd_color = current_colors[self.ui.comboBox_objective_plot_pd.currentIndex()]
-        sd_color = current_colors[self.ui.comboBox_objective_plot_sd.currentIndex()]
-        pr_color = current_colors[self.ui.comboBox_objective_plot_pr.currentIndex()]
-        cr_color = current_colors[self.ui.comboBox_objective_plot_cr.currentIndex()]
+    def update_study_view(self):
+        # Write to log
+        logger.info('Updating experiment view')
 
-        # Create new color dictionary
-        objective_response_color_dict = {'PD':pd_color, 'SD':sd_color, 'PR':pr_color, 'CR':cr_color}
-        self.tv_data_obj.objective_response_colors = objective_response_color_dict.copy()
-
-        # Check if Objective Response Curve is present
-        updated_style = self.get_plot_style()
-        selected_plot_cbox  = [self.ui.comboBox_configuration_plot_upper_left, self.ui.comboBox_configuration_plot_upper_right,
-                               self.ui.comboBox_configuration_plot_lower_left, self.ui.comboBox_configuration_plot_lower_right]
-        selected_gviews = [self.graphicsView_visual_top_left,    self.graphicsView_visual_top_right,
-                           self.graphicsView_visual_bottom_left, self.graphicsView_visual_bottom_right]
-        for splot_cbox, s_gview in zip(selected_plot_cbox, selected_gviews):
-            plot_name = splot_cbox.currentText()
-            if plot_name == 'Objective_Response_Bar':
-                experiment_name = self.ui.comboBox_configuration_experiments.currentText()
-                plot_function_name = self.plotting_function_dict[plot_name]
-                experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_name]
-                experiment_obj.plot_to_widget_by_name(plot_function_name, s_gview, plot_style=updated_style,
-                    objective_response_color_dict = objective_response_color_dict)
+        # Respond to figure comboBox change
+        plot_style = self.get_plot_style()
+        self.draw_figure_group(plot_style=plot_style)
+    def update_study_view_text(self, *_):
+        # Respond to figure comboBox change
+        plot_style = self.get_plot_style()
+        self.draw_figure_group(plot_style=plot_style)
 
     # Interface Utilities
     def toggle_graph_configuration_group(self):
@@ -521,10 +701,54 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         # Update each plot
         for idx in range(num_figures):
+            # Get Plot Information
             selected_plot = self.plot_select_comboBox[idx].currentText()
             plot_name = self.plotting_function_dict[selected_plot]
             graphic_view = self.graphic_views[idx]
-            experiment_obj.plot_to_widget_by_name(plot_name, graphic_view, plot_style = updated_style)
+
+            # Get custom parameters
+            custom_params = self.get_custom_parameters(plot_name)
+
+            # Plot Figure
+            experiment_obj.plot_to_widget_by_name(plot_name, graphic_view, plot_style = updated_style, **custom_params)
+
+    # Get custom plot figures
+    def get_custom_parameters(self, plot_name):
+        # Define custom parameters
+        custom_params = {}
+
+        if plot_name == "plot_auc_bar":
+            logger.info('Returning auc by arm group box parameters')
+            custom_params = self.get_auc_by_arm_group_box_parameters()
+        elif plot_name == "plot_event_free_survival":
+            custom_params = self. get_event_free_group_box_parameters()
+        elif plot_name == "plot_vol_change_as_objective_response_bar":
+            custom_params = self. get_objective_response_group_box_parameters()
+        elif plot_name == "plot_percent_tumor_vol_change_bar":
+            custom_params = self. get_percent_tv_change_group_box_parameters()
+        elif plot_name == "proportion_in_objective_response_classification_bar":
+            custom_params = self.get_objective_response_group_box_parameters()
+
+        return custom_params
+    def get_objective_response_group_box_parameters(self):
+        # Get label parameters
+        show_axis_labels = True if self.ui.comboBox_obj_res_show_labels.currentText()=='True' else False
+        shorten_x_labels = True if self.ui.comboBox_obj_res_shorten_labels.currentText()=='True' else False
+
+        # Get Color parameters
+        pd_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_pd.currentText())
+        sd_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_sd.currentText())
+        pr_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_pr.currentText())
+        cr_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_cr.currentText())
+
+        print(f"pd_color = {pd_color}")
+
+        # Construct custom parameter dictionary
+        custom_params = {"objective_response_colors":
+                             {"PD": pd_color, "SD": sd_color, "PR": pr_color,"CR": cr_color},
+                         "show_axis_labels": show_axis_labels, "shorten_x_labels": shorten_x_labels}
+        print(f"custom_params: {custom_params}")
+        return custom_params
 
 
 

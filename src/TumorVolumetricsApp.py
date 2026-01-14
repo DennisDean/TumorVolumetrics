@@ -224,6 +224,18 @@ class MainApp(QMainWindow):
         if self.use_latex == False:
             logger.info(f'Full style sheet functionality requires Latex installed')
 
+        #----------------------------------------------------
+        # Hide interface widget not ready for first release
+        set_layout_visible(self.ui.verticalLayout_navigate, False)
+        self.ui.pushButton_load_saveas.setVisible(False)
+        self.ui.treeWidget_navigate_file.setVisible(False)
+        self.ui.actionSave.setVisible(False)
+        self.ui.groupBox_xml_navigate.setVisible(False)
+        self.ui.pushButton_show_contributor.setVisible(False)
+        self.ui.pushButton_show_arm.setVisible(False)
+        self.ui.pushButton_show_curves.setVisible(False)
+        self.ui.pushButton_show_disease.setVisible(False)
+        self.ui.checkBox_show_show_all.setVisible(False)
 
     # Major Commands
     def pushbutton_load_csv_file(self):
@@ -263,7 +275,7 @@ class MainApp(QMainWindow):
         self.tumor_volume_file_path = file_path
 
         # Turn off show and navigate groups
-        set_layout_visible(self.ui.verticalLayout_navigate, True)
+        set_layout_visible(self.ui.verticalLayout_navigate, False)
         set_layout_visible(self.ui.verticalLayout_show, True)
         set_layout_visible(self.ui.horizontalLayout_spacer, True)
         self.adjustSize()

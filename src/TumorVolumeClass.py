@@ -2354,14 +2354,59 @@ class TumorVolumeExperimentClass():
         # Plots
         self.objective_response_names = {"CR": "Complete Response", "PR": "Partial Response",
                                          "SD": "Stable Disease", "PD": "Progressive Disease"}
-        self.objective_response_colors = {
+        self.objective_response_color_dict = { # Default color if colors are not provided
             "CR": "#66C2A5",  # teal (best)
             "PR": "#8DA0CB",  # muted blue (partial)
             "SD": "#B8B8B8",  # light gray (stable)
             "PD": "#808080"  # gray (progression)
         }
         self.plot_types = ("Avg_TV_Change_Bar", "TV_Control_Bar", "Objective_Response_Bar",
-                           "AUC_with_Control_Bar", "Log2_Fold_Change_w_Error")
+                           "AUC_with_Control_Bar", "Log2_Fold_Change_w_Error") # Will depricate with function dict
+
+        # Standardizing plot representation as used in study class
+        # Enough information to generate interface in a future version
+        self.plotting_function_dict_2 = {
+            "AUC with Controls": {
+                "function": "plot_auc_with_controls_bar",
+                "params": {
+                    "compute_day": {"type": "int", "default": None, "label": "Compute Through Day", "min": 1, "max": 365, "step": 1, "nullable": True},
+                    "control_arms": {"type": "text", "default": "control,vehicle,placebo", "label": "Control Arms (comma-separated)"},
+                    "error_metric": {"type": "combo", "default": "sem", "options": ["std", "sem"], "label": "Error Metric"},
+                    "show_legend": {"type": "bool", "default": True, "label": "Show Legend"},
+                    "show_axis_labels": {"type": "bool", "default": False, "label": "Show Axis Labels"},
+                    "x_label_rotation": {"type": "int", "default": 0, "label": "X-Label Rotation", "min": 0, "max": 90, "step": 15},
+                    "title": {"type": "text", "default": "Average AUC by Study", "label": "Title"} } },
+            "Average % TV Change": {
+                "function": "plot_average_tumor_volume_change_bar",
+                "params": {
+                    "compute_day": {"type": "int", "default": None, "label": "Compute At Day", "min": 1, "max": 365, "step": 1, "nullable": True},
+                    "control_arms": {"type": "text", "default": "control,vehicle,placebo", "label": "Control Arms (comma-separated)"},
+                    "error_metric": {"type": "combo", "default": "std", "options": ["std", "sem"], "label": "Error Metric"},
+                    "show_axis_labels": {"type": "bool", "default": True, "label": "Show Axis Labels"},
+                    "x_label_rotation": {"type": "int", "default": 0, "label": "X-Label Rotation", "min": 0, "max": 90,"step": 15},
+                    "title": {"type": "text", "default": "Average % Tumor Volume Change by Study", "label": "Title"} }},
+            "Log2 Fold Change": {
+                "function": "plot_log2fc_points",
+                "params": {
+                    "compute_day": {"type": "int", "default": None, "label": "Compute At Day", "min": 1, "max": 365, "step": 1, "nullable": True},
+                    "control_arms": {"type": "text", "default": "control,vehicle,placebo", "label": "Control Arms (comma-separated)"},
+                    "show_legend": {"type": "bool", "default": True, "label": "Show Legend"},
+                    "show_axis_labels": {"type": "bool", "default": True, "label": "Show Axis Labels"},
+                    "title": {"type": "text", "default": "Log2 Change (Control vs Treatment)", "label": "Title"} } },
+            "Objective Response Proportion": {
+                "function": "proportion_in_objective_response_classification_bar",
+                "params": {
+                    "control_arms": {"type": "text", "default": "control,vehicle,placebo", "label": "Control Arms (comma-separated)"} } },
+            "T/C Ratio": {
+                "function": "plot_tumor_control_ratio_bar",
+                "params": {
+                    "compute_day": {"type": "int", "default": None, "label": "Compute At Day", "min": 1, "max": 365, "step": 1, "nullable": True},
+                    "control_arms": {"type": "text", "default": "control,vehicle,placebo", "label": "Control Arms (comma-separated)"},
+                    "error_metric": {"type": "combo", "default": "std", "options": ["std", "sem"], "label": "Error Metric"},
+                    "show_axis_labels": {"type": "bool", "default": True, "label": "Show Axis Labels"},
+                    "x_label_rotation": {"type": "int", "default": 0, "label": "X-Label Rotation", "min": 0, "max": 90,"step": 15},
+                    "title": {"type": "text", "default": "T/C Ratio (SE) by Study", "label": "Title"} } }
+        }
 
     # Summary
     def summarize(self):
@@ -2926,9 +2971,9 @@ class TumorVolumeExperimentClass():
 
         return fig, ax
     def proportion_in_objective_response_classification_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
-            show_legend=False, show_axis_labels=False, compute_day: int | None = None, x_label_rotation = 0,
+            show_legend=False, show_axis_labels=False, compute_day: int | None = None, x_label_rotation = 0, shorten_x_labels = False,
             title="Objective Response Distribution by Study", figsize=(10, 6), parent_widget=None,
-            objective_response_color_dict:dict[str,str]|None = None):
+            objective_response_colors:dict[str,str]|None = None):
         """
         Create a stacked 100% bar plot showing objective response proportions
         for each study, with count and percentage inside each bar segment.
@@ -2962,49 +3007,8 @@ class TumorVolumeExperimentClass():
             - Colors are pulled from self.objective_response_colors
         """
 
-        OR_ORDER = ["CR", "PR", "SD", "PD"]
-        if objective_response_color_dict is None:
-            OR_COLORS = [self.objective_response_colors[o] for o in OR_ORDER]
-        else:
-            OR_COLORS = [objective_response_color_dict[o] for o in OR_ORDER]
 
-        study_keys = sorted(self.study_keys)
 
-        # Holds raw counts per OR code per study
-        study_or_counts = []
-
-        # ---------------- Collect Objective Responses ----------------
-        for study in study_keys:
-            study_obj = self.experiment_study_dict[study]
-
-            arms_to_plot = [
-                arm for arm in study_obj.unique_arms
-                if arm.lower() not in control_arms
-            ]
-
-            resp_counts = {or_code: 0 for or_code in OR_ORDER}
-
-            for arm in arms_to_plot:
-                for ts_id in study_obj.study_arms_dict[arm]:
-                    tv_obj = study_obj.study_tv_time_dict[ts_id]
-                    resp = tv_obj.compute_objective_response(compute_day)
-
-                    if resp in resp_counts:
-                        resp_counts[resp] += 1
-
-            study_or_counts.append(resp_counts)
-
-        # Convert counts → proportions
-        study_or_props = []
-        for count_dict in study_or_counts:
-            total = sum(count_dict.values())
-            if total == 0:
-                study_or_props.append([0, 0, 0, 0])
-            else:
-                study_or_props.append([count_dict[o] / total for o in OR_ORDER])
-
-        study_or_props = np.array(study_or_props)
-        x = np.arange(len(study_keys))
 
         # ---------------- Plotting ----------------
         # Create styled figure
@@ -3015,6 +3019,65 @@ class TumorVolumeExperimentClass():
             fig.set_size_inches(figsize)
 
         with style_ctx:
+            # Get color
+            # Get the color cycle from the current style
+            prop_cycle = plt.rcParams['axes.prop_cycle']
+            colors = prop_cycle.by_key()['color']
+            print(f"stycle colors {colors}")
+
+            # Get color based on input
+            OR_ORDER = ["CR", "PR", "SD", "PD"]
+            if objective_response_colors is not None:
+                print(f"objective response colors {objective_response_colors}")
+                OR_COLORS = [objective_response_colors[o] for o in OR_ORDER]
+            elif plot_style != None:
+                style_or_dict = {key:c for key,c in zip(OR_ORDER,colors)}
+                OR_COLORS = [style_or_dict[o] for o in OR_ORDER]
+            else:
+                OR_COLORS = [self.objective_response_color_dict[o] for o in OR_ORDER]
+            print(f"OR_COLORS = {OR_COLORS}")
+
+            study_keys = sorted(self.study_keys)
+
+            # Holds raw counts per OR code per study
+            study_or_counts = []
+
+            # ---------------- Collect Objective Responses ----------------
+            for study in study_keys:
+                study_obj = self.experiment_study_dict[study]
+
+                arms_to_plot = [
+                    arm for arm in study_obj.unique_arms
+                    if arm.lower() not in control_arms
+                ]
+
+                resp_counts = {or_code: 0 for or_code in OR_ORDER}
+
+                for arm in arms_to_plot:
+                    for ts_id in study_obj.study_arms_dict[arm]:
+                        tv_obj = study_obj.study_tv_time_dict[ts_id]
+                        resp = tv_obj.compute_objective_response(compute_day)
+
+                        if resp in resp_counts:
+                            resp_counts[resp] += 1
+
+                study_or_counts.append(resp_counts)
+
+            # Convert counts → proportions
+            study_or_props = []
+            for count_dict in study_or_counts:
+                total = sum(count_dict.values())
+                if total == 0:
+                    study_or_props.append([0, 0, 0, 0])
+                else:
+                    study_or_props.append([count_dict[o] / total for o in OR_ORDER])
+
+            study_or_props = np.array(study_or_props)
+            x = np.arange(len(study_keys))
+
+
+
+
 
 
             bottoms = np.zeros(len(study_keys))
@@ -3063,7 +3126,11 @@ class TumorVolumeExperimentClass():
                 ax.set_xlabel("Study")
 
             ax.set_xticks(x)
-            ax.set_xticklabels(study_keys, rotation=x_label_rotation, ha="center")
+            if shorten_x_labels == False:
+                ax.set_xticklabels(study_keys, rotation=x_label_rotation, ha="center")
+            else:
+                short_study_keys = list(map(remove_alpha, study_keys))
+                ax.set_xticklabels(short_study_keys, rotation=x_label_rotation, ha="center")
 
             if title:
                 ax.set_title(title)

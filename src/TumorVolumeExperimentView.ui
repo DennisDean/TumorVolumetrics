@@ -69,9 +69,9 @@
              <property name="geometry">
               <rect>
                <x>0</x>
-               <y>-90</y>
+               <y>-114</y>
                <width>231</width>
-               <height>900</height>
+               <height>924</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -964,6 +964,13 @@
                   </layout>
                  </item>
                 </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_10">
+                <property name="text">
+                 <string/>
+                </property>
                </widget>
               </item>
              </layout>
