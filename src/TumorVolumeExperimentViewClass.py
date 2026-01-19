@@ -140,6 +140,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # 5. INITIALIZE COMPONENT GROUP BOXES (order matters!)
         self.initialize_style_sheets_functions()  # First - sets up style system
         self.initialize_objective_response_plot_groupbox()
+        self.initialize_tumor_control_ration_groupbox()
 
         # 6. UI CUSTOMIZATION
         self.add_context_menu_support_to_graphic_view()
@@ -256,14 +257,20 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self._gb_objrp_anim.setDuration(180)
         self._gb_objrp_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
+        self._gb_tcrat_anim = QPropertyAnimation(self.ui.groupBox_objective_response, b"maximumHeight")
+        self._gb_tcrat_anim.setDuration(180)
+        self._gb_tcrat_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
         # Set checked
         self.ui.groupBox_plot_configurations.setChecked(True)
         self.ui.groupBox_plot_style_sheet.setChecked(False)
         self.ui.groupBox_objective_response.setChecked(False)
+        self.ui.groupBox_tumor_control_ratio.setEnabled(False)
 
         # Set initial group box settings
-        group_boxes = [self.ui.groupBox_plot_configurations, self.ui.groupBox_plot_style_sheet, self.ui.groupBox_objective_response]
-        init_group_box_state = [True, False, False]
+        group_boxes = [self.ui.groupBox_plot_configurations, self.ui.groupBox_plot_style_sheet, self.ui.groupBox_objective_response,
+                       self.ui.groupBox_tumor_control_ratio]
+        init_group_box_state = [True, False, False, False]
         for gbox, gstate in zip(group_boxes, init_group_box_state):
             gbox.setChecked(gstate)
             gbox.layout().activate()
@@ -275,6 +282,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.groupBox_plot_style_sheet.toggled.connect(lambda checked: self._animate_style_groupbox(self.ui.groupBox_plot_style_sheet, checked))
         self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
         self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
+        self.ui.groupBox_tumor_control_ratio.toggled.connect(lambda checked: self._gb_tcrat_anim(self.ui.groupBox_tumor_control_ratio, checked))
 
     # Groupbox Utilities
     def _populate_color_comboboxes(self, combo_boxes, available_style_colors: list[str] | None,
@@ -412,16 +420,42 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
-        self._populate_color_comboboxes(orc_cboxes, available_style_colors) # Will need to add color shift
-        #self._populate_color_comboboxes(orc_cboxes, available_style_colors, color_shift=2)
+        self._populate_color_comboboxes(orc_cboxes, available_style_colors)  # Will need to add color shift
+        # self._populate_color_comboboxes(orc_cboxes, available_style_colors, color_shift=2)
 
         # Set Index
         color_shift = 2  # don't use the first two colors, assuming two arms
         for idx, cbox in enumerate(orc_cboxes):
-            cbox.setCurrentIndex(idx+color_shift)
+            cbox.setCurrentIndex(idx + color_shift)
 
         # Connect pushbutton to update objective response plot
         self.ui.pushButton_objective_response_update.clicked.connect(self.update_study_view)
+    def initialize_tumor_control_ration_groupbox(self):
+        # Update log file
+        logger.info('Initializing Tumor Control Ratio Plot Groupbox')
+
+
+        # Define cutoff options
+        cutoff_day = 15 # setting to a reasonable value to start
+        min_day = 5 # Minimum day set arbitrarily
+        max_day_across_studies = 14 # set to a reasonable number
+        cutoff_options = ["Common Across Studies - Day {cutoff_day}", "Full Follow Up", "Fixed"]
+        fixed_options = [str(day) for day in range(min_day,max_day_across_studies+1)]
+        self.ui.comboBox_tc_cutoff_type.addItems(cutoff_options)
+        self.ui.comboBox_tc_cutoff_type.setCurrentIndex(0)
+        self.ui.comboBox_tc_cutoff_day.addItems(cutoff_options)
+        self.ui.comboBox_tc_cutoff_day.setCurrentIndex(len(fixed_options)-1)
+
+        # Label Options
+        cbox_values = ["True", "False"]
+        rotation_options = ["horizontal", "slight", "diagonal", "steep", "vertical" ]
+        self.rotation_option_dict = {"horizontal": 0, "slight": 30, "diagonal": 45, "steep": 60, "vertical": 90}
+        self.ui.comboBox_tc_ratio_labels_show.addItems(cbox_values)
+        self.ui.comboBox_tc_ratio_labels_show.setCurrentIndex(0)
+        self.ui.comboBox_tc_ratio_shorten_label.addItems(cbox_values)
+        self.ui.comboBox_tc_ratio_shorten_label.setCurrentIndex(1)
+        self.ui.comboBox_tc_ratio_labels_rotation.addItems(rotation_options)
+        self.ui.comboBox_tc_ratio_labels_rotation.setCurrentIndex(0)
 
     # Update Group Box Parameters
     def update_plot_style(self):
