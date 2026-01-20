@@ -69,9 +69,9 @@
              <property name="geometry">
               <rect>
                <x>0</x>
-               <y>-377</y>
+               <y>-353</y>
                <width>231</width>
-               <height>1187</height>
+               <height>1245</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -974,7 +974,10 @@
                 <property name="checkable">
                  <bool>true</bool>
                 </property>
-                <layout class="QVBoxLayout" name="verticalLayout_6">
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_tumor_control_ratio_2">
                  <item>
                   <widget class="QLabel" name="label_21">
                    <property name="text">
@@ -983,7 +986,7 @@
                   </widget>
                  </item>
                  <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_tc_cutoff_type">
+                  <layout class="QHBoxLayout" name="horizontalLayout_17">
                    <item>
                     <widget class="QLabel" name="label_22">
                      <property name="sizePolicy">
@@ -1018,7 +1021,7 @@
                   </layout>
                  </item>
                  <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_tc_ratio_cutoff_day">
+                  <layout class="QHBoxLayout" name="horizontalLayout_18">
                    <item>
                     <widget class="QLabel" name="label_23">
                      <property name="sizePolicy">
@@ -1053,6 +1056,45 @@
                   </layout>
                  </item>
                  <item>
+                  <widget class="QLabel" name="label_28">
+                   <property name="text">
+                    <string>Error</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_16">
+                   <item>
+                    <widget class="QLabel" name="label_29">
+                     <property name="minimumSize">
+                      <size>
+                       <width>75</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>75</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Metric</string>
+                     </property>
+                     <property name="textFormat">
+                      <enum>Qt::PlainText</enum>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="comboBox_tc_ratio_error_metric"/>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
                   <widget class="QLabel" name="label_24">
                    <property name="text">
                     <string>Labels</string>
@@ -1060,7 +1102,7 @@
                   </widget>
                  </item>
                  <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_20">
+                  <layout class="QHBoxLayout" name="horizontalLayout_19">
                    <item>
                     <widget class="QLabel" name="label_25">
                      <property name="sizePolicy">
@@ -1068,6 +1110,12 @@
                        <horstretch>0</horstretch>
                        <verstretch>0</verstretch>
                       </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>75</width>
+                       <height>0</height>
+                      </size>
                      </property>
                      <property name="maximumSize">
                       <size>
@@ -1089,7 +1137,42 @@
                   </layout>
                  </item>
                  <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_16">
+                  <layout class="QHBoxLayout" name="horizontalLayout_20">
+                   <item>
+                    <widget class="QLabel" name="label_26">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>75</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>75</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Rotation</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="comboBox_tc_ratio_labels_rotation"/>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_21">
                    <item>
                     <widget class="QLabel" name="label_27">
                      <property name="sizePolicy">
@@ -1120,35 +1203,6 @@
                    </item>
                    <item>
                     <widget class="QComboBox" name="comboBox_tc_ratio_shorten_label"/>
-                   </item>
-                  </layout>
-                 </item>
-                 <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_21">
-                   <item>
-                    <widget class="QLabel" name="label_26">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>75</width>
-                       <height>16777215</height>
-                      </size>
-                     </property>
-                     <property name="text">
-                      <string>Rotation</string>
-                     </property>
-                     <property name="alignment">
-                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QComboBox" name="comboBox_tc_ratio_labels_rotation"/>
                    </item>
                   </layout>
                  </item>

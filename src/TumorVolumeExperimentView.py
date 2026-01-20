@@ -82,7 +82,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, -377, 231, 1187))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, -353, 231, 1245))
         self.verticalLayout_4 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.groupBox_plot_configurations = QGroupBox(self.scrollAreaWidgetContents)
@@ -535,15 +535,16 @@ class Ui_MainWindow(object):
         self.groupBox_tumor_control_ratio = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox_tumor_control_ratio.setObjectName(u"groupBox_tumor_control_ratio")
         self.groupBox_tumor_control_ratio.setCheckable(True)
-        self.verticalLayout_6 = QVBoxLayout(self.groupBox_tumor_control_ratio)
-        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.groupBox_tumor_control_ratio.setChecked(True)
+        self.verticalLayout_tumor_control_ratio_2 = QVBoxLayout(self.groupBox_tumor_control_ratio)
+        self.verticalLayout_tumor_control_ratio_2.setObjectName(u"verticalLayout_tumor_control_ratio_2")
         self.label_21 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_21.setObjectName(u"label_21")
 
-        self.verticalLayout_6.addWidget(self.label_21)
+        self.verticalLayout_tumor_control_ratio_2.addWidget(self.label_21)
 
-        self.horizontalLayout_tc_cutoff_type = QHBoxLayout()
-        self.horizontalLayout_tc_cutoff_type.setObjectName(u"horizontalLayout_tc_cutoff_type")
+        self.horizontalLayout_17 = QHBoxLayout()
+        self.horizontalLayout_17.setObjectName(u"horizontalLayout_17")
         self.label_22 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_22.setObjectName(u"label_22")
         sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
@@ -555,18 +556,18 @@ class Ui_MainWindow(object):
         self.label_22.setMaximumSize(QSize(75, 16777215))
         self.label_22.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
-        self.horizontalLayout_tc_cutoff_type.addWidget(self.label_22)
+        self.horizontalLayout_17.addWidget(self.label_22)
 
         self.comboBox_tc_cutoff_type = QComboBox(self.groupBox_tumor_control_ratio)
         self.comboBox_tc_cutoff_type.setObjectName(u"comboBox_tc_cutoff_type")
 
-        self.horizontalLayout_tc_cutoff_type.addWidget(self.comboBox_tc_cutoff_type)
+        self.horizontalLayout_17.addWidget(self.comboBox_tc_cutoff_type)
 
 
-        self.verticalLayout_6.addLayout(self.horizontalLayout_tc_cutoff_type)
+        self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_17)
 
-        self.horizontalLayout_tc_ratio_cutoff_day = QHBoxLayout()
-        self.horizontalLayout_tc_ratio_cutoff_day.setObjectName(u"horizontalLayout_tc_ratio_cutoff_day")
+        self.horizontalLayout_18 = QHBoxLayout()
+        self.horizontalLayout_18.setObjectName(u"horizontalLayout_18")
         self.label_23 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_23.setObjectName(u"label_23")
         sizePolicy3.setHeightForWidth(self.label_23.sizePolicy().hasHeightForWidth())
@@ -575,42 +576,87 @@ class Ui_MainWindow(object):
         self.label_23.setMaximumSize(QSize(75, 16777215))
         self.label_23.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
-        self.horizontalLayout_tc_ratio_cutoff_day.addWidget(self.label_23)
+        self.horizontalLayout_18.addWidget(self.label_23)
 
         self.comboBox_tc_cutoff_day = QComboBox(self.groupBox_tumor_control_ratio)
         self.comboBox_tc_cutoff_day.setObjectName(u"comboBox_tc_cutoff_day")
 
-        self.horizontalLayout_tc_ratio_cutoff_day.addWidget(self.comboBox_tc_cutoff_day)
+        self.horizontalLayout_18.addWidget(self.comboBox_tc_cutoff_day)
 
 
-        self.verticalLayout_6.addLayout(self.horizontalLayout_tc_ratio_cutoff_day)
+        self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_18)
+
+        self.label_28 = QLabel(self.groupBox_tumor_control_ratio)
+        self.label_28.setObjectName(u"label_28")
+
+        self.verticalLayout_tumor_control_ratio_2.addWidget(self.label_28)
+
+        self.horizontalLayout_16 = QHBoxLayout()
+        self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
+        self.label_29 = QLabel(self.groupBox_tumor_control_ratio)
+        self.label_29.setObjectName(u"label_29")
+        self.label_29.setMinimumSize(QSize(75, 0))
+        self.label_29.setMaximumSize(QSize(75, 16777215))
+        self.label_29.setTextFormat(Qt.PlainText)
+        self.label_29.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_16.addWidget(self.label_29)
+
+        self.comboBox_tc_ratio_error_metric = QComboBox(self.groupBox_tumor_control_ratio)
+        self.comboBox_tc_ratio_error_metric.setObjectName(u"comboBox_tc_ratio_error_metric")
+
+        self.horizontalLayout_16.addWidget(self.comboBox_tc_ratio_error_metric)
+
+
+        self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_16)
 
         self.label_24 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_24.setObjectName(u"label_24")
 
-        self.verticalLayout_6.addWidget(self.label_24)
+        self.verticalLayout_tumor_control_ratio_2.addWidget(self.label_24)
 
-        self.horizontalLayout_20 = QHBoxLayout()
-        self.horizontalLayout_20.setObjectName(u"horizontalLayout_20")
+        self.horizontalLayout_19 = QHBoxLayout()
+        self.horizontalLayout_19.setObjectName(u"horizontalLayout_19")
         self.label_25 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_25.setObjectName(u"label_25")
         sizePolicy.setHeightForWidth(self.label_25.sizePolicy().hasHeightForWidth())
         self.label_25.setSizePolicy(sizePolicy)
+        self.label_25.setMinimumSize(QSize(75, 0))
         self.label_25.setMaximumSize(QSize(75, 16777215))
         self.label_25.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
-        self.horizontalLayout_20.addWidget(self.label_25)
+        self.horizontalLayout_19.addWidget(self.label_25)
 
         self.comboBox_tc_ratio_labels_show = QComboBox(self.groupBox_tumor_control_ratio)
         self.comboBox_tc_ratio_labels_show.setObjectName(u"comboBox_tc_ratio_labels_show")
 
-        self.horizontalLayout_20.addWidget(self.comboBox_tc_ratio_labels_show)
+        self.horizontalLayout_19.addWidget(self.comboBox_tc_ratio_labels_show)
 
 
-        self.verticalLayout_6.addLayout(self.horizontalLayout_20)
+        self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_19)
 
-        self.horizontalLayout_16 = QHBoxLayout()
-        self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
+        self.horizontalLayout_20 = QHBoxLayout()
+        self.horizontalLayout_20.setObjectName(u"horizontalLayout_20")
+        self.label_26 = QLabel(self.groupBox_tumor_control_ratio)
+        self.label_26.setObjectName(u"label_26")
+        sizePolicy3.setHeightForWidth(self.label_26.sizePolicy().hasHeightForWidth())
+        self.label_26.setSizePolicy(sizePolicy3)
+        self.label_26.setMinimumSize(QSize(75, 0))
+        self.label_26.setMaximumSize(QSize(75, 16777215))
+        self.label_26.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_20.addWidget(self.label_26)
+
+        self.comboBox_tc_ratio_labels_rotation = QComboBox(self.groupBox_tumor_control_ratio)
+        self.comboBox_tc_ratio_labels_rotation.setObjectName(u"comboBox_tc_ratio_labels_rotation")
+
+        self.horizontalLayout_20.addWidget(self.comboBox_tc_ratio_labels_rotation)
+
+
+        self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_20)
+
+        self.horizontalLayout_21 = QHBoxLayout()
+        self.horizontalLayout_21.setObjectName(u"horizontalLayout_21")
         self.label_27 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_27.setObjectName(u"label_27")
         sizePolicy3.setHeightForWidth(self.label_27.sizePolicy().hasHeightForWidth())
@@ -619,34 +665,15 @@ class Ui_MainWindow(object):
         self.label_27.setMaximumSize(QSize(75, 16777215))
         self.label_27.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
-        self.horizontalLayout_16.addWidget(self.label_27)
+        self.horizontalLayout_21.addWidget(self.label_27)
 
         self.comboBox_tc_ratio_shorten_label = QComboBox(self.groupBox_tumor_control_ratio)
         self.comboBox_tc_ratio_shorten_label.setObjectName(u"comboBox_tc_ratio_shorten_label")
 
-        self.horizontalLayout_16.addWidget(self.comboBox_tc_ratio_shorten_label)
+        self.horizontalLayout_21.addWidget(self.comboBox_tc_ratio_shorten_label)
 
 
-        self.verticalLayout_6.addLayout(self.horizontalLayout_16)
-
-        self.horizontalLayout_21 = QHBoxLayout()
-        self.horizontalLayout_21.setObjectName(u"horizontalLayout_21")
-        self.label_26 = QLabel(self.groupBox_tumor_control_ratio)
-        self.label_26.setObjectName(u"label_26")
-        sizePolicy3.setHeightForWidth(self.label_26.sizePolicy().hasHeightForWidth())
-        self.label_26.setSizePolicy(sizePolicy3)
-        self.label_26.setMaximumSize(QSize(75, 16777215))
-        self.label_26.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-
-        self.horizontalLayout_21.addWidget(self.label_26)
-
-        self.comboBox_tc_ratio_labels_rotation = QComboBox(self.groupBox_tumor_control_ratio)
-        self.comboBox_tc_ratio_labels_rotation.setObjectName(u"comboBox_tc_ratio_labels_rotation")
-
-        self.horizontalLayout_21.addWidget(self.comboBox_tc_ratio_labels_rotation)
-
-
-        self.verticalLayout_6.addLayout(self.horizontalLayout_21)
+        self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_21)
 
 
         self.verticalLayout_4.addWidget(self.groupBox_tumor_control_ratio)
@@ -719,10 +746,12 @@ class Ui_MainWindow(object):
         self.label_21.setText(QCoreApplication.translate("MainWindow", u"Cutoff", None))
         self.label_22.setText(QCoreApplication.translate("MainWindow", u"Type", None))
         self.label_23.setText(QCoreApplication.translate("MainWindow", u"Day", None))
+        self.label_28.setText(QCoreApplication.translate("MainWindow", u"Error", None))
+        self.label_29.setText(QCoreApplication.translate("MainWindow", u"Metric", None))
         self.label_24.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
         self.label_25.setText(QCoreApplication.translate("MainWindow", u"Show", None))
-        self.label_27.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
         self.label_26.setText(QCoreApplication.translate("MainWindow", u"Rotation", None))
+        self.label_27.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
         self.label_10.setText("")
         self.menuShow.setTitle(QCoreApplication.translate("MainWindow", u"Show", None))
     # retranslateUi

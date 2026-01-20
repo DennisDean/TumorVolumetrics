@@ -114,6 +114,9 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.plot_scienceplot_color = None
         self.plot_scienceplot_grid = None
 
+        # Tumor control ratio plot data structures
+        self.rotation_option_dict = {"horizontal": 0, "slight": 30, "diagonal": 45, "steep": 60, "vertical": 90}
+
         # Graphics view references
         self.graphicsView_visual_top_left = None
         self.graphicsView_visual_top_right = None
@@ -140,7 +143,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # 5. INITIALIZE COMPONENT GROUP BOXES (order matters!)
         self.initialize_style_sheets_functions()  # First - sets up style system
         self.initialize_objective_response_plot_groupbox()
-        self.initialize_tumor_control_ration_groupbox()
+        self.initialize_tumor_control_ratio_groupbox()
 
         # 6. UI CUSTOMIZATION
         self.add_context_menu_support_to_graphic_view()
@@ -257,7 +260,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self._gb_objrp_anim.setDuration(180)
         self._gb_objrp_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
-        self._gb_tcrat_anim = QPropertyAnimation(self.ui.groupBox_objective_response, b"maximumHeight")
+        self._gb_tcrat_anim = QPropertyAnimation(self.ui.groupBox_tumor_control_ratio, b"maximumHeight")
         self._gb_tcrat_anim.setDuration(180)
         self._gb_tcrat_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
@@ -265,7 +268,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.groupBox_plot_configurations.setChecked(True)
         self.ui.groupBox_plot_style_sheet.setChecked(False)
         self.ui.groupBox_objective_response.setChecked(False)
-        self.ui.groupBox_tumor_control_ratio.setEnabled(False)
+        self.ui.groupBox_tumor_control_ratio.setChecked(False)
 
         # Set initial group box settings
         group_boxes = [self.ui.groupBox_plot_configurations, self.ui.groupBox_plot_style_sheet, self.ui.groupBox_objective_response,
@@ -282,11 +285,10 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.groupBox_plot_style_sheet.toggled.connect(lambda checked: self._animate_style_groupbox(self.ui.groupBox_plot_style_sheet, checked))
         self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
         self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
-        self.ui.groupBox_tumor_control_ratio.toggled.connect(lambda checked: self._gb_tcrat_anim(self.ui.groupBox_tumor_control_ratio, checked))
+        self.ui.groupBox_tumor_control_ratio.toggled.connect(lambda checked: self._animate_tcrat_groupbox(self.ui.groupBox_tumor_control_ratio, checked))
 
     # Groupbox Utilities
-    def _populate_color_comboboxes(self, combo_boxes, available_style_colors: list[str] | None,
-                                   color_shift = 0):
+    def _populate_color_comboboxes(self, combo_boxes, available_style_colors: list[str] | None, color_shift = 0):
         """Populate ALL combo boxes with ALL available colors from the current style.
 
         Args:
@@ -430,21 +432,25 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         # Connect pushbutton to update objective response plot
         self.ui.pushButton_objective_response_update.clicked.connect(self.update_study_view)
-    def initialize_tumor_control_ration_groupbox(self):
+    def initialize_tumor_control_ratio_groupbox(self):
         # Update log file
         logger.info('Initializing Tumor Control Ratio Plot Groupbox')
-
 
         # Define cutoff options
         cutoff_day = 15 # setting to a reasonable value to start
         min_day = 5 # Minimum day set arbitrarily
         max_day_across_studies = 14 # set to a reasonable number
-        cutoff_options = ["Common Across Studies - Day {cutoff_day}", "Full Follow Up", "Fixed"]
+        cutoff_options = [f"Common Across Studies - Day {cutoff_day}", "Full Follow Up", "Fixed"]
         fixed_options = [str(day) for day in range(min_day,max_day_across_studies+1)]
         self.ui.comboBox_tc_cutoff_type.addItems(cutoff_options)
         self.ui.comboBox_tc_cutoff_type.setCurrentIndex(0)
-        self.ui.comboBox_tc_cutoff_day.addItems(cutoff_options)
+        self.ui.comboBox_tc_cutoff_day.addItems(fixed_options)
         self.ui.comboBox_tc_cutoff_day.setCurrentIndex(len(fixed_options)-1)
+
+        # Error metric
+        error_metric_options = ["std", "sem"]
+        self.ui.comboBox_tc_ratio_error_metric.addItems(error_metric_options)
+        self.ui.comboBox_tc_ratio_error_metric.setCurrentIndex(0)
 
         # Label Options
         cbox_values = ["True", "False"]
@@ -456,6 +462,14 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.comboBox_tc_ratio_shorten_label.setCurrentIndex(1)
         self.ui.comboBox_tc_ratio_labels_rotation.addItems(rotation_options)
         self.ui.comboBox_tc_ratio_labels_rotation.setCurrentIndex(0)
+
+        # Connect response
+        self.ui.comboBox_tc_cutoff_type.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_tc_cutoff_day.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_tc_ratio_error_metric.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_tc_ratio_labels_show.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_tc_ratio_labels_rotation.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_tc_ratio_shorten_label.currentTextChanged.connect(self.update_study_view_text)
 
     # Update Group Box Parameters
     def update_plot_style(self):
@@ -709,6 +723,24 @@ class TumorVolumeExperimentWindow(QMainWindow):
             self._gb_objrp_anim.setEndValue(header_height)
 
         self._gb_objrp_anim.start()
+    def _animate_tcrat_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_tcrat_anim.stop()
+
+        if expanded:
+            self._gb_tcrat_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_tcrat_anim.setEndValue(expanded_height)
+        else:
+            self._gb_tcrat_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_tcrat_anim.setEndValue(header_height)
+
+        self._gb_tcrat_anim.start()
     def _recompute_groupbox_height(self, groupbox):
         layout = groupbox.layout()
         if not layout:
@@ -775,14 +807,29 @@ class TumorVolumeExperimentWindow(QMainWindow):
         pr_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_pr.currentText())
         cr_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_cr.currentText())
 
-        print(f"pd_color = {pd_color}")
-
         # Construct custom parameter dictionary
         custom_params = {"objective_response_colors":
                              {"PD": pd_color, "SD": sd_color, "PR": pr_color,"CR": cr_color},
                          "show_axis_labels": show_axis_labels, "shorten_x_labels": shorten_x_labels}
-        print(f"custom_params: {custom_params}")
         return custom_params
+    def get_tumor_control_ratio_group_box_parameters(self):
+        # Get label parameters
+        cutoff_type_str = self.ui.comboBox_tc_cutoff_type.currentText()
+        compute_day = int(self.ui.comboBox_tc_cutoff_day.currentText())
 
+        # Set error metric
+        error_metric = self.ui.comboBox_tc_ratio_error_metric.addItem(error_metric_options)
+
+
+        # Get Color parameters
+        show_axis_labels =  True if self.ui.comboBox_tc_ratio_labels_show.currentText()=='True' else False
+        x_label_rotation_type = self.ui.comboBox_tc_ratio_labels_rotation.currentText()
+        x_label_rotation = self.rotation_option_dict[x_label_rotation_type]
+        shorten_x_labels = self.ui.comboBox_tc_ratio_shorten_label.currentText()
+
+        # Construct custom parameter dictionary
+        custom_params = {"compute_day": compute_day, "error_metric": error_metric, "show_axis_labels": show_axis_labels,
+                         "x_label_rotation": x_label_rotation, "shorten_x_labels": shorten_x_labels}
+        return custom_params
 
 
