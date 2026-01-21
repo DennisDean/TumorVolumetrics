@@ -2360,8 +2360,6 @@ class TumorVolumeExperimentClass():
             "SD": "#B8B8B8",  # light gray (stable)
             "PD": "#808080"  # gray (progression)
         }
-        self.plot_types = ("Avg_TV_Change_Bar", "TV_Control_Bar", "Objective_Response_Bar",
-                           "AUC_with_Control_Bar", "Log2_Fold_Change_w_Error") # Will depricate with function dict
 
         # Standardizing plot representation as used in study class
         # Enough information to generate interface in a future version
@@ -2407,6 +2405,10 @@ class TumorVolumeExperimentClass():
                     "x_label_rotation": {"type": "int", "default": 0, "label": "X-Label Rotation", "min": 0, "max": 90,"step": 15},
                     "title": {"type": "text", "default": "T/C Ratio (SE) by Study", "label": "Title"} } }
         }
+
+        # Generating instead of setting plot types makes the tools extensible
+        self.plot_types = list(self.plotting_function_dict_2.keys())
+        self.plot_types.sort()
 
     # Summary
     def summarize(self):
@@ -3023,19 +3025,16 @@ class TumorVolumeExperimentClass():
             # Get the color cycle from the current style
             prop_cycle = plt.rcParams['axes.prop_cycle']
             colors = prop_cycle.by_key()['color']
-            print(f"stycle colors {colors}")
 
             # Get color based on input
             OR_ORDER = ["CR", "PR", "SD", "PD"]
             if objective_response_colors is not None:
-                print(f"objective response colors {objective_response_colors}")
                 OR_COLORS = [objective_response_colors[o] for o in OR_ORDER]
             elif plot_style != None:
                 style_or_dict = {key:c for key,c in zip(OR_ORDER,colors)}
                 OR_COLORS = [style_or_dict[o] for o in OR_ORDER]
             else:
                 OR_COLORS = [self.objective_response_color_dict[o] for o in OR_ORDER]
-            print(f"OR_COLORS = {OR_COLORS}")
 
             study_keys = sorted(self.study_keys)
 

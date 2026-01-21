@@ -209,6 +209,12 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.plotting_function_dict = {"Avg_TV_Change_Bar":"plot_average_tumor_volume_change_bar", "TV_Control_Bar":"plot_tumor_control_ratio_bar",
                             "Objective_Response_Bar":"proportion_in_objective_response_classification_bar", "AUC_with_Control_Bar":"plot_auc_with_controls_bar",
                             "Log2_Fold_Change_w_Error":"plot_log2fc_points"}
+        experiment_list = list(self.tv_data_obj.tumor_vol_experiment_dict.keys())
+        first_experiment_key = experiment_list[0]
+        experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[first_experiment_key]
+        self.plotting_function_dict_2 = experiment_obj.plotting_function_dict_2
+        self.plot_types = list(self.plotting_function_dict_2.keys())
+
 
         # Initialize selection comboBoxes
         for idx, cbox in enumerate(self.plot_select_comboBox):
@@ -769,7 +775,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         for idx in range(num_figures):
             # Get Plot Information
             selected_plot = self.plot_select_comboBox[idx].currentText()
-            plot_name = self.plotting_function_dict[selected_plot]
+            plot_name = self.plotting_function_dict_2[selected_plot]['function']
             graphic_view = self.graphic_views[idx]
 
             # Get custom parameters
