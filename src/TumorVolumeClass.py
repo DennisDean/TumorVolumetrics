@@ -790,6 +790,36 @@ class TumorVolumeStudyClass():
 
         return results.p_value
 
+    # summarize
+    def get_study_min_of_max_timepoints(self):
+        # Initialize vaiables
+        min_of_max_timepoints = 0
+
+        # Traverse tumor volume data
+        tv_keys = self.study_tv_time_dict.keys()
+        tv_max_day = []
+        for tv_key in tv_keys:
+            tv_obj = self.study_tv_time_dict[tv_key]
+            tv_max_day.append(int(tv_obj.max_day))
+        print(f'tv_points = {tv_max_day}')
+        min_of_max_timepoints = min(tv_max_day)
+
+        return min_of_max_timepoints
+    def get_study_max_of_max_timepoints(self):
+        # Initialize vaiables
+        min_of_max_timepoints = 0
+
+        # Traverse tumor volume data
+        tv_keys = self.study_tv_time_dict.keys()
+        tv_max_day = []
+        for tv_key in tv_keys:
+            tv_obj = self.study_tv_time_dict[tv_key]
+            tv_max_day.append(int(tv_obj.max_day))
+        print(f'tv_points = {tv_max_day}')
+        max_of_max_timepoints = max(tv_max_day)
+
+        return max_of_max_timepoints
+
     # Summary
     def summarize(self):
         # Write summary to log file

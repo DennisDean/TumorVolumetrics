@@ -1021,7 +1021,7 @@
                   </layout>
                  </item>
                  <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_18">
+                  <layout class="QHBoxLayout" name="horizontalLayout_tumor_control_ratio_day">
                    <item>
                     <widget class="QLabel" name="label_23">
                      <property name="sizePolicy">

@@ -294,6 +294,31 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.groupBox_tumor_control_ratio.toggled.connect(lambda checked: self._animate_tcrat_groupbox(self.ui.groupBox_tumor_control_ratio, checked))
 
     # Groupbox Utilities
+    def get_min_and_max_day_across_studies(self):
+        # Get experiment name
+        experiment_key = self.ui.comboBox_configuration_experiments.currentText()
+        print(experiment_key)
+        experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_key]
+        study_keys = experiment_obj.study_keys
+        min_of_max_list = []
+        max_of_max_list = []
+        for study_key in study_keys:
+            # get minimum of maximum timepoints
+            study_obj = self.tv_data_obj.tumor_vol_study_dict[study_key]
+
+            # Get minimum day across studies
+            min_of_max = study_obj.get_study_min_of_max_timepoints()
+            min_of_max_list.append(min_of_max)
+
+            # Get maximum day across studies
+            max_of_max = study_obj.get_study_max_of_max_timepoints()
+            max_of_max_list.append(max_of_max)
+
+        # Get minimum and maximum day across studies
+        min_day = min(min_of_max_list)
+        max_day = max(max_of_max_list)
+
+        return min_day, max_day
     def _populate_color_comboboxes(self, combo_boxes, available_style_colors: list[str] | None, color_shift = 0):
         """Populate ALL combo boxes with ALL available colors from the current style.
 
@@ -442,16 +467,27 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Update log file
         logger.info('Initializing Tumor Control Ratio Plot Groupbox')
 
-        # Define cutoff options
-        cutoff_day = 15 # setting to a reasonable value to start
+        # Smart settting of initials day values
+        min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
+        cutoff_day = min_study_day # setting to a reasonable value to start
         min_day = 5 # Minimum day set arbitrarily
-        max_day_across_studies = 14 # set to a reasonable number
+        max_day_across_studies = max_study_day # set to a reasonable number
+        fixed_options = [str(day) for day in range(min_day, max_day_across_studies + 1)]
+        print(f'fixed_options = {fixed_options}')
+        print(f'min_study_day = {min_study_day}')
+        day_index = [idx for idx,d in enumerate(fixed_options) if int(d) == min_study_day]
+        print(day_index)
+        day_index = day_index[0]
+
+        # Set combo box values
         cutoff_options = [f"Common Across Studies - Day {cutoff_day}", "Full Follow Up", "Fixed"]
-        fixed_options = [str(day) for day in range(min_day,max_day_across_studies+1)]
         self.ui.comboBox_tc_cutoff_type.addItems(cutoff_options)
         self.ui.comboBox_tc_cutoff_type.setCurrentIndex(0)
         self.ui.comboBox_tc_cutoff_day.addItems(fixed_options)
-        self.ui.comboBox_tc_cutoff_day.setCurrentIndex(len(fixed_options)-1)
+        self.ui.comboBox_tc_cutoff_day.setCurrentIndex(day_index)
+
+        # Hide fixed day options
+        set_layout_visible(self.ui.horizontalLayout_tumor_control_ratio_day,False)
 
         # Label Options
         cbox_values = ["True", "False"]
@@ -464,14 +500,28 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.comboBox_tc_ratio_labels_rotation.addItems(rotation_options)
         self.ui.comboBox_tc_ratio_labels_rotation.setCurrentIndex(0)
 
-        # Connect response
+        # Connect standard update response
         self.ui.comboBox_tc_cutoff_type.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tc_cutoff_day.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tc_ratio_labels_show.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tc_ratio_labels_rotation.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tc_ratio_shorten_label.currentTextChanged.connect(self.update_study_view_text)
 
+        # Connect specific update response
+        self.ui.comboBox_tc_cutoff_type.currentTextChanged.connect(self.update_tumor_control_cutoff)
+        self.ui.comboBox_tc_cutoff_day.currentTextChanged.connect(self.update_tumor_control_cutoff)
+
     # Update Group Box Parameters
+    def update_tumor_control_cutoff(self):
+        # Set group box options
+        cutoff_type = self.ui.comboBox_tc_cutoff_type.currentText()
+        if cutoff_type == "Fixed":
+            set_layout_visible(self.ui.horizontalLayout_tumor_control_ratio_day, True)
+        else:
+            set_layout_visible(self.ui.horizontalLayout_tumor_control_ratio_day, False)
+
+        # Update plot
+        # self.update_study_view()
     def update_plot_style(self):
         # Update figures
         plot_style = self.get_plot_style()

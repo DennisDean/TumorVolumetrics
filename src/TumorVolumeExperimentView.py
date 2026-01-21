@@ -566,8 +566,8 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_17)
 
-        self.horizontalLayout_18 = QHBoxLayout()
-        self.horizontalLayout_18.setObjectName(u"horizontalLayout_18")
+        self.horizontalLayout_tumor_control_ratio_day = QHBoxLayout()
+        self.horizontalLayout_tumor_control_ratio_day.setObjectName(u"horizontalLayout_tumor_control_ratio_day")
         self.label_23 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_23.setObjectName(u"label_23")
         sizePolicy3.setHeightForWidth(self.label_23.sizePolicy().hasHeightForWidth())
@@ -576,15 +576,15 @@ class Ui_MainWindow(object):
         self.label_23.setMaximumSize(QSize(75, 16777215))
         self.label_23.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
-        self.horizontalLayout_18.addWidget(self.label_23)
+        self.horizontalLayout_tumor_control_ratio_day.addWidget(self.label_23)
 
         self.comboBox_tc_cutoff_day = QComboBox(self.groupBox_tumor_control_ratio)
         self.comboBox_tc_cutoff_day.setObjectName(u"comboBox_tc_cutoff_day")
 
-        self.horizontalLayout_18.addWidget(self.comboBox_tc_cutoff_day)
+        self.horizontalLayout_tumor_control_ratio_day.addWidget(self.comboBox_tc_cutoff_day)
 
 
-        self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_18)
+        self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_tumor_control_ratio_day)
 
         self.label_24 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_24.setObjectName(u"label_24")
