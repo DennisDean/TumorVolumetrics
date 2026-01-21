@@ -2775,7 +2775,7 @@ class TumorVolumeExperimentClass():
         return fig, ax
     def plot_tumor_control_ratio_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
             show_axis_labels=True, x_label_rotation = 0, compute_day: int | None = None,
-            shorten_x_labels:Boolean=True, title="T/C Ratio (SE) by Study", figsize=(10, 6), parent_widget=None):
+            shorten_x_labels:Boolean=True, title:str|None=None, figsize=(10, 6), parent_widget=None):
         """
         Plot the T/C (Treatment/Control) ratio for each study with standard error.
 
@@ -2802,6 +2802,11 @@ class TumorVolumeExperimentClass():
             - Sets self.current_tumor_control_ratio_canvas to FigureCanvas
             - Replaces parent_widget's layout contents
         """
+        # Create default title, include compute day if set
+        if title is None:
+            title = "T/C Ratio (SE) by Study"
+        if compute_day is not None:
+            title = f'{title} - Day {compute_day}'
 
         # Sort studies
         study_keys = sorted(self.study_keys)

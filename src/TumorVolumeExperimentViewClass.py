@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 # Interface
 from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox
-from PySide6.QtCore import QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve, QSignalBlocker
 from PySide6.QtGui import QColor, QPixmap, QIcon
 
 # Tumor volume classes
@@ -507,12 +507,13 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.comboBox_tc_ratio_labels_rotation.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tc_ratio_shorten_label.currentTextChanged.connect(self.update_study_view_text)
 
-        # Connect specific update response
-        self.ui.comboBox_tc_cutoff_type.currentTextChanged.connect(self.update_tumor_control_cutoff)
-        self.ui.comboBox_tc_cutoff_day.currentTextChanged.connect(self.update_tumor_control_cutoff)
-
     # Update Group Box Parameters
-    def update_tumor_control_cutoff(self):
+    def update_tumor_control_cutoff(self,*_):
+        print('update_tumor_control_cutoff')
+
+        # Turn off cutoff type, react only to day change
+        self.ui.comboBox_tc_cutoff_type.blockSignals(True)
+
         # Set group box options
         cutoff_type = self.ui.comboBox_tc_cutoff_type.currentText()
         if cutoff_type == "Fixed":
@@ -520,8 +521,29 @@ class TumorVolumeExperimentWindow(QMainWindow):
         else:
             set_layout_visible(self.ui.horizontalLayout_tumor_control_ratio_day, False)
 
-        # Update plot
-        # self.update_study_view()
+        # Get label parameters
+        cutoff_type_index = self.ui.comboBox_tc_cutoff_type.currentIndex()
+        min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
+        fixed_options = [int(self.ui.comboBox_tc_cutoff_day.itemText(i)) for i in range(self.ui.comboBox_tc_cutoff_day.count())]
+        if cutoff_type_index == 0: # compute day common across studies
+            index = [idx for idx, opt in enumerate(fixed_options) if opt ==  min_study_day]
+            index = index[0]
+            print(f'day = {fixed_options[index]}')
+            with QSignalBlocker(self.ui.comboBox_tc_cutoff_day):
+                self.ui.comboBox_tc_cutoff_day.setCurrentIndex(index)
+        elif cutoff_type_index == 1: # use all data
+            index = [idx for idx, opt in enumerate(fixed_options) if opt == max_study_day]
+            index = index[0]
+            print(f'day = {fixed_options[index]}')
+            with QSignalBlocker(self.ui.comboBox_tc_cutoff_day):
+                self.ui.comboBox_tc_cutoff_day.setCurrentIndex(index)
+        elif cutoff_type_index == 2: # trigger a date change since it is not triggering
+            index = self.ui.comboBox_tc_cutoff_day.currentIndex()
+            with QSignalBlocker(self.ui.comboBox_tc_cutoff_day):
+                self.ui.comboBox_tc_cutoff_day.setCurrentIndex(index)
+
+        # Turn on cutoff change
+        self.ui.comboBox_tc_cutoff_type.blockSignals(False)
     def update_plot_style(self):
         # Update figures
         plot_style = self.get_plot_style()
@@ -534,7 +556,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=2)
 
         # Update Study View
-        self.update_study_view()
+        self.draw_figure_group()
 
     # Update Figure
     def get_plot_style(self):
@@ -696,6 +718,9 @@ class TumorVolumeExperimentWindow(QMainWindow):
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style=plot_style)
     def update_study_view_text(self, *_):
+        # Update tumor control cutoff options while turning off signal
+        self.update_tumor_control_cutoff()
+
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style=plot_style)
@@ -866,8 +891,10 @@ class TumorVolumeExperimentWindow(QMainWindow):
         return custom_params
     def get_tumor_control_ratio_group_box_parameters(self):
         # Get label parameters
-        cutoff_type_str = self.ui.comboBox_tc_cutoff_type.currentText()
+        # cutoff_type_index = self.ui.comboBox_tc_cutoff_type.currentText()
+        # min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
         compute_day = int(self.ui.comboBox_tc_cutoff_day.currentText())
+        print(f'compute_day: {compute_day}')
 
         # Get Color parameters
         show_axis_labels =  True if self.ui.comboBox_tc_ratio_labels_show.currentText()=='True' else False
