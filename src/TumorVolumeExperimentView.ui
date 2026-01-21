@@ -69,9 +69,9 @@
              <property name="geometry">
               <rect>
                <x>0</x>
-               <y>-353</y>
+               <y>-377</y>
                <width>231</width>
-               <height>1245</height>
+               <height>1187</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -1052,45 +1052,6 @@
                    </item>
                    <item>
                     <widget class="QComboBox" name="comboBox_tc_cutoff_day"/>
-                   </item>
-                  </layout>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="label_28">
-                   <property name="text">
-                    <string>Error</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_16">
-                   <item>
-                    <widget class="QLabel" name="label_29">
-                     <property name="minimumSize">
-                      <size>
-                       <width>75</width>
-                       <height>0</height>
-                      </size>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>75</width>
-                       <height>16777215</height>
-                      </size>
-                     </property>
-                     <property name="text">
-                      <string>Metric</string>
-                     </property>
-                     <property name="textFormat">
-                      <enum>Qt::PlainText</enum>
-                     </property>
-                     <property name="alignment">
-                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QComboBox" name="comboBox_tc_ratio_error_metric"/>
                    </item>
                   </layout>
                  </item>

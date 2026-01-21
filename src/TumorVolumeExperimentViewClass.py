@@ -453,11 +453,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.comboBox_tc_cutoff_day.addItems(fixed_options)
         self.ui.comboBox_tc_cutoff_day.setCurrentIndex(len(fixed_options)-1)
 
-        # Error metric
-        error_metric_options = ["std", "sem"]
-        self.ui.comboBox_tc_ratio_error_metric.addItems(error_metric_options)
-        self.ui.comboBox_tc_ratio_error_metric.setCurrentIndex(0)
-
         # Label Options
         cbox_values = ["True", "False"]
         rotation_options = ["horizontal", "slight", "diagonal", "steep", "vertical" ]
@@ -472,7 +467,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Connect response
         self.ui.comboBox_tc_cutoff_type.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tc_cutoff_day.currentTextChanged.connect(self.update_study_view_text)
-        self.ui.comboBox_tc_ratio_error_metric.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tc_ratio_labels_show.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tc_ratio_labels_rotation.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tc_ratio_shorten_label.currentTextChanged.connect(self.update_study_view_text)
@@ -800,6 +794,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
             custom_params = self. get_percent_tv_change_group_box_parameters()
         elif plot_name == "proportion_in_objective_response_classification_bar":
             custom_params = self.get_objective_response_group_box_parameters()
+        elif plot_name == "plot_tumor_control_ratio_bar":
+            custom_params = self.get_tumor_control_ratio_group_box_parameters()
 
         return custom_params
     def get_objective_response_group_box_parameters(self):
@@ -823,18 +819,14 @@ class TumorVolumeExperimentWindow(QMainWindow):
         cutoff_type_str = self.ui.comboBox_tc_cutoff_type.currentText()
         compute_day = int(self.ui.comboBox_tc_cutoff_day.currentText())
 
-        # Set error metric
-        error_metric = self.ui.comboBox_tc_ratio_error_metric.addItem(error_metric_options)
-
-
         # Get Color parameters
         show_axis_labels =  True if self.ui.comboBox_tc_ratio_labels_show.currentText()=='True' else False
         x_label_rotation_type = self.ui.comboBox_tc_ratio_labels_rotation.currentText()
         x_label_rotation = self.rotation_option_dict[x_label_rotation_type]
-        shorten_x_labels = self.ui.comboBox_tc_ratio_shorten_label.currentText()
+        shorten_x_labels = True if self.ui.comboBox_tc_ratio_shorten_label.currentText()=='True' else False
 
         # Construct custom parameter dictionary
-        custom_params = {"compute_day": compute_day, "error_metric": error_metric, "show_axis_labels": show_axis_labels,
+        custom_params = {"compute_day": compute_day, "show_axis_labels": show_axis_labels,
                          "x_label_rotation": x_label_rotation, "shorten_x_labels": shorten_x_labels}
         return custom_params
 

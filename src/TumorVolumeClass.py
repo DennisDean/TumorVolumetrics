@@ -8,6 +8,7 @@
 #    Assessment of Patient-Derived Xenograft Growth and Antitumor Activity:
 #         The NCI PDXNet Consensus, Mol Cancer Ther (2024) 23 (7): 924–938
 #
+from narwhals import Boolean
 
 # To Do
 #TODO: Enable matplotlib figure garbage collection
@@ -2742,8 +2743,9 @@ class TumorVolumeExperimentClass():
             plt.show()
 
         return fig, ax
-    def plot_tumor_control_ratio_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), error_metric="std",
-            show_axis_labels=True, x_label_rotation = 0, compute_day: int | None = None, title="T/C Ratio (SE) by Study", figsize=(10, 6), parent_widget=None):
+    def plot_tumor_control_ratio_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
+            show_axis_labels=True, x_label_rotation = 0, compute_day: int | None = None,
+            shorten_x_labels:Boolean=True, title="T/C Ratio (SE) by Study", figsize=(10, 6), parent_widget=None):
         """
         Plot the T/C (Treatment/Control) ratio for each study with standard error.
 
@@ -2871,10 +2873,8 @@ class TumorVolumeExperimentClass():
                 capsize=5,
             )
 
-
             # Add lines between each study
             ax.axhline(0, color=line_color, linewidth=1)
-
 
             # Enable grid with style's properties
             # Enable grid only if 'grid' style is in the plot_style
@@ -2893,11 +2893,6 @@ class TumorVolumeExperimentClass():
                     ax.grid(True)
                     ax.set_axisbelow(True)
 
-
-
-
-
-
             # Add vertical lines between studies
             for i in range(len(x) - 1):
                 line_x = x[i] + 0.5
@@ -2906,15 +2901,25 @@ class TumorVolumeExperimentClass():
 
             # Axis labels
             if show_axis_labels:
-                ax.set_ylabel("T/C Ratio (SE)")
                 ax.set_xlabel("Study")
+            ax.set_ylabel("T/C Ratio (SE)")
 
             if title:
                 ax.set_title(title)
 
             # Ticks
             ax.set_xticks(x)
-            ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
+
+            # DX Tick Labels
+            if shorten_x_labels == True:
+                study_labels = map(remove_alpha,study_labels)
+            else:
+                study_labels = study_labels.copy()
+
+            if show_axis_labels == True:
+                ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
+            else:
+                ax.set_xticklabels([])
 
         # fig.tight_layout()
 
@@ -3073,12 +3078,6 @@ class TumorVolumeExperimentClass():
 
             study_or_props = np.array(study_or_props)
             x = np.arange(len(study_keys))
-
-
-
-
-
-
             bottoms = np.zeros(len(study_keys))
 
             # Add stacked layers CR, PR, SD, PD

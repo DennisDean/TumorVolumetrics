@@ -82,7 +82,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, -353, 231, 1245))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, -377, 231, 1187))
         self.verticalLayout_4 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.groupBox_plot_configurations = QGroupBox(self.scrollAreaWidgetContents)
@@ -586,30 +586,6 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_18)
 
-        self.label_28 = QLabel(self.groupBox_tumor_control_ratio)
-        self.label_28.setObjectName(u"label_28")
-
-        self.verticalLayout_tumor_control_ratio_2.addWidget(self.label_28)
-
-        self.horizontalLayout_16 = QHBoxLayout()
-        self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
-        self.label_29 = QLabel(self.groupBox_tumor_control_ratio)
-        self.label_29.setObjectName(u"label_29")
-        self.label_29.setMinimumSize(QSize(75, 0))
-        self.label_29.setMaximumSize(QSize(75, 16777215))
-        self.label_29.setTextFormat(Qt.PlainText)
-        self.label_29.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-
-        self.horizontalLayout_16.addWidget(self.label_29)
-
-        self.comboBox_tc_ratio_error_metric = QComboBox(self.groupBox_tumor_control_ratio)
-        self.comboBox_tc_ratio_error_metric.setObjectName(u"comboBox_tc_ratio_error_metric")
-
-        self.horizontalLayout_16.addWidget(self.comboBox_tc_ratio_error_metric)
-
-
-        self.verticalLayout_tumor_control_ratio_2.addLayout(self.horizontalLayout_16)
-
         self.label_24 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_24.setObjectName(u"label_24")
 
@@ -746,8 +722,6 @@ class Ui_MainWindow(object):
         self.label_21.setText(QCoreApplication.translate("MainWindow", u"Cutoff", None))
         self.label_22.setText(QCoreApplication.translate("MainWindow", u"Type", None))
         self.label_23.setText(QCoreApplication.translate("MainWindow", u"Day", None))
-        self.label_28.setText(QCoreApplication.translate("MainWindow", u"Error", None))
-        self.label_29.setText(QCoreApplication.translate("MainWindow", u"Metric", None))
         self.label_24.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
         self.label_25.setText(QCoreApplication.translate("MainWindow", u"Show", None))
         self.label_26.setText(QCoreApplication.translate("MainWindow", u"Rotation", None))
