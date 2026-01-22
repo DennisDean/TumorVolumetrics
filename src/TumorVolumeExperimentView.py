@@ -82,7 +82,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, -377, 231, 1187))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, -316, 215, 1450))
         self.verticalLayout_4 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.groupBox_plot_configurations = QGroupBox(self.scrollAreaWidgetContents)
@@ -368,6 +368,126 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.line)
 
+        self.groupBox_log_2_change = QGroupBox(self.scrollAreaWidgetContents)
+        self.groupBox_log_2_change.setObjectName(u"groupBox_log_2_change")
+        self.groupBox_log_2_change.setCheckable(True)
+        self.groupBox_log_2_change.setChecked(False)
+        self.verticalLayout_6 = QVBoxLayout(self.groupBox_log_2_change)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.label_28 = QLabel(self.groupBox_log_2_change)
+        self.label_28.setObjectName(u"label_28")
+
+        self.verticalLayout_6.addWidget(self.label_28)
+
+        self.horizontalLayout_16 = QHBoxLayout()
+        self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
+        self.label_30 = QLabel(self.groupBox_log_2_change)
+        self.label_30.setObjectName(u"label_30")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.label_30.sizePolicy().hasHeightForWidth())
+        self.label_30.setSizePolicy(sizePolicy2)
+        self.label_30.setMinimumSize(QSize(75, 0))
+        self.label_30.setMaximumSize(QSize(75, 16777215))
+        self.label_30.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_16.addWidget(self.label_30)
+
+        self.comboBox_log_2_cutoff_type = QComboBox(self.groupBox_log_2_change)
+        self.comboBox_log_2_cutoff_type.setObjectName(u"comboBox_log_2_cutoff_type")
+
+        self.horizontalLayout_16.addWidget(self.comboBox_log_2_cutoff_type)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_16)
+
+        self.horizontalLayout_log_2_day = QHBoxLayout()
+        self.horizontalLayout_log_2_day.setObjectName(u"horizontalLayout_log_2_day")
+        self.label_34 = QLabel(self.groupBox_log_2_change)
+        self.label_34.setObjectName(u"label_34")
+        self.label_34.setMinimumSize(QSize(75, 0))
+        self.label_34.setMaximumSize(QSize(75, 16777215))
+        self.label_34.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_log_2_day.addWidget(self.label_34)
+
+        self.comboBox_log_2_cutoff_day = QComboBox(self.groupBox_log_2_change)
+        self.comboBox_log_2_cutoff_day.setObjectName(u"comboBox_log_2_cutoff_day")
+
+        self.horizontalLayout_log_2_day.addWidget(self.comboBox_log_2_cutoff_day)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_log_2_day)
+
+        self.label_29 = QLabel(self.groupBox_log_2_change)
+        self.label_29.setObjectName(u"label_29")
+
+        self.verticalLayout_6.addWidget(self.label_29)
+
+        self.horizontalLayout_23 = QHBoxLayout()
+        self.horizontalLayout_23.setObjectName(u"horizontalLayout_23")
+        self.label_32 = QLabel(self.groupBox_log_2_change)
+        self.label_32.setObjectName(u"label_32")
+        sizePolicy2.setHeightForWidth(self.label_32.sizePolicy().hasHeightForWidth())
+        self.label_32.setSizePolicy(sizePolicy2)
+        self.label_32.setMinimumSize(QSize(75, 0))
+        self.label_32.setMaximumSize(QSize(75, 16777215))
+        self.label_32.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_23.addWidget(self.label_32)
+
+        self.comboBox_log_2_label_show = QComboBox(self.groupBox_log_2_change)
+        self.comboBox_log_2_label_show.setObjectName(u"comboBox_log_2_label_show")
+
+        self.horizontalLayout_23.addWidget(self.comboBox_log_2_label_show)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_23)
+
+        self.horizontalLayout_24 = QHBoxLayout()
+        self.horizontalLayout_24.setObjectName(u"horizontalLayout_24")
+        self.label_31 = QLabel(self.groupBox_log_2_change)
+        self.label_31.setObjectName(u"label_31")
+        sizePolicy2.setHeightForWidth(self.label_31.sizePolicy().hasHeightForWidth())
+        self.label_31.setSizePolicy(sizePolicy2)
+        self.label_31.setMinimumSize(QSize(75, 0))
+        self.label_31.setMaximumSize(QSize(75, 16777215))
+        self.label_31.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_24.addWidget(self.label_31)
+
+        self.comboBox_log_2_label_rotation = QComboBox(self.groupBox_log_2_change)
+        self.comboBox_log_2_label_rotation.setObjectName(u"comboBox_log_2_label_rotation")
+
+        self.horizontalLayout_24.addWidget(self.comboBox_log_2_label_rotation)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_24)
+
+        self.horizontalLayout_22 = QHBoxLayout()
+        self.horizontalLayout_22.setObjectName(u"horizontalLayout_22")
+        self.label_33 = QLabel(self.groupBox_log_2_change)
+        self.label_33.setObjectName(u"label_33")
+        sizePolicy2.setHeightForWidth(self.label_33.sizePolicy().hasHeightForWidth())
+        self.label_33.setSizePolicy(sizePolicy2)
+        self.label_33.setMinimumSize(QSize(75, 0))
+        self.label_33.setMaximumSize(QSize(75, 16777215))
+        self.label_33.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_22.addWidget(self.label_33)
+
+        self.comboBox_log_2_label_shorten = QComboBox(self.groupBox_log_2_change)
+        self.comboBox_log_2_label_shorten.setObjectName(u"comboBox_log_2_label_shorten")
+
+        self.horizontalLayout_22.addWidget(self.comboBox_log_2_label_shorten)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_22)
+
+
+        self.verticalLayout_4.addWidget(self.groupBox_log_2_change)
+
         self.groupBox_objective_response = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox_objective_response.setObjectName(u"groupBox_objective_response")
         sizePolicy.setHeightForWidth(self.groupBox_objective_response.sizePolicy().hasHeightForWidth())
@@ -516,11 +636,11 @@ class Ui_MainWindow(object):
 
         self.pushButton_objective_response_update = QPushButton(self.groupBox_objective_response)
         self.pushButton_objective_response_update.setObjectName(u"pushButton_objective_response_update")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.pushButton_objective_response_update.sizePolicy().hasHeightForWidth())
-        self.pushButton_objective_response_update.setSizePolicy(sizePolicy2)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.pushButton_objective_response_update.sizePolicy().hasHeightForWidth())
+        self.pushButton_objective_response_update.setSizePolicy(sizePolicy3)
         self.pushButton_objective_response_update.setMinimumSize(QSize(0, 25))
         self.pushButton_objective_response_update.setMaximumSize(QSize(16777215, 25))
 
@@ -547,11 +667,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_17.setObjectName(u"horizontalLayout_17")
         self.label_22 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_22.setObjectName(u"label_22")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.label_22.sizePolicy().hasHeightForWidth())
-        self.label_22.setSizePolicy(sizePolicy3)
+        sizePolicy2.setHeightForWidth(self.label_22.sizePolicy().hasHeightForWidth())
+        self.label_22.setSizePolicy(sizePolicy2)
         self.label_22.setMinimumSize(QSize(75, 0))
         self.label_22.setMaximumSize(QSize(75, 16777215))
         self.label_22.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
@@ -570,8 +687,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_tumor_control_ratio_day.setObjectName(u"horizontalLayout_tumor_control_ratio_day")
         self.label_23 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_23.setObjectName(u"label_23")
-        sizePolicy3.setHeightForWidth(self.label_23.sizePolicy().hasHeightForWidth())
-        self.label_23.setSizePolicy(sizePolicy3)
+        sizePolicy2.setHeightForWidth(self.label_23.sizePolicy().hasHeightForWidth())
+        self.label_23.setSizePolicy(sizePolicy2)
         self.label_23.setMinimumSize(QSize(75, 0))
         self.label_23.setMaximumSize(QSize(75, 16777215))
         self.label_23.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
@@ -615,8 +732,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_20.setObjectName(u"horizontalLayout_20")
         self.label_26 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_26.setObjectName(u"label_26")
-        sizePolicy3.setHeightForWidth(self.label_26.sizePolicy().hasHeightForWidth())
-        self.label_26.setSizePolicy(sizePolicy3)
+        sizePolicy2.setHeightForWidth(self.label_26.sizePolicy().hasHeightForWidth())
+        self.label_26.setSizePolicy(sizePolicy2)
         self.label_26.setMinimumSize(QSize(75, 0))
         self.label_26.setMaximumSize(QSize(75, 16777215))
         self.label_26.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
@@ -635,8 +752,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_21.setObjectName(u"horizontalLayout_21")
         self.label_27 = QLabel(self.groupBox_tumor_control_ratio)
         self.label_27.setObjectName(u"label_27")
-        sizePolicy3.setHeightForWidth(self.label_27.sizePolicy().hasHeightForWidth())
-        self.label_27.setSizePolicy(sizePolicy3)
+        sizePolicy2.setHeightForWidth(self.label_27.sizePolicy().hasHeightForWidth())
+        self.label_27.setSizePolicy(sizePolicy2)
         self.label_27.setMinimumSize(QSize(75, 0))
         self.label_27.setMaximumSize(QSize(75, 16777215))
         self.label_27.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
@@ -708,7 +825,15 @@ class Ui_MainWindow(object):
         self.label_12.setText(QCoreApplication.translate("MainWindow", u"Color", None))
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Grid", None))
         self.pushButton_plot_uodate_style.setText(QCoreApplication.translate("MainWindow", u"Update", None))
-        self.groupBox_objective_response.setTitle(QCoreApplication.translate("MainWindow", u"Objective Response Plot", None))
+        self.groupBox_log_2_change.setTitle(QCoreApplication.translate("MainWindow", u"Log 2 Change", None))
+        self.label_28.setText(QCoreApplication.translate("MainWindow", u"Cutoff", None))
+        self.label_30.setText(QCoreApplication.translate("MainWindow", u"Type", None))
+        self.label_34.setText(QCoreApplication.translate("MainWindow", u"Day", None))
+        self.label_29.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
+        self.label_32.setText(QCoreApplication.translate("MainWindow", u"Show", None))
+        self.label_31.setText(QCoreApplication.translate("MainWindow", u"Rotation", None))
+        self.label_33.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
+        self.groupBox_objective_response.setTitle(QCoreApplication.translate("MainWindow", u"Objective Response", None))
         self.label_18.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
         self.label_19.setText(QCoreApplication.translate("MainWindow", u"Show", None))
         self.label_20.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
