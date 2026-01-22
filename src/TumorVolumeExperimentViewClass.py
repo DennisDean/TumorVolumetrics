@@ -311,7 +311,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
     def get_min_and_max_day_across_studies(self):
         # Get experiment name
         experiment_key = self.ui.comboBox_configuration_experiments.currentText()
-        print(experiment_key)
         experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[experiment_key]
         study_keys = experiment_obj.study_keys
         min_of_max_list = []
@@ -459,10 +458,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         min_day = 5 # Minimum day set arbitrarily
         max_day_across_studies = max_study_day # set to a reasonable number
         fixed_options = [str(day) for day in range(min_day, max_day_across_studies + 1)]
-        print(f'fixed_options = {fixed_options}')
-        print(f'min_study_day = {min_study_day}')
         day_index = [idx for idx,d in enumerate(fixed_options) if int(d) == min_study_day]
-        print(day_index)
         day_index = day_index[0]
 
         # Set combo box values
@@ -516,7 +512,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Get semantics relevant objective response colors
         obj_res_color_dict = self.get_response_colors_from_colormap(available_style_colors)
         obj_res_color_list = [ obj_res_color_dict[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
-        print(f'obj_res_color_list: {obj_res_color_list}')
         available_style_colors.extend(obj_res_color_list)
         self.available_style_colors = available_style_colors
 
@@ -545,10 +540,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         min_day = 5 # Minimum day set arbitrarily
         max_day_across_studies = max_study_day # set to a reasonable number
         fixed_options = [str(day) for day in range(min_day, max_day_across_studies + 1)]
-        print(f'fixed_options = {fixed_options}')
-        print(f'min_study_day = {min_study_day}')
         day_index = [idx for idx,d in enumerate(fixed_options) if int(d) == min_study_day]
-        print(day_index)
         day_index = day_index[0]
 
         # Set combo box values
@@ -581,7 +573,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
     # Update Group Box Parameters
     def update_tumor_control_cutoff(self,*_):
-        print('update_tumor_control_cutoff')
 
         # Turn off cutoff type, react only to day change
         self.ui.comboBox_tc_cutoff_type.blockSignals(True)
@@ -600,13 +591,11 @@ class TumorVolumeExperimentWindow(QMainWindow):
         if cutoff_type_index == 0: # compute day common across studies
             index = [idx for idx, opt in enumerate(fixed_options) if opt ==  min_study_day]
             index = index[0]
-            print(f'day = {fixed_options[index]}')
             with QSignalBlocker(self.ui.comboBox_tc_cutoff_day):
                 self.ui.comboBox_tc_cutoff_day.setCurrentIndex(index)
         elif cutoff_type_index == 1: # use all data
             index = [idx for idx, opt in enumerate(fixed_options) if opt == max_study_day]
             index = index[0]
-            print(f'day = {fixed_options[index]}')
             with QSignalBlocker(self.ui.comboBox_tc_cutoff_day):
                 self.ui.comboBox_tc_cutoff_day.setCurrentIndex(index)
         elif cutoff_type_index == 2: # trigger a date change since it is not triggering
@@ -629,9 +618,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         obj_res_color = self.get_response_colors_from_colormap(available_style_colors)
         obj_res_color_list = [obj_res_color[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
         available_style_colors.extend(obj_res_color_list)
-        print(f'obj_res_color_list = {obj_res_color_list}')
 
-        print(f'available_style_colors = {available_style_colors}'  )
         self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=orignial_color_list_length)
 
         # Update Study View
@@ -944,7 +931,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # cutoff_type_index = self.ui.comboBox_tc_cutoff_type.currentText()
         # min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
         compute_day = int(self.ui.comboBox_log_2_cutoff_day.currentText())
-        print(f'compute_day: {compute_day}')
+
 
         # Get Color parameters
         show_axis_labels =  True if self.ui.comboBox_log_2_label_show.currentText()=='True' else False
@@ -977,7 +964,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # cutoff_type_index = self.ui.comboBox_tc_cutoff_type.currentText()
         # min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
         compute_day = int(self.ui.comboBox_tc_cutoff_day.currentText())
-        print(f'compute_day: {compute_day}')
 
         # Get Color parameters
         show_axis_labels =  True if self.ui.comboBox_tc_ratio_labels_show.currentText()=='True' else False

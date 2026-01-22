@@ -801,7 +801,6 @@ class TumorVolumeStudyClass():
         for tv_key in tv_keys:
             tv_obj = self.study_tv_time_dict[tv_key]
             tv_max_day.append(int(tv_obj.max_day))
-        print(f'tv_points = {tv_max_day}')
         min_of_max_timepoints = min(tv_max_day)
 
         return min_of_max_timepoints
@@ -3585,7 +3584,6 @@ class TumorVolumeExperimentClass():
             ax.set_xticklabels(x_labels, rotation=x_label_rotation, ha="center")
         else:
             ax.set_xticklabels([])
-
 
         ax.set_ylabel("log2(Change)")
 
