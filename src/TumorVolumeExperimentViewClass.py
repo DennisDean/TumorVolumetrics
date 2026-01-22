@@ -5,6 +5,9 @@
 
 # Set up a module-level logger
 import logging
+
+from matplotlib.colors import ListedColormap
+
 logger = logging.getLogger(__name__)
 
 # Extend Existing Class
@@ -19,6 +22,9 @@ import re
 # Plotting
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+from matplotlib.colors import ListedColormap
+from matplotlib.colors import LinearSegmentedColormap
 
 # Interface
 from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox
@@ -380,6 +386,11 @@ class TumorVolumeExperimentWindow(QMainWindow):
         except ValueError:
             return False
     def _mpl_code_to_hex(self,code: str) -> str:
+
+        # If it's already a hex color, return it as-is
+        if isinstance(code, str) and code.startswith('#'):
+            return code.upper()  # Ensure uppercase
+
         base_map = {
             "b": "#0000FF",
             "g": "#008000",
@@ -449,8 +460,16 @@ class TumorVolumeExperimentWindow(QMainWindow):
             available_style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         else:
             available_style_colors = self.get_style_colors()  # Lazy loading
+
+
+        # Get semantics relevant objective response colors
+        obj_res_color_dict = self.get_response_colors_from_colormap(available_style_colors)
+        obj_res_color_list = [ obj_res_color_dict[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
+        print(f'obj_res_color_list: {obj_res_color_list}')
+        available_style_colors.extend(obj_res_color_list)
         self.available_style_colors = available_style_colors
 
+        # Populate Color Boxes
         orc_cboxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         self._populate_color_comboboxes(orc_cboxes, available_style_colors)  # Will need to add color shift
@@ -458,8 +477,10 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         # Set Index
         color_shift = 2  # don't use the first two colors, assuming two arms
+        idx_max = len(available_style_colors)-4
         for idx, cbox in enumerate(orc_cboxes):
-            cbox.setCurrentIndex(idx + color_shift)
+            cbox.setCurrentIndex(idx_max)
+            idx_max += 1
 
         # Connect pushbutton to update objective response plot
         self.ui.pushButton_objective_response_update.clicked.connect(self.update_study_view)
@@ -552,8 +573,15 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Update Objective Response Plot Options
         combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                        self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
-        available_style_colors = self.get_style_colors()
-        self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=2)
+        available_style_colors = self.get_style_colors_2()
+        orignial_color_list_length = len(available_style_colors)
+        obj_res_color = self.get_response_colors_from_colormap(available_style_colors)
+        obj_res_color_list = [obj_res_color[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
+        available_style_colors.extend(obj_res_color_list)
+        print(f'obj_res_color_list = {obj_res_color_list}')
+
+        print(f'available_style_colors = {available_style_colors}'  )
+        self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=orignial_color_list_length)
 
         # Update Study View
         self.draw_figure_group()
@@ -679,6 +707,10 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Convert to hex
         if not self._is_hex_color(available_style_colors[0]):
             available_style_colors = [ self._mpl_code_to_hex(c) for c in available_style_colors]
+
+        # Get objective response curves
+        #obj_res_colors = self.get_response_colors_from_colormap(available_style_colors)
+        #available_style_colors.extend(obj_res_colors)
 
         # If no combo boxes provided, try default naming convention
         if combo_boxes is None:
@@ -906,5 +938,63 @@ class TumorVolumeExperimentWindow(QMainWindow):
         custom_params = {"compute_day": compute_day, "show_axis_labels": show_axis_labels,
                          "x_label_rotation": x_label_rotation, "shorten_x_labels": shorten_x_labels}
         return custom_params
+
+    # Figure specific options
+    def transform_color(self, rgb_color, target_rgb, blend_weight=0.4, brightness_adjust=1.0):
+        """Blend with target color and adjust brightness"""
+        # Blend
+        blended = tuple(c1 * (1 - blend_weight) + c2 * blend_weight
+                        for c1, c2 in zip(rgb_color, target_rgb))
+        # Adjust brightness
+        adjusted = tuple(min(1.0, c * brightness_adjust) for c in blended)
+        return adjusted
+    def get_response_colors_from_colormap_2(self, available_style_colors):
+        cmap = ListedColormap(available_style_colors)
+
+        positions = [0.15, 0.4, 0.65, 0.9]
+
+        # Target colors and brightness adjustments
+        transforms = {
+            'PD': {'target': (0.85, 0.15, 0.15), 'blend': 0.5, 'brightness': 1.0},  # Red
+            'SD': {'target': (0.95, 0.85, 0.25), 'blend': 0.4, 'brightness': 1.0},  # Yellow
+            'PR': {'target': (0.65, 0.95, 0.55), 'blend': 0.4, 'brightness': 1.0},  # Light green
+            'CR': {'target': (0.20, 0.60, 0.20), 'blend': 0.5, 'brightness': 0.85}  # Dark green
+        }
+
+        colors = {}
+        for key, pos in zip(['PD', 'SD', 'PR', 'CR'], positions):
+            cmap_color = cmap(pos)[:3]
+            t = transforms[key]
+            transformed = self.transform_color(cmap_color, t['target'], t['blend'], t['brightness'])
+            colors[key] = mcolors.rgb2hex(transformed)
+
+        return colors
+    def get_response_colors_from_colormap(self, available_style_colors):
+        # Create a colormap that smoothly interpolates between colors
+        cmap = LinearSegmentedColormap.from_list('custom', available_style_colors)
+
+        positions = [0.15, 0.4, 0.65, 0.9]
+
+        # Target colors (RGB tuples, 0-1 scale)
+        target_colors = {
+            'PD': (0.8, 0.1, 0.1),  # Red
+            'SD': (0.9, 0.8, 0.2),  # Yellow
+            'PR': (0.6, 0.9, 0.5),  # Light green
+            'CR': (0.1, 0.5, 0.1)  # Dark green
+        }
+
+        blend_strength = 0.8  # 0=pure colormap, 1=pure target color
+
+        colors = {}
+        for key, pos in zip(['PD', 'SD', 'PR', 'CR'], positions):
+            cmap_color = cmap(pos)[:3]  # Get RGB, ignore alpha
+            target = target_colors[key]
+            blended = self.blend_colors(cmap_color, target, blend_strength)
+            colors[key] = mcolors.rgb2hex(blended).upper()
+
+        return colors
+    def blend_colors(self, color1, color2, weight=0.5):
+        """Blend two RGB colors together"""
+        return tuple(c1 * (1 - weight) + c2 * weight for c1, c2 in zip(color1, color2))
 
 
