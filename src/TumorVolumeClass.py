@@ -3453,8 +3453,9 @@ class TumorVolumeExperimentClass():
             plt.show()
 
         return fig, ax
-    def plot_log2fc_points(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), show_legend=True, show_axis_labels=True,
-            compute_day=None, title="Log2 Change (Control vs Treatment)", figsize=(12, 6), parent_widget=None):
+    def plot_log2fc_points(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), show_legend=True,
+            show_axis_labels=True, x_label_rotation = 0, compute_day=None, title="Log2 Change (Control vs Treatment)",
+            shorten_x_labels:Boolean=False, figsize=(12, 6), parent_widget=None):
         """
         Plot log2-fold change at compute_day for control vs treatment arms.
         Supports Qt embedding via parent_widget or standalone matplotlib display.
@@ -3578,10 +3579,15 @@ class TumorVolumeExperimentClass():
 
         # Formatting
         ax.set_xticks(x_positions)
-        ax.set_xticklabels(x_labels, rotation=45, ha="right")
-
+        if shorten_x_labels == True:
+            x_labels = map(remove_alpha,x_labels)
         if show_axis_labels:
-            ax.set_ylabel("log2(Change)")
+            ax.set_xticklabels(x_labels, rotation=x_label_rotation, ha="center")
+        else:
+            ax.set_xticklabels([])
+
+
+        ax.set_ylabel("log2(Change)")
 
         if title:
             ax.set_title(title)
