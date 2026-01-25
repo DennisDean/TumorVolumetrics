@@ -1006,7 +1006,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
             colors[key] = mcolors.rgb2hex(transformed)
 
         return colors
-    def get_response_colors_from_colormap(self, available_style_colors):
+    def get_response_colors_from_colormap_3(self, available_style_colors):
         # Create a colormap that smoothly interpolates between colors
         cmap = LinearSegmentedColormap.from_list('custom', available_style_colors)
 
@@ -1030,8 +1030,78 @@ class TumorVolumeExperimentWindow(QMainWindow):
             colors[key] = mcolors.rgb2hex(blended).upper()
 
         return colors
+    def get_response_colors_from_colormap(self, available_style_colors):
+        """
+        Get response colors from a colormap.
+        Automatically detects grayscale colormaps and returns grayscale colors.
+        """
+        # Create a colormap that smoothly interpolates between colors
+        cmap = LinearSegmentedColormap.from_list('custom', available_style_colors)
+
+        # Check if colormap is grayscale
+        is_grayscale = self._is_grayscale_colormap(available_style_colors)
+
+        positions = [0.15, 0.4, 0.65, 0.9]
+
+        if is_grayscale:
+            # For grayscale, map to different intensity levels
+            # PD (worst) = darkest, CR (best) = lightest
+            grayscale_values = {
+                'PD': 0.2,  # Dark gray
+                'SD': 0.45,  # Medium-dark gray
+                'PR': 0.7,  # Medium-light gray
+                'CR': 0.9  # Light gray
+            }
+
+            colors = {}
+            for key in ['PD', 'SD', 'PR', 'CR']:
+                gray_val = grayscale_values[key]
+                colors[key] = mcolors.rgb2hex((gray_val, gray_val, gray_val)).upper()
+
+            return colors
+
+        else:
+            # Original color blending logic for color colormaps
+            target_colors = {
+                'PD': (0.8, 0.1, 0.1),  # Red
+                'SD': (0.9, 0.8, 0.2),  # Yellow
+                'PR': (0.6, 0.9, 0.5),  # Light green
+                'CR': (0.1, 0.5, 0.1)  # Dark green
+            }
+
+            blend_strength = 0.8  # 0=pure colormap, 1=pure target color
+
+            colors = {}
+            for key, pos in zip(['PD', 'SD', 'PR', 'CR'], positions):
+                cmap_color = cmap(pos)[:3]  # Get RGB, ignore alpha
+                target = target_colors[key]
+                blended = self.blend_colors(cmap_color, target, blend_strength)
+                colors[key] = mcolors.rgb2hex(blended).upper()
+
+            return colors
     def blend_colors(self, color1, color2, weight=0.5):
         """Blend two RGB colors together"""
         return tuple(c1 * (1 - weight) + c2 * weight for c1, c2 in zip(color1, color2))
+    def _is_grayscale_colormap(self, colors):
+        """
+        Detect if a list of colors represents a grayscale colormap.
+        Returns True if all colors have R=G=B (within tolerance).
+        """
+        tolerance = 0.05  # Allow small differences due to floating point
+
+        for color in colors:
+            # Convert color to RGB
+            if isinstance(color, str):
+                rgb = mcolors.to_rgb(color)
+            else:
+                rgb = color[:3] if len(color) > 3 else color
+
+            r, g, b = rgb
+
+            # Check if R, G, B are approximately equal
+            if not (abs(r - g) < tolerance and abs(g - b) < tolerance and abs(r - b) < tolerance):
+                return False
+
+        return True
 
 
