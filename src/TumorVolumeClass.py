@@ -95,11 +95,9 @@ def _mpl_code_to_hex(self, code: str) -> str:
 
     raise ValueError(f"Unknown matplotlib color code: {code}")
 
-
 # GUI
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
-
 
 # Set up logger
 # Create logs directory if it does not exist
@@ -814,7 +812,6 @@ class TumorVolumeStudyClass():
         for tv_key in tv_keys:
             tv_obj = self.study_tv_time_dict[tv_key]
             tv_max_day.append(int(tv_obj.max_day))
-        print(f'tv_points = {tv_max_day}')
         max_of_max_timepoints = max(tv_max_day)
 
         return max_of_max_timepoints
@@ -3452,9 +3449,10 @@ class TumorVolumeExperimentClass():
             plt.show()
 
         return fig, ax
-    def plot_log2fc_points(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), show_legend=True,
-            show_axis_labels=True, x_label_rotation = 0, compute_day=None, title="Log2 Change (Control vs Treatment)",
-            shorten_x_labels:Boolean=False, figsize=(12, 6), parent_widget=None):
+    def plot_log2fc_points(self, plot_style=None, control_arms=("control", "vehicle", "placebo"), show_legend=True,
+                           show_axis_labels=True, x_label_rotation=0, compute_day=None,
+                           title="Log2 Change (Control vs Treatment)",
+                           shorten_x_labels: Boolean = False, figsize=(12, 6), parent_widget=None):
         """
         Plot log2-fold change at compute_day for control vs treatment arms.
         Supports Qt embedding via parent_widget or standalone matplotlib display.
@@ -3474,126 +3472,174 @@ class TumorVolumeExperimentClass():
 
         study_keys = sorted(self.study_keys)
 
-        # Create figure
-        if parent_widget:
-            fig = Figure(figsize=figsize)
-            ax = fig.add_subplot(111)
-        else:
-            fig, ax = plt.subplots(figsize=figsize)
+        # ---------------------------------------------------------
+        #   CREATE FIGURE WITH STYLE
+        # ---------------------------------------------------------
+        # Create styled figure
+        fig, ax, style_ctx = self._create_styled_figure(plot_style, parent_widget)
 
-        x_positions = []
-        x_labels = []
-        x_counter = 0
+        # Apply figsize only for standalone mode
+        if not parent_widget and figsize:
+            fig.set_size_inches(figsize)
 
-        ctrl_color = '#808080'  # gray
-        trt_color = '#1f77b4'  # blue
+        # ---------------------------------------------------------
+        #   COLLECT DATA AND PLOT
+        # ---------------------------------------------------------
+        with style_ctx:
+            # Get colors from the style
+            prop_cycle = plt.rcParams['axes.prop_cycle']
+            colors = prop_cycle.by_key()['color']
+            edge_color = plt.rcParams['axes.edgecolor']
+            line_color = plt.rcParams['text.color']
 
-        for study_idx, study in enumerate(study_keys):
-            study_obj = self.experiment_study_dict[study]
-            arms = study_obj.unique_arms
+            # Use first two colors from the cycle for control/treatment
+            ctrl_color = colors[0]
+            trt_color = colors[1]
 
-            control_list = [a for a in arms if a.lower() in control_arms]
-            treatment_list = [a for a in arms if a.lower() not in control_arms]
+            x_positions = []
+            x_labels = []
+            x_counter = 0
 
-            ctrl_vals = []
-            trt_vals = []
-            ctrl_vals_raw = []
-            trt_vals_raw = []
+            for study_idx, study in enumerate(study_keys):
+                study_obj = self.experiment_study_dict[study]
+                arms = study_obj.unique_arms
 
-            # ---- collect controls ----
-            for arm in control_list:
-                for ts_id in study_obj.study_arms_dict[arm]:
-                    tv = study_obj.study_tv_time_dict[ts_id]
-                    idx = get_index(tv.time_day, compute_day)
-                    v0 = tv.tumor_volume[0]
-                    v_end = tv.tumor_volume[idx]
-                    if v0 > 0:
-                        ctrl_vals.append(np.log2(v_end / v0))
-                        ctrl_vals_raw.append(v_end / v0)
+                control_list = [a for a in arms if a.lower() in control_arms]
+                treatment_list = [a for a in arms if a.lower() not in control_arms]
 
-            # ---- collect treatment ----
-            for arm in treatment_list:
-                for ts_id in study_obj.study_arms_dict[arm]:
-                    tv = study_obj.study_tv_time_dict[ts_id]
-                    idx = get_index(tv.time_day, compute_day)
-                    v0 = tv.tumor_volume[0]
-                    v_end = tv.tumor_volume[idx]
-                    if v0 > 0:
-                        trt_vals.append(np.log2(v_end / v0))
-                        trt_vals_raw.append(v_end / v0)
+                ctrl_vals = []
+                trt_vals = []
+                ctrl_vals_raw = []
+                trt_vals_raw = []
 
-            if len(ctrl_vals) == 0 or len(trt_vals) == 0:
-                continue
+                # ---- collect controls ----
+                for arm in control_list:
+                    for ts_id in study_obj.study_arms_dict[arm]:
+                        tv = study_obj.study_tv_time_dict[ts_id]
+                        idx = get_index(tv.time_day, compute_day)
+                        v0 = tv.tumor_volume[0]
+                        v_end = tv.tumor_volume[idx]
+                        if v0 > 0:
+                            ctrl_vals.append(np.log2(v_end / v0))
+                            ctrl_vals_raw.append(v_end / v0)
 
-            def sem(x):
-                return np.std(x, ddof=1) / np.sqrt(len(x)) if len(x) > 1 else 0.0
+                # ---- collect treatment ----
+                for arm in treatment_list:
+                    for ts_id in study_obj.study_arms_dict[arm]:
+                        tv = study_obj.study_tv_time_dict[ts_id]
+                        idx = get_index(tv.time_day, compute_day)
+                        v0 = tv.tumor_volume[0]
+                        v_end = tv.tumor_volume[idx]
+                        if v0 > 0:
+                            trt_vals.append(np.log2(v_end / v0))
+                            trt_vals_raw.append(v_end / v0)
 
-            # t-test
-            t_stat, p_value = ttest_ind(trt_vals_raw, ctrl_vals_raw, equal_var=False)
-            logger.info(f"Study={study}, t-stat={t_stat}, p-value={p_value}")
+                if len(ctrl_vals) == 0 or len(trt_vals) == 0:
+                    continue
 
-            ctrl_mean = np.mean(ctrl_vals)
-            trt_mean = np.mean(trt_vals)
-            ctrl_sem = sem(ctrl_vals)
-            trt_sem = sem(trt_vals)
+                def sem(x):
+                    return np.std(x, ddof=1) / np.sqrt(len(x)) if len(x) > 1 else 0.0
 
-            # Plot positions
-            ctrl_x = x_counter
-            trt_x = x_counter + 1
-            center_x = (ctrl_x + trt_x) / 2
+                # t-test
+                t_stat, p_value = ttest_ind(trt_vals_raw, ctrl_vals_raw, equal_var=False)
+                logger.info(f"Study={study}, t-stat={t_stat}, p-value={p_value}")
 
-            x_positions.append(center_x)
-            x_labels.append(study)
+                ctrl_mean = np.mean(ctrl_vals)
+                trt_mean = np.mean(trt_vals)
+                ctrl_sem = sem(ctrl_vals)
+                trt_sem = sem(trt_vals)
 
-            # Plot control
-            ax.errorbar(
-                [ctrl_x], [ctrl_mean],
-                yerr=[ctrl_sem],
-                fmt="o",
-                markersize=10,
-                capsize=5,
-                linewidth=2,
-                color=ctrl_color,
-                label='Control' if study_idx == 0 else ''
-            )
+                # Plot positions
+                ctrl_x = x_counter
+                trt_x = x_counter + 1
+                center_x = (ctrl_x + trt_x) / 2
 
-            # Plot treatment
-            ax.errorbar(
-                [trt_x], [trt_mean],
-                yerr=[trt_sem],
-                fmt="o",
-                markersize=10,
-                capsize=5,
-                linewidth=2,
-                color=trt_color,
-                label='Treatment' if study_idx == 0 else ''
-            )
+                x_positions.append(center_x)
+                x_labels.append(study)
 
-            x_counter += 3  # spacing
+                # Plot control
+                ax.errorbar(
+                    [ctrl_x], [ctrl_mean],
+                    yerr=[ctrl_sem],
+                    fmt="o",
+                    markersize=10,
+                    capsize=5,
+                    linewidth=2,
+                    color=ctrl_color,
+                    ecolor=line_color,
+                    label='Control' if study_idx == 0 else ''
+                )
 
-        # Vertical separators
-        for i in range(len(x_positions) - 1):
-            line_x = x_positions[i] + 1.5
-            ax.axvline(x=line_x, color='black', linestyle='-', linewidth=1, alpha=0.5)
+                # Plot treatment
+                ax.errorbar(
+                    [trt_x], [trt_mean],
+                    yerr=[trt_sem],
+                    fmt="o",
+                    markersize=10,
+                    capsize=5,
+                    linewidth=2,
+                    color=trt_color,
+                    ecolor=line_color,
+                    label='Treatment' if study_idx == 0 else ''
+                )
 
-        # Formatting
-        ax.set_xticks(x_positions)
-        if shorten_x_labels == True:
-            x_labels = map(remove_alpha,x_labels)
-        if show_axis_labels:
-            ax.set_xticklabels(x_labels, rotation=x_label_rotation, ha="center")
-        else:
-            ax.set_xticklabels([])
+                x_counter += 3  # spacing
 
-        ax.set_ylabel("log2(Change)")
+            # Vertical separators
+            for i in range(len(x_positions) - 1):
+                line_x = x_positions[i] + 1.5
+                ax.axvline(x=line_x, color=line_color, linestyle='-', linewidth=1, alpha=0.5)
 
-        if title:
-            ax.set_title(title)
+            # Formatting
+            ax.set_xticks(x_positions)
+            if shorten_x_labels == True:
+                x_labels = map(remove_alpha, x_labels)
+            if show_axis_labels:
+                ax.set_xticklabels(x_labels, rotation=x_label_rotation, ha="center")
+            else:
+                ax.set_xticklabels([])
 
-        if show_legend:
-            ax.legend(loc='best')
+            ax.set_ylabel("log2(Change)")
 
-        #fig.tight_layout()
+            if title:
+                ax.set_title(title)
+
+            # Enable grid only if 'grid' style is in the plot_style
+            print(f'Plotting log2fc - plot style = {plot_style}')
+            if plot_style:
+                # Handle both string and list inputs
+                if isinstance(plot_style, str):
+                    styles = [plot_style]
+                elif isinstance(plot_style, list):
+                    styles = plot_style
+                else:
+                    styles = []
+
+                # Check if any style contains 'grid'
+                grid_styles = ['grid', 'seaborn-v0_8-whitegrid', 'seaborn-v0_8-darkgrid']
+                if any(grid_style in styles for grid_style in grid_styles):
+                    print('grid_styles found')
+                    ax.grid(True)
+                    ax.set_axisbelow(True)
+
+            if show_legend:
+                ax.legend(loc='best', frameon=True, framealpha=0.8)
+
+            # Enable grid only if 'grid' style is in the plot_style
+            if plot_style:
+                # Handle both string and list inputs
+                if isinstance(plot_style, str):
+                    styles = [plot_style]
+                elif isinstance(plot_style, list):
+                    styles = plot_style
+                else:
+                    styles = []
+
+                # Check if any style contains 'grid'
+                grid_styles = ['grid', 'seaborn-v0_8-whitegrid', 'seaborn-v0_8-darkgrid']
+                if any(grid_style in styles for grid_style in grid_styles):
+                    ax.grid(True)
+                    ax.set_axisbelow(True)
 
         # ---------------------------------------------------------
         #   EMBED IN QT (IF REQUESTED)
@@ -3602,7 +3648,17 @@ class TumorVolumeExperimentClass():
             canvas = FigureCanvas(fig)
             canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             canvas.updateGeometry()
-            canvas.setStyleSheet("background-color: white;")
+
+            # Get matplotlib's figure background color
+            fig_facecolor = fig.get_facecolor()
+
+            # Convert RGBA to hex for Qt
+            hex_color = mcolors.to_hex(fig_facecolor)
+            canvas.setStyleSheet(f"background-color: {hex_color};")
+
+            if plot_style in ['dark_background', 'seaborn-v0_8-dark']:
+                fig.patch.set_facecolor(fig.get_facecolor())
+                ax.set_facecolor(ax.get_facecolor())
 
             # Enable right-click menu
             canvas.setContextMenuPolicy(Qt.CustomContextMenu)

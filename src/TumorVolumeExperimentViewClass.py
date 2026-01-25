@@ -622,7 +622,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=orignial_color_list_length)
 
         # Update Study View
-        self.draw_figure_group()
+        self.update_study_view()
 
     # Update Figure
     def get_plot_style(self):
