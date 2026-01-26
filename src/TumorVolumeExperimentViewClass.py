@@ -572,6 +572,57 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.comboBox_tc_ratio_shorten_label.currentTextChanged.connect(self.update_study_view_text)
 
     # Update Group Box Parameters
+    def update_plot_style(self):
+        # Update figures
+        plot_style = self.get_plot_style()
+        self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
+
+        # Update Objective Response Plot Options
+        combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
+                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
+        available_style_colors = self.get_style_colors_2()
+        orignial_color_list_length = len(available_style_colors)
+        obj_res_color = self.get_response_colors_from_colormap(available_style_colors)
+        obj_res_color_list = [obj_res_color[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
+        available_style_colors.extend(obj_res_color_list)
+
+        self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=orignial_color_list_length)
+
+        # Update Study View
+        self.update_study_view()
+    def update_log_2_change_cutoff(self,*_):
+
+        # Turn off cutoff type, react only to day change
+        self.ui.comboBox_log_2_cutoff_type.blockSignals(True)
+
+        # Set group box options
+        cutoff_type = self.ui.comboBox_log_2_cutoff_type.currentText()
+        if cutoff_type == "Fixed":
+            set_layout_visible(self.ui.horizontalLayout_log_2_day, True)
+        else:
+            set_layout_visible(self.ui.horizontalLayout_log_2_day, False)
+
+        # Get label parameters
+        cutoff_type_index = self.ui.comboBox_log_2_cutoff_type.currentIndex()
+        min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
+        fixed_options = [int(self.ui.comboBox_log_2_cutoff_day.itemText(i)) for i in range(self.ui.comboBox_log_2_cutoff_day.count())]
+        if cutoff_type_index == 0: # compute day common across studies
+            index = [idx for idx, opt in enumerate(fixed_options) if opt ==  min_study_day]
+            index = index[0]
+            with QSignalBlocker(self.ui.comboBox_log_2_cutoff_day):
+                self.ui.comboBox_log_2_cutoff_day.setCurrentIndex(index)
+        elif cutoff_type_index == 1: # use all data
+            index = [idx for idx, opt in enumerate(fixed_options) if opt == max_study_day]
+            index = index[0]
+            with QSignalBlocker(self.ui.comboBox_log_2_cutoff_day):
+                self.ui.comboBox_log_2_cutoff_day.setCurrentIndex(index)
+        elif cutoff_type_index == 2: # trigger a date change since it is not triggering
+            index = self.ui.comboBox_log_2_cutoff_day.currentIndex()
+            with QSignalBlocker(self.ui.comboBox_log_2_cutoff_day):
+                self.ui.comboBox_log_2_cutoff_day.setCurrentIndex(index)
+
+        # Turn on cutoff change
+        self.ui.comboBox_log_2_cutoff_type.blockSignals(False)
     def update_tumor_control_cutoff(self,*_):
 
         # Turn off cutoff type, react only to day change
@@ -605,24 +656,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         # Turn on cutoff change
         self.ui.comboBox_tc_cutoff_type.blockSignals(False)
-    def update_plot_style(self):
-        # Update figures
-        plot_style = self.get_plot_style()
-        self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
-
-        # Update Objective Response Plot Options
-        combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
-                       self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
-        available_style_colors = self.get_style_colors_2()
-        orignial_color_list_length = len(available_style_colors)
-        obj_res_color = self.get_response_colors_from_colormap(available_style_colors)
-        obj_res_color_list = [obj_res_color[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
-        available_style_colors.extend(obj_res_color_list)
-
-        self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=orignial_color_list_length)
-
-        # Update Study View
-        self.update_study_view()
 
     # Update Figure
     def get_plot_style(self):
@@ -754,7 +787,9 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.draw_figure_group(plot_style=plot_style)
     def update_study_view_text(self, *_):
         # Update tumor control cutoff options while turning off signal
+        self.update_log_2_change_cutoff()
         self.update_tumor_control_cutoff()
+
 
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
