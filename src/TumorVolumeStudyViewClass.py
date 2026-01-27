@@ -353,13 +353,18 @@ class TumorVolumeStudyWindow(QMainWindow):
     def initialize_auc_by_arm_group_box(self):
         # Combo box values
         cbox_values = ["True", "False"]
+        rotation_options = ["horizontal", "slight", "diagonal", "steep", "vertical" ]
+        self.rotation_option_dict = {"horizontal": 0, "slight": 30, "diagonal": 45, "steep": 60, "vertical": 90}
 
         # Define the boxes
         self.ui.comboBox_auc_normalize.addItems(cbox_values)
         self.ui.comboBox_auc_normalize.setCurrentIndex(1)
-
+        self.ui.comboBox_auc_by_arm_label_rotation.addItems(rotation_options)
+        self.ui.comboBox_auc_by_arm_label_rotation.setCurrentIndex(0)
         self.ui.comboBox_auc_show_labels.addItems(cbox_values)
         self.ui.comboBox_auc_show_labels.setCurrentIndex(0)
+
+
 
         self.ui.comboBox_auc_shorten_labels.addItems(cbox_values)
         self.ui.comboBox_auc_shorten_labels.setCurrentIndex(1)
@@ -367,6 +372,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Set connections
         self.ui.comboBox_auc_normalize.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_auc_show_labels.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_auc_by_arm_label_rotation.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_auc_shorten_labels.currentTextChanged.connect(self.update_study_view_text)
     def initialize_event_free_group_box(self):
         # Block signals during initialization to prevent intermediate updates
@@ -418,11 +424,14 @@ class TumorVolumeStudyWindow(QMainWindow):
     def initialize_objective_response_plot_groupbox(self):
         # Combo box values
         cbox_values = ["True", "False"]
+        rotation_options = ["horizontal", "slight", "diagonal", "steep", "vertical" ]
+        self.rotation_option_dict = {"horizontal": 0, "slight": 30, "diagonal": 45, "steep": 60, "vertical": 90}
 
         # Define the boxes
         self.ui.comboBox_obj_res_show_labels.addItems(cbox_values)
         self.ui.comboBox_obj_res_show_labels.setCurrentIndex(0)
-
+        self.ui.comboBox_objective_response_label_rotation.addItems(rotation_options)
+        self.ui.comboBox_objective_response_label_rotation.setCurrentIndex(0)
         self.ui.comboBox_obj_res_shorten_labels.addItems(cbox_values)
         self.ui.comboBox_obj_res_shorten_labels.setCurrentIndex(1)
 
@@ -448,11 +457,14 @@ class TumorVolumeStudyWindow(QMainWindow):
     def initialize_percent_tv_change_groupbox(self):
         # Combo box values
         cbox_values = ["True", "False"]
+        rotation_options = ["horizontal", "slight", "diagonal", "steep", "vertical" ]
+        self.rotation_option_dict = {"horizontal": 0, "slight": 30, "diagonal": 45, "steep": 60, "vertical": 90}
 
         # Define the boxes
         self.ui.comboBox_tv_change_normalize.addItems(cbox_values)
         self.ui.comboBox_tv_change_normalize.setCurrentIndex(1)
-
+        self.ui.comboBox_tv_change_label_rotation.addItems(rotation_options)
+        self.ui.comboBox_tv_change_label_rotation.setCurrentIndex(0)
         self.ui.comboBox_tv_change_show_labels.addItems(cbox_values)
         self.ui.comboBox_tv_change_show_labels.setCurrentIndex(0)
 
@@ -1045,11 +1057,13 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Get values
         plot_normalized_auc = True if self.ui.comboBox_auc_normalize.currentText() == "True" else False
         show_axis_labels = True if self.ui.comboBox_auc_show_labels.currentText() == "True" else False
+        x_label_rotation_type = self.ui.comboBox_auc_by_arm_label_rotation.currentText()
+        x_label_rotation = self.rotation_option_dict[x_label_rotation_type]
         shorten_x_labels = True if self.ui.comboBox_auc_shorten_labels.currentText() == "True" else False
 
         # Construct custom parameter dictionary
         custom_params = {"plot_normalized_auc": plot_normalized_auc, "show_axis_labels": show_axis_labels,
-                         "shorten_x_labels": shorten_x_labels}
+                         "shorten_x_labels": shorten_x_labels, "x_label_rotation":x_label_rotation}
         return custom_params
     def get_event_free_group_box_parameters(self):
         # Get values
@@ -1088,6 +1102,8 @@ class TumorVolumeStudyWindow(QMainWindow):
     def get_objective_response_group_box_parameters(self):
         # Get label parameters
         show_axis_labels = True if self.ui.comboBox_obj_res_show_labels.currentText()=='True' else False
+        x_label_rotation_type = self.ui.comboBox_objective_response_label_rotation.currentText()
+        x_label_rotation = self.rotation_option_dict[x_label_rotation_type]
         shorten_x_labels = True if self.ui.comboBox_obj_res_shorten_labels.currentText()=='True' else False
 
         # Get Color parameters
@@ -1104,7 +1120,8 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Construct custom parameter dictionary
         custom_params = {"objective_response_colors":
                              {"PD": pd_color, "SD": sd_color, "PR": pr_color,"CR": cr_color},
-                         "show_axis_labels": show_axis_labels, "shorten_x_labels": shorten_x_labels}
+                         "show_axis_labels": show_axis_labels, "shorten_x_labels": shorten_x_labels,
+                         "x_label_rotation":x_label_rotation}
         return custom_params
     def get_percent_tv_change_group_box_parameters(self):
         # log parameter query
@@ -1113,9 +1130,11 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Get values
         plot_normalized_tv_change = True if self.ui.comboBox_tv_change_normalize.currentText() == "True" else False
         show_axis_labels = True if self.ui.comboBox_tv_change_show_labels.currentText() == "True" else False
+        x_label_rotation_type = self.ui.comboBox_tv_change_label_rotation.currentText()
+        x_label_rotation = self.rotation_option_dict[x_label_rotation_type]
         shorten_x_labels = True if self.ui.comboBox_tv_change_shorten_labels.currentText() == "True" else False
 
         # Construct custom parameter dictionary
         custom_params = {"plot_normalized_tv_change": plot_normalized_tv_change, "show_axis_labels": show_axis_labels,
-                         "shorten_x_labels": shorten_x_labels}
+                         "shorten_x_labels": shorten_x_labels, "x_label_rotation":x_label_rotation}
         return custom_params

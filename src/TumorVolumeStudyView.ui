@@ -1415,7 +1415,7 @@
                     </widget>
                    </item>
                    <item>
-                    <widget class="QComboBox" name="comboBox_tc_change_label_rotation"/>
+                    <widget class="QComboBox" name="comboBox_tv_change_label_rotation"/>
                    </item>
                   </layout>
                  </item>

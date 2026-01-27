@@ -1706,7 +1706,7 @@ class TumorVolumeStudyClass():
     def plot_auc_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
             title="AUC by Arm", color_cycle=None, show_axis_labels: bool = True, plot_normalized_auc=False,
-            show_legend: bool = False, plot_style=None,parent_widget=None, shorten_x_labels=False):
+            show_legend: bool = False, plot_style=None,parent_widget=None, shorten_x_labels=False,x_label_rotation:int=0):
         """
         Vertical bar plot of AUC values for each time-series.
         Controls are plotted first, followed by experimental arms.
@@ -1801,7 +1801,7 @@ class TumorVolumeStudyClass():
             # X ticks - apply show_axis_labels parameter
             if show_axis_labels:
                 ax.set_xticks(bar_x_positions)
-                ax.set_xticklabels(bar_labels, rotation=75, ha="right", fontsize=8)
+                ax.set_xticklabels(bar_labels, rotation = x_label_rotation, ha = "center", fontsize=8)
             else:
                 ax.set_xticks([])
                 ax.set_xticklabels([])
@@ -1901,7 +1901,7 @@ class TumorVolumeStudyClass():
     def plot_percent_tumor_vol_change_bar( self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
             title="Tumor Volume Change (%)", color_cycle=None, show_axis_labels: bool = True, plot_normalized_tv_change=False,
-            shorten_x_labels:bool=True, show_legend: bool = True, plot_style=None, parent_widget=None):
+            shorten_x_labels:bool=True, show_legend: bool = True, plot_style=None, parent_widget=None, x_label_rotation:int=0):
         """
         Vertical bar plot of percent tumor volume change per time-series.
         Controls are plotted first, followed by experimental arms.
@@ -2002,7 +2002,7 @@ class TumorVolumeStudyClass():
             # X ticks
             if show_axis_labels:
                 ax.set_xticks(bar_x_positions)
-                ax.set_xticklabels(bar_labels, rotation=75, ha="right", fontsize=8)
+                ax.set_xticklabels(bar_labels, rotation = x_label_rotation, ha = "center", fontsize=8)
             else:
                 ax.set_xticks([])
                 ax.set_xticklabels([])
@@ -2093,7 +2093,7 @@ class TumorVolumeStudyClass():
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
             title="Objective Response", color_cycle=None, show_axis_labels: bool = True, show_legend: bool = True,
             objective_response_colors:dict|None = None, y_range: list | None = None, plot_style=None, parent_widget=None,
-            shorten_x_labels:bool=True):
+            shorten_x_labels:bool=True, x_label_rotation:int=0):
         """
         Bar plot of percent tumor volume change colored by objective response category.
         Supports matplotlib styles and embedding into a PySide6 widget.
@@ -2214,7 +2214,9 @@ class TumorVolumeStudyClass():
             # X ticks
             if show_axis_labels:
                 ax.set_xticks(bar_x_positions)
-                ax.set_xticklabels(bar_labels, rotation=75, ha="right", fontsize=8)
+                ax.set_xticklabels(bar_labels, rotation = x_label_rotation, ha = "center", fontsize=8)
+
+
             else:
                 ax.set_xticks([])
 
@@ -2237,7 +2239,7 @@ class TumorVolumeStudyClass():
             # ---------------------------------------------------
             # 5. Optional bar labels
             # ---------------------------------------------------
-            if show_bar_labels:
+            if show_bar_labels and show_axis_labels:
                 for rect in bars:
                     h = rect.get_height()
                     ax.text(

@@ -833,10 +833,10 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_35.addWidget(self.label_49)
 
-        self.comboBox_tc_change_label_rotation = QComboBox(self.groupBox_percent_tv_change)
-        self.comboBox_tc_change_label_rotation.setObjectName(u"comboBox_tc_change_label_rotation")
+        self.comboBox_tv_change_label_rotation = QComboBox(self.groupBox_percent_tv_change)
+        self.comboBox_tv_change_label_rotation.setObjectName(u"comboBox_tv_change_label_rotation")
 
-        self.horizontalLayout_35.addWidget(self.comboBox_tc_change_label_rotation)
+        self.horizontalLayout_35.addWidget(self.comboBox_tv_change_label_rotation)
 
 
         self.verticalLayout_11.addLayout(self.horizontalLayout_35)
