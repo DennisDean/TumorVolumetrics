@@ -1259,51 +1259,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Adjust brightness
         adjusted = tuple(min(1.0, c * brightness_adjust) for c in blended)
         return adjusted
-    def get_response_colors_from_colormap_2(self, available_style_colors):
-        cmap = ListedColormap(available_style_colors)
-
-        positions = [0.15, 0.4, 0.65, 0.9]
-
-        # Target colors and brightness adjustments
-        transforms = {
-            'PD': {'target': (0.85, 0.15, 0.15), 'blend': 0.5, 'brightness': 1.0},  # Red
-            'SD': {'target': (0.95, 0.85, 0.25), 'blend': 0.4, 'brightness': 1.0},  # Yellow
-            'PR': {'target': (0.65, 0.95, 0.55), 'blend': 0.4, 'brightness': 1.0},  # Light green
-            'CR': {'target': (0.20, 0.60, 0.20), 'blend': 0.5, 'brightness': 0.85}  # Dark green
-        }
-
-        colors = {}
-        for key, pos in zip(['PD', 'SD', 'PR', 'CR'], positions):
-            cmap_color = cmap(pos)[:3]
-            t = transforms[key]
-            transformed = self.transform_color(cmap_color, t['target'], t['blend'], t['brightness'])
-            colors[key] = mcolors.rgb2hex(transformed)
-
-        return colors
-    def get_response_colors_from_colormap_3(self, available_style_colors):
-        # Create a colormap that smoothly interpolates between colors
-        cmap = LinearSegmentedColormap.from_list('custom', available_style_colors)
-
-        positions = [0.15, 0.4, 0.65, 0.9]
-
-        # Target colors (RGB tuples, 0-1 scale)
-        target_colors = {
-            'PD': (0.8, 0.1, 0.1),  # Red
-            'SD': (0.9, 0.8, 0.2),  # Yellow
-            'PR': (0.6, 0.9, 0.5),  # Light green
-            'CR': (0.1, 0.5, 0.1)  # Dark green
-        }
-
-        blend_strength = 0.8  # 0=pure colormap, 1=pure target color
-
-        colors = {}
-        for key, pos in zip(['PD', 'SD', 'PR', 'CR'], positions):
-            cmap_color = cmap(pos)[:3]  # Get RGB, ignore alpha
-            target = target_colors[key]
-            blended = self.blend_colors(cmap_color, target, blend_strength)
-            colors[key] = mcolors.rgb2hex(blended).upper()
-
-        return colors
     def get_response_colors_from_colormap(self, available_style_colors):
         """
         Get response colors from a colormap.

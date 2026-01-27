@@ -1706,7 +1706,7 @@ class TumorVolumeStudyClass():
     def plot_auc_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
             title="AUC by Arm", color_cycle=None, show_axis_labels: bool = True, plot_normalized_auc=False,
-            show_legend: bool = False, plot_style=None,parent_widget=None, shorten_x_labels=False,x_label_rotation:int=0):
+            show_legend: bool = True, plot_style=None,parent_widget=None, shorten_x_labels=False,x_label_rotation:int=0):
         """
         Vertical bar plot of AUC values for each time-series.
         Controls are plotted first, followed by experimental arms.
