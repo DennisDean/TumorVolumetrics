@@ -80,7 +80,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # 1. CORE SETUP - UI and data
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle("Tumor Volume Study")
+        self.setWindowTitle("Tumor Volume Study View")
         self.tv_data_obj = tv_data_obj
         self.studies = tv_data_obj.unique_studies
 
@@ -448,6 +448,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Get semantics relevant objective response colors
         obj_res_color_dict = self.get_response_colors_from_colormap(available_style_colors)
         obj_res_color_list = [ obj_res_color_dict[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
+        print("obj_res_color_list = {obj_res_color_list}")
         available_style_colors.extend(obj_res_color_list)
         self.available_style_colors = available_style_colors
 
@@ -757,7 +758,21 @@ class TumorVolumeStudyWindow(QMainWindow):
         combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                        self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         available_style_colors = self.get_style_colors()
+
+        # Get semantics relevant objective response colors
+        obj_res_color_dict = self.get_response_colors_from_colormap(available_style_colors)
+        obj_res_color_list = [obj_res_color_dict[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
+        print("obj_res_color_list = {obj_res_color_list}")
+        available_style_colors.extend(obj_res_color_list)
+        self.available_style_colors = available_style_colors
+
         self._populate_color_comboboxes(combo_boxes, available_style_colors, color_shift=2)
+
+        # Set Index
+        idx_max = len(available_style_colors) - 4
+        for idx, cbox in enumerate(combo_boxes):
+            cbox.setCurrentIndex(idx_max)
+            idx_max += 1
 
         # Update Study View
         self.update_study_view()

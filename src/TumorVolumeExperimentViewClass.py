@@ -81,7 +81,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # 1. CORE SETUP - UI and data
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle("Tumor Volume Experiment")
+        self.setWindowTitle("Tumor Volume Experiment View")
         self.tv_data_obj = tv_data_obj
         self.experiments = tv_data_obj.unique_experiments
 
