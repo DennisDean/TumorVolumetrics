@@ -244,8 +244,3 @@ class TumorVolumeFileWindow(QMainWindow):
 
         # Resize columns to fit content
         table.resizeColumnsToContents()
-
-
-
-
-

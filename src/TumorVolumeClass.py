@@ -11,7 +11,6 @@
 from narwhals import Boolean
 
 # To Do
-#TODO: Enable matplotlib figure garbage collection
 
 # Import modules
 

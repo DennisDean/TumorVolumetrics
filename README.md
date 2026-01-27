@@ -15,50 +15,23 @@ This repository is under active development. The user-facing viewers are the mos
 
 ## What This Tool Is For
 
+The primary goals of the interface is to standardize and excellerate the generation of publication quality figures directly from the interface. Right clicking on a figure launches a diaglog box that allows figure configutration, copying the figure, and saving the figure. figure widgth, length, and dpi are easily set. 
+
 Tumor Volumetrics is built for scientists and analysts who:
 - Work with longitudinal tumor volume data in CSV form
 - Need to rapidly explore experiments and studies
-- Want consistent, publication-ready tumor volume plots
-- Prefer interactive workflows over ad hoc scripts
 
 The goal is to remove friction from common tasks like:
-- Loading and inspecting tumor volume datasets
-- Navigating experiments, studies, and arms
-- Generating standard plots with consistent styling
-- Iterating quickly during study review and interpretation
+- Loading, inspecting, and plotting tumor volume datasets
+- Automatically applying styles across plots which sets up the infastructure for defining custom plot configurations.
+
 
 --
 
-Main User Interfaces
-Tumor Volume Experiment Viewer
+## Main User Interfaces
+The primary goal of the interfaces is to make common tumor figures quickly aviallbe allowing the user to move quickly to reviewinhg data. Currently, the interface supports experiment and study centrics views of the data.
 
-The Experiment Viewer is optimized for cross-study and cross-arm exploration within an experiment. It allows you to quickly configure and generate standard tumor volume plots with minimal setup.
-
-<p align="center"> <img src="src/media/tv_view.png" /><br> <b>Figure 1.</b> Tumor Volume Experiment Viewer. </p> 
-<p align="center"> <img src="src/media/tv_view_with_configuration_options.png" /><br> <b>Figure 2.</b> Experiment Viewer with configuration options shown. </p>
-
-Key capabilities:
-- Select experiment, study, and arm combinations
-- Generate spider plots, averages, and other standard views
-- Adjust plotting options interactively
-- Rapidly iterate on figure configuration without code changes
-
-This viewer is intended for experiment-level review and comparison.
-
-### Tumor Volume Study Viewer
-
-The Study Viewer focuses on **deep inspection of a single study**. It supports arm-level and subject-level exploration and is optimized for understanding response patterns and variability.
-
-<p align="center"> <img src="src/media/tumor_volume_study_viewer.png" /><br> <b>Figure 3.</b> Tumor Volume Study Viewer. </p> 
-<p align="center"> <img src="src/media/tumor_volume_study_viewer_with_options.png" /><br> <b>Figure 4.</b> Study Viewer with option settings shown. </p>
-
-Key capabilities:
-- Explore arms and individual time series
-- Generate standard study-level plots
-- Configure display and grouping options interactively
-- Support common review patterns used in study evaluation
-
-This viewer is intended for ** study-level analysis and interpretation **.
+<p align="center"> <img src="src/media/tumor_volume_study_treatment_effective_example.png" /><br> <b>Figure 1.</b> Study viewer with effective treatment example shown. Viewer configuration and plottingg style options are shown on the upper right. Options available for the objective response plot  </p>
 
 
 ## File Loading and Grouping
@@ -91,14 +64,40 @@ Selecting an item displays the corresponding rows from the underlying CSV. This 
 
 <p align="center"> <img src="src/media/tumor_voumetrics_file_screen.png" /><br> <b>Figure 6.</b> File selection and inspection interface. </p>
 
-## Example Figures
+## Main User Interfaces
+The primary goal of the interfaces is to make common tumor figures quickly aviallbe allowing the user to move quickly to reviewinhg data. Currently, the interface supports experiment and study centrics views of the data.
 
-The application currently supports and is optimized for generating common tumor volume visualizations.
+### Tumor Volume Experiment Viewer
 
-<p align="center"> <img src="src/media/spider_with_weights.png" /><br> <b>Figure 7.</b> Tumor volume spider plots with weights. </p> 
-<p align="center"> <img src="src/media/tumor_volume_average_with_std.png" /><br> <b>Figure 8.</b> Average tumor volume curves with standard deviation. </p> <p align="center"> <img src="src/media/kaplan_meier_with_at_risk_plot_table.png" /><br> <b>Figure 9.</b> Event-free Kaplan–Meier curve with at-risk table. </p> <p align="center"> <img src="src/media/tumor_volume_change_as_objective_response.png" /><br> <b>Figure 10.</b> Change in tumor volume plotted as objective response. </p>
+The Experiment Viewer is optimized for cross-study and cross-arm exploration within an experiment. It allows you to quickly configure and generate standard tumor volume plots with minimal setup.
 
-The intent is to make these figures one or two clicks away once data is loaded and grouped.
+<p align="center"> <img src="src/media/tumor_volume_experiment_view.png" /><br> <b>Figure 1.</b> Tumor Volume Experiment Viewer. </p> 
+<p align="center"> <img src="src/media/tumor_volume_experiment_view_wiht_options.png" /><br> <b>Figure 2.</b> Experiment Viewer with configuration options shown. </p>
+
+Key capabilities:
+- Select experiment, study, and arm combinations
+- Generate spider plots, averages, and other standard views
+- Adjust plotting options interactively
+- Rapidly iterate on figure configuration without code changes
+
+This viewer is intended for experiment-level review and comparison.
+
+### Tumor Volume Study Viewer
+
+The Study Viewer focuses on **deep inspection of a single study**. It supports arm-level and subject-level exploration and is optimized for understanding response patterns and variability.
+
+<p align="center"> <img src="src/media/tumor_volume_study_viewer.png" /><br> <b>Figure 3.</b> Tumor Volume Study Viewer. </p> 
+<p align="center"> <img src="src/media/tumor_volume_study_viewer_with_options.png" /><br> <b>Figure 4.</b> Study Viewer with option settings shown. </p>
+
+Key capabilities:
+- Explore arms and individual time series
+- Generate standard study-level plots
+- Configure display and grouping options interactively
+- Support common review patterns used in study evaluation
+
+This viewer is intended for ** study-level analysis and interpretation **.
+
+
 
 ## Design Philosophy
 
@@ -126,10 +125,7 @@ If you are interested in the class structure, see the [Tumor Volume Class Read M
 
 
 ## Features in Progress
-- Expanded configuration options in both viewers
 - Enhanced CSV validation and QC tooling
-- Additional arm- and experiment-level plot types 
-- Improved export workflows for figures 
 - Richer XML metadata support
 
 ## Roadmap
@@ -137,7 +133,6 @@ If you are interested in the class structure, see the [Tumor Volume Class Read M
 The long-term goal is a comprehensive PySide6 application that supports:
 
 Data loading and QC
-- Interactive experiment and study exploration
 - Standard preclinical oncology analyses
 - Rapid generation of publication-quality figures
 - Simple extension points for advanced or lab-specific methods
