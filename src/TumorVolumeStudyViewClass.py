@@ -474,6 +474,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Set connections
         self.ui.comboBox_tv_change_normalize.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tv_change_show_labels.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_tv_change_label_rotation.currentTextChanged.connect(self.update_study_view_text)
         self.ui.comboBox_tv_change_shorten_labels.currentTextChanged.connect(self.update_study_view_text)
     def initialize_spider_plot_group_box(self):
         # Get transform information
