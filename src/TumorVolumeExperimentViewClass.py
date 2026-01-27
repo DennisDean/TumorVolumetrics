@@ -148,6 +148,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         # 5. INITIALIZE COMPONENT GROUP BOXES (order matters!)
         self.initialize_style_sheets_functions()  # First - sets up style system
+        self.initialize_avg_auc_by_study_groupbox()
+        self.initialize_avg_per_tv_change_groupbox()
         self.initialize_log_2_change_groupbox()
         self.initialize_objective_response_plot_groupbox()
         self.initialize_tumor_control_ratio_groupbox()
@@ -260,7 +262,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.pushButton_plot_uodate_style.clicked.connect(self.update_plot_style)
     def initialize_collapsable_group_boxes(self):
 
-        # Define box animation
+        # Define view parameters and style group box animations
         self._gb_confg_anim = QPropertyAnimation(self.ui.groupBox_plot_configurations, b"maximumHeight")
         self._gb_confg_anim.setDuration(180)
         self._gb_confg_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
@@ -268,6 +270,15 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self._gb_style_anim = QPropertyAnimation(self.ui.groupBox_plot_style_sheet, b"maximumHeight")
         self._gb_style_anim.setDuration(180)
         self._gb_style_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
+        # Define plot parameter group box animations
+        self._gb_avauc_anim = QPropertyAnimation(self.ui.groupBox_avg_auc_by_study, b"maximumHeight")
+        self._gb_avauc_anim.setDuration(180)
+        self._gb_avauc_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
+        self._gb_avgch_anim = QPropertyAnimation(self.ui.groupBox_avg_per_tv_change, b"maximumHeight")
+        self._gb_avgch_anim.setDuration(180)
+        self._gb_avgch_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
         self._gb_logch_anim = QPropertyAnimation(self.ui.groupBox_log_2_change, b"maximumHeight")
         self._gb_logch_anim.setDuration(180)
@@ -281,18 +292,23 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self._gb_tcrat_anim.setDuration(180)
         self._gb_tcrat_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
-        # Set checked
+        # Set checked for view paraemters and style sheets
         self.ui.groupBox_plot_configurations.setChecked(True)
         self.ui.groupBox_plot_style_sheet.setChecked(False)
+
+        # Set checked for plot parameters
+        self.ui.groupBox_avg_auc_by_study.setChecked(False)
+        self.ui.groupBox_avg_per_tv_change.setChecked(False)
         self.ui.groupBox_log_2_change.setChecked(False)
         self.ui.groupBox_objective_response.setChecked(False)
         self.ui.groupBox_tumor_control_ratio.setChecked(False)
 
         # Set initial group box settings
         group_boxes = [self.ui.groupBox_plot_configurations, self.ui.groupBox_plot_style_sheet,
+                       self.ui.groupBox_avg_auc_by_study,    self.ui.groupBox_avg_per_tv_change,
                        self.ui.groupBox_log_2_change,        self.ui.groupBox_objective_response,
                        self.ui.groupBox_tumor_control_ratio]
-        init_group_box_state = [True, False, False, False, False]
+        init_group_box_state = [True, False, False, False, False, False, False]
         for gbox, gstate in zip(group_boxes, init_group_box_state):
             gbox.setChecked(gstate)
             gbox.layout().activate()
@@ -300,9 +316,13 @@ class TumorVolumeExperimentWindow(QMainWindow):
             if gstate == False:
                 gbox.setMaximumHeight(header_height)
 
-        # Conenct to toggle function
+        # Annimate style groupboxes
         self.ui.groupBox_plot_style_sheet.toggled.connect(lambda checked: self._animate_style_groupbox(self.ui.groupBox_plot_style_sheet, checked))
         self.ui.groupBox_plot_configurations.toggled.connect(lambda checked: self._animate_confg_groupbox(self.ui.groupBox_plot_configurations, checked))
+
+        # Annimate plotting groupboxes
+        self.ui.groupBox_avg_auc_by_study.toggled.connect(lambda checked: self._animate_avauc_groupbox(self.ui.groupBox_avg_auc_by_study, checked))
+        self.ui.groupBox_avg_per_tv_change.toggled.connect(lambda checked: self._animate_avgch_groupbox(self.ui.groupBox_log_2_change, checked))
         self.ui.groupBox_log_2_change.toggled.connect(lambda checked: self._animate_logch_groupbox(self.ui.groupBox_log_2_change, checked))
         self.ui.groupBox_objective_response.toggled.connect(lambda checked: self._animate_objrp_groupbox(self.ui.groupBox_objective_response, checked))
         self.ui.groupBox_tumor_control_ratio.toggled.connect(lambda checked: self._animate_tcrat_groupbox(self.ui.groupBox_tumor_control_ratio, checked))
@@ -448,6 +468,86 @@ class TumorVolumeExperimentWindow(QMainWindow):
         raise ValueError(f"Unknown matplotlib color code: {code}")
 
     # Initialize GroupBoxes
+    def initialize_avg_auc_by_study_groupbox(self):
+        # Update log file
+        logger.info('Initializing Average AUC by Study Groupbox')
+
+        # Smart settting of initials day values
+        min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
+        cutoff_day = min_study_day # setting to a reasonable value to start
+        min_day = 5 # Minimum day set arbitrarily
+        max_day_across_studies = max_study_day # set to a reasonable number
+        fixed_options = [str(day) for day in range(min_day, max_day_across_studies + 1)]
+        day_index = [idx for idx,d in enumerate(fixed_options) if int(d) == max_study_day]
+        day_index = day_index[0]
+
+        # Set combo box values
+        cutoff_options = [f"Common Across Studies - Day {cutoff_day}", "Full Follow Up", "Fixed"]
+        self.ui.comboBox_avg_auc_by_study_type.addItems(cutoff_options)
+        self.ui.comboBox_avg_auc_by_study_type.setCurrentIndex(1)
+        self.ui.comboBox_avg_auc_by_study_day.addItems(fixed_options)
+        self.ui.comboBox_avg_auc_by_study_day.setCurrentIndex(day_index)
+
+        # Hide fixed day options
+        set_layout_visible(self.ui.horizontalLayout_avg_auc_by_study_day,False)
+
+        # Label Options
+        cbox_values = ["True", "False"]
+        rotation_options = ["horizontal", "slight", "diagonal", "steep", "vertical" ]
+        self.rotation_option_dict = {"horizontal": 0, "slight": 30, "diagonal": 45, "steep": 60, "vertical": 90}
+        self.ui.comboBox_avg_auc_by_study_show.addItems(cbox_values)
+        self.ui.comboBox_avg_auc_by_study_show.setCurrentIndex(0)
+        self.ui.comboBox_avg_auc_by_study_shorten.addItems(cbox_values)
+        self.ui.comboBox_avg_auc_by_study_shorten.setCurrentIndex(1)
+        self.ui.comboBox_avg_auc_by_study_rotation.addItems(rotation_options)
+        self.ui.comboBox_avg_auc_by_study_rotation.setCurrentIndex(0)
+
+        # Connect standard update response
+        self.ui.comboBox_avg_auc_by_study_type.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_avg_auc_by_study_day.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_avg_auc_by_study_show.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_avg_auc_by_study_shorten.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_avg_auc_by_study_rotation.currentTextChanged.connect(self.update_study_view_text)
+    def initialize_avg_per_tv_change_groupbox(self):
+        # Update log file
+        logger.info('Initializing Average Percent Tumor Volume Groupbox')
+
+        # Smart settting of initials day values
+        min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
+        cutoff_day = min_study_day # setting to a reasonable value to start
+        min_day = 5 # Minimum day set arbitrarily
+        max_day_across_studies = max_study_day # set to a reasonable number
+        fixed_options = [str(day) for day in range(min_day, max_day_across_studies + 1)]
+        day_index = [idx for idx,d in enumerate(fixed_options) if int(d) == max_study_day]
+        day_index = day_index[0]
+
+        # Set combo box values
+        cutoff_options = [f"Common Across Studies - Day {cutoff_day}", "Full Follow Up", "Fixed"]
+        self.ui.comboBox_avg_per_tv_change_type.addItems(cutoff_options)
+        self.ui.comboBox_avg_per_tv_change_type.setCurrentIndex(1)
+        self.ui.comboBox_avg_per_tv_change_day.addItems(fixed_options)
+        self.ui.comboBox_avg_per_tv_change_day.setCurrentIndex(day_index)
+
+        # Hide fixed day options
+        set_layout_visible(self.ui.horizontalLayout_avg_per_tv_change_day,False)
+
+        # Label Options
+        cbox_values = ["True", "False"]
+        rotation_options = ["horizontal", "slight", "diagonal", "steep", "vertical" ]
+        self.rotation_option_dict = {"horizontal": 0, "slight": 30, "diagonal": 45, "steep": 60, "vertical": 90}
+        self.ui.comboBox_avg_per_tv_change_show.addItems(cbox_values)
+        self.ui.comboBox_avg_per_tv_change_show.setCurrentIndex(0)
+        self.ui.comboBox_avg_per_tv_change_shorten.addItems(cbox_values)
+        self.ui.comboBox_avg_per_tv_change_shorten.setCurrentIndex(1)
+        self.ui.comboBox_avg_per_tv_change_rotation.addItems(rotation_options)
+        self.ui.comboBox_avg_per_tv_change_rotation.setCurrentIndex(0)
+
+        # Connect standard update response
+        self.ui.comboBox_avg_per_tv_change_type.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_avg_per_tv_change_day.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_avg_per_tv_change_show.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_avg_per_tv_change_rotation.currentTextChanged.connect(self.update_study_view_text)
+        self.ui.comboBox_avg_per_tv_change_shorten.currentTextChanged.connect(self.update_study_view_text)
     def initialize_log_2_change_groupbox(self):
         # Update log file
         logger.info('Initializing Log 2 Change Plot Groupbox')
@@ -458,13 +558,13 @@ class TumorVolumeExperimentWindow(QMainWindow):
         min_day = 5 # Minimum day set arbitrarily
         max_day_across_studies = max_study_day # set to a reasonable number
         fixed_options = [str(day) for day in range(min_day, max_day_across_studies + 1)]
-        day_index = [idx for idx,d in enumerate(fixed_options) if int(d) == min_study_day]
+        day_index = [idx for idx,d in enumerate(fixed_options) if int(d) == max_study_day]
         day_index = day_index[0]
 
         # Set combo box values
         cutoff_options = [f"Common Across Studies - Day {cutoff_day}", "Full Follow Up", "Fixed"]
         self.ui.comboBox_log_2_cutoff_type.addItems(cutoff_options)
-        self.ui.comboBox_log_2_cutoff_type.setCurrentIndex(0)
+        self.ui.comboBox_log_2_cutoff_type.setCurrentIndex(1)
         self.ui.comboBox_log_2_cutoff_day.addItems(fixed_options)
         self.ui.comboBox_log_2_cutoff_day.setCurrentIndex(day_index)
 
@@ -540,13 +640,13 @@ class TumorVolumeExperimentWindow(QMainWindow):
         min_day = 5 # Minimum day set arbitrarily
         max_day_across_studies = max_study_day # set to a reasonable number
         fixed_options = [str(day) for day in range(min_day, max_day_across_studies + 1)]
-        day_index = [idx for idx,d in enumerate(fixed_options) if int(d) == min_study_day]
+        day_index = [idx for idx,d in enumerate(fixed_options) if int(d) == max_study_day]
         day_index = day_index[0]
 
         # Set combo box values
         cutoff_options = [f"Common Across Studies - Day {cutoff_day}", "Full Follow Up", "Fixed"]
         self.ui.comboBox_tc_cutoff_type.addItems(cutoff_options)
-        self.ui.comboBox_tc_cutoff_type.setCurrentIndex(0)
+        self.ui.comboBox_tc_cutoff_type.setCurrentIndex(1)
         self.ui.comboBox_tc_cutoff_day.addItems(fixed_options)
         self.ui.comboBox_tc_cutoff_day.setCurrentIndex(day_index)
 
@@ -590,6 +690,73 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         # Update Study View
         self.update_study_view()
+    def update_avg_auc_by_day_cutoff(self, *_):
+
+        # Turn off cutoff type, react only to day change
+        self.ui.comboBox_avg_auc_by_study_type.blockSignals(True)
+
+        # Set group box options
+        cutoff_type = self.ui.comboBox_avg_auc_by_study_type.currentText()
+        if cutoff_type == "Fixed":
+            set_layout_visible(self.ui.horizontalLayout_avg_auc_by_study_day, True)
+        else:
+            set_layout_visible(self.ui.horizontalLayout_avg_auc_by_study_day, False)
+
+        # Get label parameters
+        cutoff_type_index = self.ui.comboBox_avg_auc_by_study_type.currentIndex()
+        min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
+        fixed_options = [int(self.ui.comboBox_avg_auc_by_study_day.itemText(i)) for i in
+                         range(self.ui.comboBox_avg_auc_by_study_day.count())]
+        if cutoff_type_index == 0:  # compute day common across studies
+            index = [idx for idx, opt in enumerate(fixed_options) if opt == min_study_day]
+            index = index[0]
+            with QSignalBlocker(self.ui.comboBox_avg_auc_by_study_day):
+                self.ui.comboBox_avg_auc_by_study_day.setCurrentIndex(index)
+        elif cutoff_type_index == 1:  # use all data
+            index = [idx for idx, opt in enumerate(fixed_options) if opt == max_study_day]
+            index = index[0]
+            with QSignalBlocker(self.ui.comboBox_avg_auc_by_study_day):
+                self.ui.comboBox_avg_auc_by_study_day.setCurrentIndex(index)
+        elif cutoff_type_index == 2:  # trigger a date change since it is not triggering
+            index = self.ui.comboBox_avg_auc_by_study_day.currentIndex()
+            with QSignalBlocker(self.ui.comboBox_avg_auc_by_study_day):
+                self.ui.comboBox_avg_auc_by_study_day.setCurrentIndex(index)
+
+        # Turn on cutoff change
+        self.ui.comboBox_avg_auc_by_study_type.blockSignals(False)
+    def update_avg_per_tv_change_cutoff(self,*_):
+
+        # Turn off cutoff type, react only to day change
+        self.ui.comboBox_avg_per_tv_change_type.blockSignals(True)
+
+        # Set group box options
+        cutoff_type = self.ui.comboBox_avg_per_tv_change_type.currentText()
+        if cutoff_type == "Fixed":
+            set_layout_visible(self.ui.horizontalLayout_avg_per_tv_change_day, True)
+        else:
+            set_layout_visible(self.ui.horizontalLayout_avg_per_tv_change_day, False)
+
+        # Get label parameters
+        cutoff_type_index = self.ui.comboBox_avg_per_tv_change_type.currentIndex()
+        min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
+        fixed_options = [int(self.ui.comboBox_avg_per_tv_change_day.itemText(i)) for i in range(self.ui.comboBox_avg_per_tv_change_day.count())]
+        if cutoff_type_index == 0: # compute day common across studies
+            index = [idx for idx, opt in enumerate(fixed_options) if opt ==  min_study_day]
+            index = index[0]
+            with QSignalBlocker(self.ui.comboBox_avg_per_tv_change_day):
+                self.ui.comboBox_avg_per_tv_change_day.setCurrentIndex(index)
+        elif cutoff_type_index == 1: # use all data
+            index = [idx for idx, opt in enumerate(fixed_options) if opt == max_study_day]
+            index = index[0]
+            with QSignalBlocker(self.ui.comboBox_avg_per_tv_change_day):
+                self.ui.comboBox_avg_per_tv_change_day.setCurrentIndex(index)
+        elif cutoff_type_index == 2: # trigger a date change since it is not triggering
+            index = self.ui.comboBox_avg_per_tv_change_day.currentIndex()
+            with QSignalBlocker(self.ui.comboBox_avg_per_tv_change_day):
+                self.ui.comboBox_avg_per_tv_change_day.setCurrentIndex(index)
+
+        # Turn on cutoff change
+        self.ui.comboBox_avg_per_tv_change_type.blockSignals(False)
     def update_log_2_change_cutoff(self,*_):
 
         # Turn off cutoff type, react only to day change
@@ -787,6 +954,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.draw_figure_group(plot_style=plot_style)
     def update_study_view_text(self, *_):
         # Update tumor control cutoff options while turning off signal
+        self.update_avg_auc_by_day_cutoff()
+        self.update_avg_per_tv_change_cutoff()
         self.update_log_2_change_cutoff()
         self.update_tumor_control_cutoff()
 
@@ -813,7 +982,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         set_layout_visible(self.ui.verticalLayout_matplotlib_options,not bool(new_index))
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
 
-    # Group box animation code (could be consolidated with a dictionary)
+    # Animate style groupbox (could be consolidated with a dictionary)
     def _animate_style_groupbox(self, groupbox: QGroupBox, expanded: bool):
         header_height = groupbox.fontMetrics().height() + 16
 
@@ -850,6 +1019,44 @@ class TumorVolumeExperimentWindow(QMainWindow):
             self._gb_confg_anim.setEndValue(header_height)
 
         self._gb_confg_anim.start()
+
+    # Animate plot config groupboxes
+    def _animate_avauc_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_avauc_anim.stop()
+
+        if expanded:
+            self._gb_avauc_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_avauc_anim.setEndValue(expanded_height)
+        else:
+            self._gb_avauc_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_avauc_anim.setEndValue(header_height)
+
+        self._gb_avauc_anim.start()
+    def _animate_avgch_groupbox(self, groupbox: QGroupBox, expanded: bool):
+        header_height = groupbox.fontMetrics().height() + 16
+
+        layout = groupbox.layout()
+        content_height = layout.sizeHint().height() if layout else 0
+
+        expanded_height = header_height + content_height
+
+        self._gb_avgch_anim.stop()
+
+        if expanded:
+            self._gb_avgch_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_avgch_anim.setEndValue(expanded_height)
+        else:
+            self._gb_avgch_anim.setStartValue(groupbox.maximumHeight())
+            self._gb_avgch_anim.setEndValue(header_height)
+
+        self._gb_avgch_anim.start()
     def _animate_logch_groupbox(self, groupbox: QGroupBox, expanded: bool):
         header_height = groupbox.fontMetrics().height() + 16
 
@@ -941,18 +1148,15 @@ class TumorVolumeExperimentWindow(QMainWindow):
             # Plot Figure
             experiment_obj.plot_to_widget_by_name(plot_name, graphic_view, plot_style = updated_style, **custom_params)
 
-    # Get custom plot figures
+    # Get custom plot parameters
     def get_custom_parameters(self, plot_name):
         # Define custom parameters
         custom_params = {}
 
-        if plot_name == "plot_auc_bar":
-            logger.info('Returning auc by arm group box parameters')
-            custom_params = self.get_auc_by_arm_group_box_parameters()
-        elif plot_name == "plot_event_free_survival":
-            custom_params = self. get_event_free_group_box_parameters()
-        elif plot_name == "plot_vol_change_as_objective_response_bar":
-            custom_params = self. get_objective_response_group_box_parameters()
+        if plot_name == "plot_auc_with_controls_bar":
+            custom_params = self.get_avg_auc_by_study_group_box_parameters()
+        elif plot_name == "plot_average_tumor_volume_change_bar":
+            custom_params = self.get_avg_per_tv_change_group_box_parameters()
         elif plot_name == "plot_log2fc_points":
             custom_params = self.get_log_2_change_group_box_parameters()
         elif plot_name == "proportion_in_objective_response_classification_bar":
@@ -960,6 +1164,41 @@ class TumorVolumeExperimentWindow(QMainWindow):
         elif plot_name == "plot_tumor_control_ratio_bar":
             custom_params = self.get_tumor_control_ratio_group_box_parameters()
 
+        return custom_params
+
+    # Get custom plot parameters
+    def get_avg_auc_by_study_group_box_parameters(self):
+        # Get label parameters
+        # cutoff_type_index = self.ui.comboBox_tc_cutoff_type.currentText()
+        # min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
+        compute_day = int(self.ui.comboBox_avg_auc_by_study_day.currentText())
+
+        # Get Color parameters
+        show_axis_labels = True if self.ui.comboBox_avg_auc_by_study_show.currentText() == 'True' else False
+        x_label_rotation_type = self.ui.comboBox_avg_auc_by_study_rotation.currentText()
+        x_label_rotation = self.rotation_option_dict[x_label_rotation_type]
+        shorten_x_labels = True if self.ui.comboBox_avg_auc_by_study_shorten.currentText() == 'True' else False
+
+        # Construct custom parameter dictionary
+        custom_params = {"compute_day": compute_day, "show_axis_labels": show_axis_labels,
+                         "x_label_rotation": x_label_rotation, "shorten_x_labels": shorten_x_labels}
+        return custom_params
+    def get_avg_per_tv_change_group_box_parameters(self):
+        # Get label parameters
+        # cutoff_type_index = self.ui.comboBox_tc_cutoff_type.currentText()
+        # min_study_day, max_study_day = self.get_min_and_max_day_across_studies()
+        compute_day = int(self.ui.comboBox_avg_per_tv_change_day.currentText())
+
+
+        # Get Color parameters
+        show_axis_labels =  True if self.ui.comboBox_avg_per_tv_change_show.currentText()=='True' else False
+        x_label_rotation_type = self.ui.comboBox_avg_per_tv_change_rotation.currentText()
+        x_label_rotation = self.rotation_option_dict[x_label_rotation_type]
+        shorten_x_labels = True if self.ui.comboBox_avg_per_tv_change_shorten.currentText()=='True' else False
+
+        # Construct custom parameter dictionary
+        custom_params = {"compute_day": compute_day, "show_axis_labels": show_axis_labels,
+                         "x_label_rotation": x_label_rotation, "shorten_x_labels": shorten_x_labels}
         return custom_params
     def get_log_2_change_group_box_parameters(self):
         # Get label parameters

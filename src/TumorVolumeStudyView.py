@@ -86,7 +86,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents_3 = QWidget()
         self.scrollAreaWidgetContents_3.setObjectName(u"scrollAreaWidgetContents_3")
-        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 231, 1941))
+        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 231, 2067))
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
@@ -422,6 +422,29 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_10.addLayout(self.horizontalLayout_22)
 
+        self.horizontalLayout_33 = QHBoxLayout()
+        self.horizontalLayout_33.setObjectName(u"horizontalLayout_33")
+        self.label_47 = QLabel(self.groupBox_auc_by_arm)
+        self.label_47.setObjectName(u"label_47")
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(0)
+        sizePolicy5.setHeightForWidth(self.label_47.sizePolicy().hasHeightForWidth())
+        self.label_47.setSizePolicy(sizePolicy5)
+        self.label_47.setMinimumSize(QSize(70, 0))
+        self.label_47.setMaximumSize(QSize(70, 16777215))
+        self.label_47.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_33.addWidget(self.label_47)
+
+        self.comboBox_auc_by_arm_label_rotation = QComboBox(self.groupBox_auc_by_arm)
+        self.comboBox_auc_by_arm_label_rotation.setObjectName(u"comboBox_auc_by_arm_label_rotation")
+
+        self.horizontalLayout_33.addWidget(self.comboBox_auc_by_arm_label_rotation)
+
+
+        self.verticalLayout_10.addLayout(self.horizontalLayout_33)
+
         self.horizontalLayout_26 = QHBoxLayout()
         self.horizontalLayout_26.setObjectName(u"horizontalLayout_26")
         self.label_36 = QLabel(self.groupBox_auc_by_arm)
@@ -474,6 +497,11 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_9.addLayout(self.horizontalLayout_3)
 
+        self.label_33 = QLabel(self.groupBox_event_free_survival)
+        self.label_33.setObjectName(u"label_33")
+
+        self.verticalLayout_9.addWidget(self.label_33)
+
         self.horizontalLayout_20 = QHBoxLayout()
         self.horizontalLayout_20.setObjectName(u"horizontalLayout_20")
         self.label_28 = QLabel(self.groupBox_event_free_survival)
@@ -494,10 +522,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_event_free_cutoff_day = QHBoxLayout()
         self.horizontalLayout_event_free_cutoff_day.setObjectName(u"horizontalLayout_event_free_cutoff_day")
-        self.label_33 = QLabel(self.groupBox_event_free_survival)
-        self.label_33.setObjectName(u"label_33")
+        self.label_50 = QLabel(self.groupBox_event_free_survival)
+        self.label_50.setObjectName(u"label_50")
+        sizePolicy5.setHeightForWidth(self.label_50.sizePolicy().hasHeightForWidth())
+        self.label_50.setSizePolicy(sizePolicy5)
+        self.label_50.setMinimumSize(QSize(50, 0))
+        self.label_50.setMaximumSize(QSize(50, 16777215))
+        self.label_50.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
-        self.horizontalLayout_event_free_cutoff_day.addWidget(self.label_33)
+        self.horizontalLayout_event_free_cutoff_day.addWidget(self.label_50)
 
         self.comboBox_event_free_cutoff_days = QComboBox(self.groupBox_event_free_survival)
         self.comboBox_event_free_cutoff_days.setObjectName(u"comboBox_event_free_cutoff_days")
@@ -587,6 +620,25 @@ class Ui_MainWindow(object):
 
 
         self.verticalLayout_groupbox_objective_response.addLayout(self.horizontalLayout_32)
+
+        self.horizontalLayout_34 = QHBoxLayout()
+        self.horizontalLayout_34.setObjectName(u"horizontalLayout_34")
+        self.label_48 = QLabel(self.groupBox_objective_response)
+        self.label_48.setObjectName(u"label_48")
+        sizePolicy5.setHeightForWidth(self.label_48.sizePolicy().hasHeightForWidth())
+        self.label_48.setSizePolicy(sizePolicy5)
+        self.label_48.setMaximumSize(QSize(70, 16777215))
+        self.label_48.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_34.addWidget(self.label_48)
+
+        self.comboBox_objective_response_label_rotation = QComboBox(self.groupBox_objective_response)
+        self.comboBox_objective_response_label_rotation.setObjectName(u"comboBox_objective_response_label_rotation")
+
+        self.horizontalLayout_34.addWidget(self.comboBox_objective_response_label_rotation)
+
+
+        self.verticalLayout_groupbox_objective_response.addLayout(self.horizontalLayout_34)
 
         self.horizontalLayout_31 = QHBoxLayout()
         self.horizontalLayout_31.setObjectName(u"horizontalLayout_31")
@@ -702,11 +754,11 @@ class Ui_MainWindow(object):
 
         self.pushButton_objective_response_update = QPushButton(self.groupBox_objective_response)
         self.pushButton_objective_response_update.setObjectName(u"pushButton_objective_response_update")
-        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy5.setHorizontalStretch(0)
-        sizePolicy5.setVerticalStretch(0)
-        sizePolicy5.setHeightForWidth(self.pushButton_objective_response_update.sizePolicy().hasHeightForWidth())
-        self.pushButton_objective_response_update.setSizePolicy(sizePolicy5)
+        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy6.setHorizontalStretch(0)
+        sizePolicy6.setVerticalStretch(0)
+        sizePolicy6.setHeightForWidth(self.pushButton_objective_response_update.sizePolicy().hasHeightForWidth())
+        self.pushButton_objective_response_update.setSizePolicy(sizePolicy6)
         self.pushButton_objective_response_update.setMinimumSize(QSize(0, 25))
         self.pushButton_objective_response_update.setMaximumSize(QSize(16777215, 25))
 
@@ -768,6 +820,26 @@ class Ui_MainWindow(object):
 
 
         self.verticalLayout_11.addLayout(self.horizontalLayout_30)
+
+        self.horizontalLayout_35 = QHBoxLayout()
+        self.horizontalLayout_35.setObjectName(u"horizontalLayout_35")
+        self.label_49 = QLabel(self.groupBox_percent_tv_change)
+        self.label_49.setObjectName(u"label_49")
+        sizePolicy5.setHeightForWidth(self.label_49.sizePolicy().hasHeightForWidth())
+        self.label_49.setSizePolicy(sizePolicy5)
+        self.label_49.setMinimumSize(QSize(70, 0))
+        self.label_49.setMaximumSize(QSize(70, 16777215))
+        self.label_49.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_35.addWidget(self.label_49)
+
+        self.comboBox_tc_change_label_rotation = QComboBox(self.groupBox_percent_tv_change)
+        self.comboBox_tc_change_label_rotation.setObjectName(u"comboBox_tc_change_label_rotation")
+
+        self.horizontalLayout_35.addWidget(self.comboBox_tc_change_label_rotation)
+
+
+        self.verticalLayout_11.addLayout(self.horizontalLayout_35)
 
         self.horizontalLayout_28 = QHBoxLayout()
         self.horizontalLayout_28.setObjectName(u"horizontalLayout_28")
@@ -976,11 +1048,11 @@ class Ui_MainWindow(object):
 
         self.label_10 = QLabel(self.scrollAreaWidgetContents_3)
         self.label_10.setObjectName(u"label_10")
-        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-        sizePolicy6.setHorizontalStretch(0)
-        sizePolicy6.setVerticalStretch(0)
-        sizePolicy6.setHeightForWidth(self.label_10.sizePolicy().hasHeightForWidth())
-        self.label_10.setSizePolicy(sizePolicy6)
+        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        sizePolicy7.setHorizontalStretch(0)
+        sizePolicy7.setVerticalStretch(0)
+        sizePolicy7.setHeightForWidth(self.label_10.sizePolicy().hasHeightForWidth())
+        self.label_10.setSizePolicy(sizePolicy7)
         self.label_10.setMinimumSize(QSize(75, 0))
         self.label_10.setMaximumSize(QSize(75, 16777215))
 
@@ -1040,18 +1112,21 @@ class Ui_MainWindow(object):
         self.label_35.setText(QCoreApplication.translate("MainWindow", u"Normal.", None))
         self.label_37.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
         self.label_34.setText(QCoreApplication.translate("MainWindow", u"Show", None))
+        self.label_47.setText(QCoreApplication.translate("MainWindow", u"Rotation", None))
         self.label_36.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
         self.groupBox_event_free_survival.setTitle(QCoreApplication.translate("MainWindow", u"Event-Free Survivial", None))
         self.label_29.setText(QCoreApplication.translate("MainWindow", u"Parameters", None))
-        self.label_27.setText(QCoreApplication.translate("MainWindow", u"delta", None))
-        self.label_28.setText(QCoreApplication.translate("MainWindow", u"cutoff", None))
-        self.label_33.setText("")
+        self.label_27.setText(QCoreApplication.translate("MainWindow", u"Delta", None))
+        self.label_33.setText(QCoreApplication.translate("MainWindow", u"Cutoff", None))
+        self.label_28.setText(QCoreApplication.translate("MainWindow", u"Type", None))
+        self.label_50.setText(QCoreApplication.translate("MainWindow", u"Day", None))
         self.label_30.setText(QCoreApplication.translate("MainWindow", u"Show Risk", None))
         self.label_31.setText(QCoreApplication.translate("MainWindow", u"Plot", None))
         self.label_32.setText(QCoreApplication.translate("MainWindow", u"Table", None))
         self.groupBox_objective_response.setTitle(QCoreApplication.translate("MainWindow", u"Objective Response Plot", None))
         self.label_46.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
         self.label_45.setText(QCoreApplication.translate("MainWindow", u"Show", None))
+        self.label_48.setText(QCoreApplication.translate("MainWindow", u"Rotation", None))
         self.label_44.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
         self.label_17.setText(QCoreApplication.translate("MainWindow", u"Set Obj. Response Color", None))
         self.label_14.setText(QCoreApplication.translate("MainWindow", u"PD", None))
@@ -1064,6 +1139,7 @@ class Ui_MainWindow(object):
         self.label_41.setText(QCoreApplication.translate("MainWindow", u"Normal.", None))
         self.label_43.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
         self.label_42.setText(QCoreApplication.translate("MainWindow", u"Show", None))
+        self.label_49.setText(QCoreApplication.translate("MainWindow", u"Rotation", None))
         self.label_40.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
         self.groupBox_configuration_spider.setTitle(QCoreApplication.translate("MainWindow", u"Spider Plot", None))
         self.label_6.setText(QCoreApplication.translate("MainWindow", u"Data Transform", None))

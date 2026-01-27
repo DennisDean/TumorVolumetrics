@@ -82,7 +82,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, -316, 215, 1450))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 216, 1976))
         self.verticalLayout_4 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.groupBox_plot_configurations = QGroupBox(self.scrollAreaWidgetContents)
@@ -368,6 +368,238 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.line)
 
+        self.groupBox_avg_auc_by_study = QGroupBox(self.scrollAreaWidgetContents)
+        self.groupBox_avg_auc_by_study.setObjectName(u"groupBox_avg_auc_by_study")
+        self.groupBox_avg_auc_by_study.setCheckable(True)
+        self.verticalLayout_8 = QVBoxLayout(self.groupBox_avg_auc_by_study)
+        self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+        self.label_42 = QLabel(self.groupBox_avg_auc_by_study)
+        self.label_42.setObjectName(u"label_42")
+
+        self.verticalLayout_8.addWidget(self.label_42)
+
+        self.horizontalLayout_29 = QHBoxLayout()
+        self.horizontalLayout_29.setObjectName(u"horizontalLayout_29")
+        self.label_48 = QLabel(self.groupBox_avg_auc_by_study)
+        self.label_48.setObjectName(u"label_48")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.label_48.sizePolicy().hasHeightForWidth())
+        self.label_48.setSizePolicy(sizePolicy2)
+        self.label_48.setMinimumSize(QSize(75, 0))
+        self.label_48.setMaximumSize(QSize(75, 16777215))
+        self.label_48.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_29.addWidget(self.label_48)
+
+        self.comboBox_avg_auc_by_study_type = QComboBox(self.groupBox_avg_auc_by_study)
+        self.comboBox_avg_auc_by_study_type.setObjectName(u"comboBox_avg_auc_by_study_type")
+
+        self.horizontalLayout_29.addWidget(self.comboBox_avg_auc_by_study_type)
+
+
+        self.verticalLayout_8.addLayout(self.horizontalLayout_29)
+
+        self.horizontalLayout_avg_auc_by_study_day = QHBoxLayout()
+        self.horizontalLayout_avg_auc_by_study_day.setObjectName(u"horizontalLayout_avg_auc_by_study_day")
+        self.label_47 = QLabel(self.groupBox_avg_auc_by_study)
+        self.label_47.setObjectName(u"label_47")
+        sizePolicy2.setHeightForWidth(self.label_47.sizePolicy().hasHeightForWidth())
+        self.label_47.setSizePolicy(sizePolicy2)
+        self.label_47.setMinimumSize(QSize(75, 0))
+        self.label_47.setMaximumSize(QSize(75, 16777215))
+        self.label_47.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_avg_auc_by_study_day.addWidget(self.label_47)
+
+        self.comboBox_avg_auc_by_study_day = QComboBox(self.groupBox_avg_auc_by_study)
+        self.comboBox_avg_auc_by_study_day.setObjectName(u"comboBox_avg_auc_by_study_day")
+
+        self.horizontalLayout_avg_auc_by_study_day.addWidget(self.comboBox_avg_auc_by_study_day)
+
+
+        self.verticalLayout_8.addLayout(self.horizontalLayout_avg_auc_by_study_day)
+
+        self.label_43 = QLabel(self.groupBox_avg_auc_by_study)
+        self.label_43.setObjectName(u"label_43")
+
+        self.verticalLayout_8.addWidget(self.label_43)
+
+        self.horizontalLayout_30 = QHBoxLayout()
+        self.horizontalLayout_30.setObjectName(u"horizontalLayout_30")
+        self.label_45 = QLabel(self.groupBox_avg_auc_by_study)
+        self.label_45.setObjectName(u"label_45")
+        sizePolicy2.setHeightForWidth(self.label_45.sizePolicy().hasHeightForWidth())
+        self.label_45.setSizePolicy(sizePolicy2)
+        self.label_45.setMinimumSize(QSize(75, 0))
+        self.label_45.setMaximumSize(QSize(75, 16777215))
+        self.label_45.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_30.addWidget(self.label_45)
+
+        self.comboBox_avg_auc_by_study_show = QComboBox(self.groupBox_avg_auc_by_study)
+        self.comboBox_avg_auc_by_study_show.setObjectName(u"comboBox_avg_auc_by_study_show")
+
+        self.horizontalLayout_30.addWidget(self.comboBox_avg_auc_by_study_show)
+
+
+        self.verticalLayout_8.addLayout(self.horizontalLayout_30)
+
+        self.horizontalLayout_32 = QHBoxLayout()
+        self.horizontalLayout_32.setObjectName(u"horizontalLayout_32")
+        self.label_44 = QLabel(self.groupBox_avg_auc_by_study)
+        self.label_44.setObjectName(u"label_44")
+        sizePolicy2.setHeightForWidth(self.label_44.sizePolicy().hasHeightForWidth())
+        self.label_44.setSizePolicy(sizePolicy2)
+        self.label_44.setMinimumSize(QSize(75, 0))
+        self.label_44.setMaximumSize(QSize(75, 16777215))
+        self.label_44.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_32.addWidget(self.label_44)
+
+        self.comboBox_avg_auc_by_study_rotation = QComboBox(self.groupBox_avg_auc_by_study)
+        self.comboBox_avg_auc_by_study_rotation.setObjectName(u"comboBox_avg_auc_by_study_rotation")
+
+        self.horizontalLayout_32.addWidget(self.comboBox_avg_auc_by_study_rotation)
+
+
+        self.verticalLayout_8.addLayout(self.horizontalLayout_32)
+
+        self.horizontalLayout_31 = QHBoxLayout()
+        self.horizontalLayout_31.setObjectName(u"horizontalLayout_31")
+        self.label_46 = QLabel(self.groupBox_avg_auc_by_study)
+        self.label_46.setObjectName(u"label_46")
+        sizePolicy2.setHeightForWidth(self.label_46.sizePolicy().hasHeightForWidth())
+        self.label_46.setSizePolicy(sizePolicy2)
+        self.label_46.setMinimumSize(QSize(75, 0))
+        self.label_46.setMaximumSize(QSize(75, 16777215))
+        self.label_46.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_31.addWidget(self.label_46)
+
+        self.comboBox_avg_auc_by_study_shorten = QComboBox(self.groupBox_avg_auc_by_study)
+        self.comboBox_avg_auc_by_study_shorten.setObjectName(u"comboBox_avg_auc_by_study_shorten")
+
+        self.horizontalLayout_31.addWidget(self.comboBox_avg_auc_by_study_shorten)
+
+
+        self.verticalLayout_8.addLayout(self.horizontalLayout_31)
+
+
+        self.verticalLayout_4.addWidget(self.groupBox_avg_auc_by_study)
+
+        self.groupBox_avg_per_tv_change = QGroupBox(self.scrollAreaWidgetContents)
+        self.groupBox_avg_per_tv_change.setObjectName(u"groupBox_avg_per_tv_change")
+        self.groupBox_avg_per_tv_change.setCheckable(True)
+        self.groupBox_avg_per_tv_change.setChecked(False)
+        self.verticalLayout_7 = QVBoxLayout(self.groupBox_avg_per_tv_change)
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        self.label_35 = QLabel(self.groupBox_avg_per_tv_change)
+        self.label_35.setObjectName(u"label_35")
+
+        self.verticalLayout_7.addWidget(self.label_35)
+
+        self.horizontalLayout_25 = QHBoxLayout()
+        self.horizontalLayout_25.setObjectName(u"horizontalLayout_25")
+        self.label_41 = QLabel(self.groupBox_avg_per_tv_change)
+        self.label_41.setObjectName(u"label_41")
+        self.label_41.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_25.addWidget(self.label_41)
+
+        self.comboBox_avg_per_tv_change_type = QComboBox(self.groupBox_avg_per_tv_change)
+        self.comboBox_avg_per_tv_change_type.setObjectName(u"comboBox_avg_per_tv_change_type")
+
+        self.horizontalLayout_25.addWidget(self.comboBox_avg_per_tv_change_type)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_25)
+
+        self.horizontalLayout_avg_per_tv_change_day = QHBoxLayout()
+        self.horizontalLayout_avg_per_tv_change_day.setObjectName(u"horizontalLayout_avg_per_tv_change_day")
+        self.label_37 = QLabel(self.groupBox_avg_per_tv_change)
+        self.label_37.setObjectName(u"label_37")
+        self.label_37.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_avg_per_tv_change_day.addWidget(self.label_37)
+
+        self.comboBox_avg_per_tv_change_day = QComboBox(self.groupBox_avg_per_tv_change)
+        self.comboBox_avg_per_tv_change_day.setObjectName(u"comboBox_avg_per_tv_change_day")
+
+        self.horizontalLayout_avg_per_tv_change_day.addWidget(self.comboBox_avg_per_tv_change_day)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_avg_per_tv_change_day)
+
+        self.label_38 = QLabel(self.groupBox_avg_per_tv_change)
+        self.label_38.setObjectName(u"label_38")
+
+        self.verticalLayout_7.addWidget(self.label_38)
+
+        self.horizontalLayout_26 = QHBoxLayout()
+        self.horizontalLayout_26.setObjectName(u"horizontalLayout_26")
+        self.label_36 = QLabel(self.groupBox_avg_per_tv_change)
+        self.label_36.setObjectName(u"label_36")
+        sizePolicy2.setHeightForWidth(self.label_36.sizePolicy().hasHeightForWidth())
+        self.label_36.setSizePolicy(sizePolicy2)
+        self.label_36.setMinimumSize(QSize(75, 0))
+        self.label_36.setMaximumSize(QSize(75, 16777215))
+        self.label_36.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_26.addWidget(self.label_36)
+
+        self.comboBox_avg_per_tv_change_show = QComboBox(self.groupBox_avg_per_tv_change)
+        self.comboBox_avg_per_tv_change_show.setObjectName(u"comboBox_avg_per_tv_change_show")
+
+        self.horizontalLayout_26.addWidget(self.comboBox_avg_per_tv_change_show)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_26)
+
+        self.horizontalLayout_27 = QHBoxLayout()
+        self.horizontalLayout_27.setObjectName(u"horizontalLayout_27")
+        self.label_40 = QLabel(self.groupBox_avg_per_tv_change)
+        self.label_40.setObjectName(u"label_40")
+        sizePolicy2.setHeightForWidth(self.label_40.sizePolicy().hasHeightForWidth())
+        self.label_40.setSizePolicy(sizePolicy2)
+        self.label_40.setMinimumSize(QSize(75, 0))
+        self.label_40.setMaximumSize(QSize(75, 16777215))
+        self.label_40.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_27.addWidget(self.label_40)
+
+        self.comboBox_avg_per_tv_change_rotation = QComboBox(self.groupBox_avg_per_tv_change)
+        self.comboBox_avg_per_tv_change_rotation.setObjectName(u"comboBox_avg_per_tv_change_rotation")
+
+        self.horizontalLayout_27.addWidget(self.comboBox_avg_per_tv_change_rotation)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_27)
+
+        self.horizontalLayout_28 = QHBoxLayout()
+        self.horizontalLayout_28.setObjectName(u"horizontalLayout_28")
+        self.label_39 = QLabel(self.groupBox_avg_per_tv_change)
+        self.label_39.setObjectName(u"label_39")
+        sizePolicy2.setHeightForWidth(self.label_39.sizePolicy().hasHeightForWidth())
+        self.label_39.setSizePolicy(sizePolicy2)
+        self.label_39.setMinimumSize(QSize(75, 0))
+        self.label_39.setMaximumSize(QSize(75, 16777215))
+        self.label_39.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_28.addWidget(self.label_39)
+
+        self.comboBox_avg_per_tv_change_shorten = QComboBox(self.groupBox_avg_per_tv_change)
+        self.comboBox_avg_per_tv_change_shorten.setObjectName(u"comboBox_avg_per_tv_change_shorten")
+
+        self.horizontalLayout_28.addWidget(self.comboBox_avg_per_tv_change_shorten)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_28)
+
+
+        self.verticalLayout_4.addWidget(self.groupBox_avg_per_tv_change)
+
         self.groupBox_log_2_change = QGroupBox(self.scrollAreaWidgetContents)
         self.groupBox_log_2_change.setObjectName(u"groupBox_log_2_change")
         self.groupBox_log_2_change.setCheckable(True)
@@ -383,9 +615,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
         self.label_30 = QLabel(self.groupBox_log_2_change)
         self.label_30.setObjectName(u"label_30")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.label_30.sizePolicy().hasHeightForWidth())
         self.label_30.setSizePolicy(sizePolicy2)
         self.label_30.setMinimumSize(QSize(75, 0))
@@ -825,6 +1054,22 @@ class Ui_MainWindow(object):
         self.label_12.setText(QCoreApplication.translate("MainWindow", u"Color", None))
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Grid", None))
         self.pushButton_plot_uodate_style.setText(QCoreApplication.translate("MainWindow", u"Update", None))
+        self.groupBox_avg_auc_by_study.setTitle(QCoreApplication.translate("MainWindow", u"Average AUC by Study", None))
+        self.label_42.setText(QCoreApplication.translate("MainWindow", u"Cutoff", None))
+        self.label_48.setText(QCoreApplication.translate("MainWindow", u"Type", None))
+        self.label_47.setText(QCoreApplication.translate("MainWindow", u"Day", None))
+        self.label_43.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
+        self.label_45.setText(QCoreApplication.translate("MainWindow", u"Show", None))
+        self.label_44.setText(QCoreApplication.translate("MainWindow", u"Rotation", None))
+        self.label_46.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
+        self.groupBox_avg_per_tv_change.setTitle(QCoreApplication.translate("MainWindow", u"Average % TV Change", None))
+        self.label_35.setText(QCoreApplication.translate("MainWindow", u"Cutoff", None))
+        self.label_41.setText(QCoreApplication.translate("MainWindow", u"Type", None))
+        self.label_37.setText(QCoreApplication.translate("MainWindow", u"Day", None))
+        self.label_38.setText(QCoreApplication.translate("MainWindow", u"Labels", None))
+        self.label_36.setText(QCoreApplication.translate("MainWindow", u"Show", None))
+        self.label_40.setText(QCoreApplication.translate("MainWindow", u"Rotation", None))
+        self.label_39.setText(QCoreApplication.translate("MainWindow", u"Shorten", None))
         self.groupBox_log_2_change.setTitle(QCoreApplication.translate("MainWindow", u"Log 2 Change", None))
         self.label_28.setText(QCoreApplication.translate("MainWindow", u"Cutoff", None))
         self.label_30.setText(QCoreApplication.translate("MainWindow", u"Type", None))

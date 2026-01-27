@@ -2008,11 +2008,7 @@ class TumorVolumeStudyClass():
                 ax.set_xticklabels([])
 
             # Labels and title
-            y_label = (
-                "Normalized Tumor Volume Change (%)"
-                if plot_normalized_tv_change
-                else "Tumor Volume Change (%)"
-            )
+            y_label = "Normalized Tumor Volume Change (%)" if plot_normalized_tv_change else "Tumor Volume Change"
             ax.set_ylabel(y_label)
 
 
@@ -2573,8 +2569,9 @@ class TumorVolumeExperimentClass():
 
     # Plotting Functions
     def plot_average_tumor_volume_change_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"),
-            error_metric="std", show_axis_labels=True, compute_day: int | None = None,x_label_rotation=0,
-            title="Average % Tumor Volume Change by Study", figsize=(10, 6), parent_widget=None):
+            error_metric="sem", show_axis_labels=True, compute_day: int | None = None,x_label_rotation=0,
+            title="Average % Tumor Volume Change by Study", figsize=(10, 6), parent_widget=None,
+            shorten_x_labels:Boolean=False):
         """
         Plot the average percent tumor volume change for each study.
 
@@ -2638,6 +2635,8 @@ class TumorVolumeExperimentClass():
 
             study_means.append(mean_val)
             study_errors.append(err_val)
+            if shorten_x_labels is True:
+                study = remove_alpha(study)
             study_labels.append(study)
 
         # Check if we have data to plot
@@ -2707,11 +2706,16 @@ class TumorVolumeExperimentClass():
                 ax.set_xlabel("Study")
 
             if title:
+                if compute_day is not None:
+                    title = f'{title} - Day {compute_day}'
                 ax.set_title(title)
 
             # Ticks
-            ax.set_xticks(x)
-            ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
+            if show_axis_labels == True:
+                ax.set_xticks(x)
+                ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
+            else:
+                ax.set_xticks([])
 
         # fig.tight_layout()
 
@@ -3231,7 +3235,7 @@ class TumorVolumeExperimentClass():
         return fig, ax
     def plot_auc_with_controls_bar(self, plot_style = None, control_arms=("control", "vehicle", "placebo"), error_metric="sem",
             show_legend=True, show_axis_labels=False, compute_day: int | None = None, title="Average AUC by Study",
-            x_label_rotation=0, figsize=(12, 6), parent_widget=None):
+            x_label_rotation=0, figsize=(12, 6), parent_widget=None, shorten_x_labels:Boolean=False):
         """
         Plot mean AUC for each study with control vs treatment bars.
         If parent_widget is provided, embeds the plot in a Qt widget
@@ -3283,6 +3287,8 @@ class TumorVolumeExperimentClass():
             if len(ctrl_vals) == 0 and len(trt_vals) == 0:
                 continue
 
+            if shorten_x_labels == True:
+                study = remove_alpha(study)
             study_labels.append(study)
 
             # Error helper
@@ -3315,8 +3321,6 @@ class TumorVolumeExperimentClass():
         # Apply figsize only for standalone mode
         if not parent_widget and figsize:
             fig.set_size_inches(figsize)
-
-
 
         # ---------------------------------------------------------
         #   PLOT
@@ -3389,10 +3393,15 @@ class TumorVolumeExperimentClass():
                 ax.set_xlabel("Study")
 
             if title:
+                if compute_day is not None:
+                    title = f"{title} - Day {compute_day}"
                 ax.set_title(title)
 
-            ax.set_xticks(x)
-            ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
+            if show_axis_labels:
+                ax.set_xticks(x)
+                ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
+            else:
+                ax.set_xticks([])
 
             if show_legend:
                 ax.legend(loc="upper right", frameon=True, framealpha=0.8)
@@ -3450,9 +3459,8 @@ class TumorVolumeExperimentClass():
 
         return fig, ax
     def plot_log2fc_points(self, plot_style=None, control_arms=("control", "vehicle", "placebo"), show_legend=True,
-                           show_axis_labels=True, x_label_rotation=0, compute_day=None,
-                           title="Log2 Change (Control vs Treatment)",
-                           shorten_x_labels: Boolean = False, figsize=(12, 6), parent_widget=None):
+            show_axis_labels=True, x_label_rotation=0, compute_day=None, title="Log2 Change (Control vs Treatment)",
+            shorten_x_labels: Boolean = False, figsize=(12, 6), parent_widget=None):
         """
         Plot log2-fold change at compute_day for control vs treatment arms.
         Supports Qt embedding via parent_widget or standalone matplotlib display.
@@ -3602,10 +3610,11 @@ class TumorVolumeExperimentClass():
             ax.set_ylabel("log2(Change)")
 
             if title:
+                if compute_day is not None:
+                    title = f"{title} - Day {compute_day}"
                 ax.set_title(title)
 
             # Enable grid only if 'grid' style is in the plot_style
-            print(f'Plotting log2fc - plot style = {plot_style}')
             if plot_style:
                 # Handle both string and list inputs
                 if isinstance(plot_style, str):
