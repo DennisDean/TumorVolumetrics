@@ -95,14 +95,15 @@ Key capabilities:
 
 Tumor Volumetrics is built around a few core ideas:
 
-- **User first, architecture second**  
-  The viewers and workflows drive the design. Internal class structure is flexible and evolving.
+- **User first**  
+  The viewers and workflows interface drive the design.
 - **Standard plots should be easy**  
   Common oncology figures should not require custom scripts every time.
-- **Interactive over batch by default**  
-  The GUI is the primary interface. Programmatic access is supported but not the main focus.
 - **Extensible, not rigid**  
   New plot types and lab-specific conventions should be easy to add.
+- **Scripting supportive classes**
+  Advance users can use classes to conduct analysis.
+  See [TumorVolumeClassReadMe.md](src/media/TumorVolumeClassReadMe.md) for more details
 
 ---
 
