@@ -180,16 +180,17 @@ The module supports XML data following a hierarchical structure:
 * lxml (for XML validation, optional)
 
 ## Figure Examples
+**Figure section under construction**
 
 ### Time Series Class Figures
 * Figure 1. Example tumor volume plot
 * Figure 2. Example tumor volume plot with weights subplot
+
+### Study Class Figures
 * Figure 3. Tumor volume spider plot
 * Figure 4. Tumor volume spider plots with weights shown as subplot
 * Figure 5. Average tumor volume curves with error bars
 * Figure 6. Average tumor volume curves with standard deviation shown
-
-### Study Class Figures
 * Figure 7. Event Free Kaplan Meier curve
 * Figure 8. Event Free Kaplan Meier curve with at-risk table
 * Figure 9. Common tumor volume transformations
