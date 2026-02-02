@@ -15,8 +15,27 @@ authors = [
 ]
 
 dependencies = [
-    "PySide6>=6.5"
-]
+    # GUI Framework
+    "PySide6==6.10.2"
+
+    # Data & Scientific Computing
+    "numpy==2.4.2",
+    "pandas==3.0.0",
+    "scipy==1.17.0",
+    "matplotlib==3.10.8",
+
+    # Statistical Analysis
+    "lifelines==0.30.0",
+    "autograd==1.8.0",
+    "autograd-gamma==0.5.0",
+
+    # Visualization Enhancement
+    "SciencePlots==2.2.0",
+    "latex==0.7.0",
+
+    # Mathematical Formulas (if you use it)
+    "formulaic==1.2.1"
+    ]
 
 [project.scripts]
 myapp = "TumorVolumetricsApp.main:main"
