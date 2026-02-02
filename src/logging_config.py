@@ -8,7 +8,7 @@ APP_NAME = "TumorVolumetrics"
 
 #
 # JSON Formatter
-#
+
 class JSONFormatter(logging.Formatter):
     def format(self, record):
         log_record = {
@@ -42,6 +42,7 @@ log_file = os.path.join(log_dir, "tumor_volumetrics.jsonl")
 #
 logger = logging.getLogger(APP_NAME)
 logger.setLevel(logging.INFO)
+logger.propagate = False
 
 # Prevent duplicate handlers if imported repeatedly
 if not logger.handlers:
@@ -59,7 +60,9 @@ if not logger.handlers:
     file_handler.setLevel(logging.INFO)
 
     # Formatter
-    formatter = JSONFormatter()
+    formatter = logging.Formatter(
+    '%(asctime)s [%(levelname)s] %(name)s.%(funcName)s:%(lineno)d - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
     console_handler.setFormatter(formatter)
     file_handler.setFormatter(formatter)
 

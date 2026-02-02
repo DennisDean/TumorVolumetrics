@@ -4,11 +4,11 @@
 #TODO: Check with a dataset that contains multuple experiments
 
 # Set up a module-level logger
-import logging
+
 
 from matplotlib.colors import ListedColormap
 
-logger = logging.getLogger(__name__)
+from logging_config import logger
 
 # Extend Existing Class
 from FigureGraphicsViewClass import FigureGraphicsView
@@ -16,14 +16,12 @@ from FigureGraphicsViewClass import FigureGraphicsView
 # Import
 
 # Computing
-import numpy as np
 import re
 
 # Plotting
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from matplotlib.colors import ListedColormap
 from matplotlib.colors import LinearSegmentedColormap
 
 # Interface

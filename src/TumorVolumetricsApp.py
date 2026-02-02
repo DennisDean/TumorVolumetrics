@@ -80,7 +80,6 @@ import matplotlib as mpl
 
 import TumorVolumeStudyViewClass
 from logging_config import logger
-__all__ = ['logger']
 
 # PySide Support
 from PySide6.QtWidgets import QApplication, QFileDialog, QMainWindow, QTreeWidgetItem, QMessageBox
@@ -135,6 +134,9 @@ def latex_available():
 class MainApp(QMainWindow):
     # Initialize
     def __init__(self):
+        # Define Logger
+        self.logger = logger
+
         # Initialize widow
         super().__init__()
         self.ui = Ui_MainWindow()
@@ -222,7 +224,7 @@ class MainApp(QMainWindow):
         # Check if Latex is available
         self.use_latex = latex_available()
         if self.use_latex == False:
-            logger.info(f'Full style sheet functionality requires Latex installed')
+            self.logger.info(f'Full style sheet functionality requires Latex installed')
 
         #----------------------------------------------------
         # Hide interface widget not ready for first release
@@ -250,7 +252,7 @@ class MainApp(QMainWindow):
         # Check if CSV file was selected
         extension = os.path.splitext(file_path)[1]
         if extension != ".csv":
-            logger.info(f"File with a csv extension was not selected ({extension}).")
+            self.logger.info(f"File with a csv extension was not selected ({extension}).")
             return
 
         # Process file selection outputs
@@ -258,7 +260,7 @@ class MainApp(QMainWindow):
             # Set status bar
             fn = os.path.basename(file_path)
             self.statusBar().showMessage(fn)
-            logger.info(f"Selected file: {file_path}")
+            self.logger.info(f"Selected file: {file_path}")
 
             # Store information
             self.tv_file_path = file_path
@@ -268,7 +270,7 @@ class MainApp(QMainWindow):
             self.ui.pushButton_load_show_file.setEnabled(True)
             self.ui.pushButton_load_saveas.setEnabled(True)
         else:
-            logger.info(f"File selection canceled by user.")
+            self.logger.info(f"File selection canceled by user.")
             return
 
         # Set file name to gobal varaibles
@@ -364,7 +366,7 @@ class MainApp(QMainWindow):
 
     # Data viewers
     def pushbutton_show_csv_file(self):
-        logger.info(f'Displaying the selected file: {self.tumor_volume_file_path}')
+        self.logger.info(f'Displaying the selected file: {self.tumor_volume_file_path}')
 
         if self.tumor_volume_file_window is None:
             self.tumor_volume_file_window= TumorVolumeFileWindow(parent=self)
@@ -375,7 +377,7 @@ class MainApp(QMainWindow):
         self.tumor_volume_file_window.raise_()
         self.tumor_volume_file_window.activateWindow()
     def pushbutton_show_experiment_viewer(self):
-        logger.info(f'Displaying tumor volume experiment viewer: {self.tumor_volume_file_path}')
+        self.logger.info(f'Displaying tumor volume experiment viewer: {self.tumor_volume_file_path}')
 
         if self.tumor_volume_experiment_window is None:
             self.tumor_volume_experiment_window = TumorVolumeExperimentWindow(self.tumor_volume_data_obj)
@@ -385,7 +387,7 @@ class MainApp(QMainWindow):
         self.tumor_volume_experiment_window.raise_()
         self.tumor_volume_experiment_window.activateWindow()
     def pushbutton_show_study_viewer(self):
-        logger.info(f'Displaying tumor volume study viewer: {self.tumor_volume_file_path}')
+        self.logger.info(f'Displaying tumor volume study viewer: {self.tumor_volume_file_path}')
 
         if self.tumor_volume_study_window is None:
             self.tumor_volume_study_window = TumorVolumeStudyWindow(self.tumor_volume_data_obj)
@@ -397,13 +399,14 @@ class MainApp(QMainWindow):
 
 # Start Application
 def main():
+    # Initialize logger
+    logger.info('Starting TumorVolumetrics.')
+
     # Starting Application
     app = QApplication(sys.argv)
     window = MainApp()
     window.show()
     app.exec()
 
-    # Initialize logger
-    logger.info('Starting TumorVolumetrics.')
 if __name__ == "__main__":
     main()  # -*- coding: utf-8 -*-

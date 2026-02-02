@@ -4,8 +4,8 @@
 #TODO: Check with a dataset that contains multuple experiments
 
 # Set up a module-level logger
-import logging
-logger = logging.getLogger(__name__)
+
+from logging_config import logger
 
 # Extend Existing Class
 from FigureGraphicsViewClass import FigureGraphicsView
@@ -76,6 +76,9 @@ class TumorVolumeStudyWindow(QMainWindow):
     # Intitialize
     def __init__(self, tv_data_obj:TumorVolumeDataClass , parent=None):
         super().__init__(parent)
+
+        # 0. Set up logger
+        self.logger = logger
 
         # 1. CORE SETUP - UI and data
         self.ui = Ui_MainWindow()
@@ -448,7 +451,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Get semantics relevant objective response colors
         obj_res_color_dict = self.get_response_colors_from_colormap(available_style_colors)
         obj_res_color_list = [ obj_res_color_dict[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
-        print("obj_res_color_list = {obj_res_color_list}")
         available_style_colors.extend(obj_res_color_list)
         self.available_style_colors = available_style_colors
 
@@ -762,7 +764,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         # Get semantics relevant objective response colors
         obj_res_color_dict = self.get_response_colors_from_colormap(available_style_colors)
         obj_res_color_list = [obj_res_color_dict[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
-        print("obj_res_color_list = {obj_res_color_list}")
         available_style_colors.extend(obj_res_color_list)
         self.available_style_colors = available_style_colors
 

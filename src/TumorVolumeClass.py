@@ -19,7 +19,6 @@ from logging_config import logger
 
 # Utilities
 import copy
-import logging
 import os
 import re
 from contextlib import nullcontext
@@ -41,7 +40,6 @@ from scipy.stats import sem, t, ttest_ind
 # Visualization
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from contextlib import nullcontext
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 def _mpl_code_to_hex(self, code: str) -> str:
@@ -101,12 +99,6 @@ from PySide6.QtWidgets import QVBoxLayout, QSizePolicy
 # Set up logger
 # Create logs directory if it does not exist
 os.makedirs("logs", exist_ok=True)
-log_file = os.path.join("logs", "app.log")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=[
-        logging.FileHandler(log_file),   # Log to file
-        logging.StreamHandler()          # Log to console
-    ])
-logger = logging.getLogger(__name__)
 
 # Utility
 def sanitize_column_names(column_name:str):
@@ -172,11 +164,11 @@ def column_print(string_list:list, number_of_columns: int = 2, space: int = 5, i
     for r in range(num_complete_rows):
         start = r * number_of_columns
         end   = start + number_of_columns
-        logger.info(indent+" ".join(string_list[start:end]))
+        self.logger.info(indent+" ".join(string_list[start:end]))
     if remaining_entries > 0:
-        logger.info(indent+" ".join(string_list[num_complete_rows * number_of_columns:]))
+        self.logger.info(indent+" ".join(string_list[num_complete_rows * number_of_columns:]))
 def write_title_list(variable_name:str, value_list:list):
-    logger.info(f"{variable_name}: {', '.join(value_list)}")
+    self.logger.info(f"{variable_name}: {', '.join(value_list)}")
 def remove_alpha(text):
     """
     Remove all alphabetic characters (a-z, A-Z) from a string.
@@ -204,6 +196,8 @@ class TumorVolumeTimeSeriesClass():
                  study_group:str|None = None, study:str|None = None, pdx_id:str|None = None,
                  tumor:str|None=None, disease_type:str|None=None, matched_controls:str|None=None,
                  volume_units="mm^3", weight_units="mg"):
+        # save global logger
+        self.logger = logger
 
         # Class variables
         # Tumor volume time series variables
@@ -522,6 +516,9 @@ class TumorVolumeStudyClass():
     def __init__(self, study_id:str, arm_col:list[str], id_col:list[str], tumor_col:list[str],
                       study_tv_time_dict:dict[str, TumorVolumeTimeSeriesClass]):
 
+        # Store logger
+        self.logger = logger
+
         # Create dictionary for holding data
         self.study_id:str = study_id
         self.arm_col = arm_col.copy()
@@ -820,15 +817,15 @@ class TumorVolumeStudyClass():
         # Write summary to log file
 
         # Write unique lists
-        logger.info('')
-        logger.info(f'Study id: {self.study_id}')
+        self.logger.info('')
+        self.logger.info(f'Study id: {self.study_id}')
         unique_arm_str = f'unique_arms: ' + ', '.join(self.unique_arms)
-        logger.info(unique_arm_str)
+        self.logger.info(unique_arm_str)
         unique_ids_str = f'unique_ids: ' + ', '.join(self.unique_ids)
-        logger.info(unique_ids_str)
-        logger.info(f'Arm:')
+        self.logger.info(unique_ids_str)
+        self.logger.info(f'Arm:')
         for arm in self.unique_arms:
-            logger.info(f'     {arm}: ' + ', '.join(self.study_arms_dict[arm]))
+            self.logger.info(f'     {arm}: ' + ', '.join(self.study_arms_dict[arm]))
 
     # Visualization Utilities
     def plot_to_widget_by_name(self, plot_name, parent_widget, plot_style=None, **plot_kwargs):
@@ -1785,7 +1782,7 @@ class TumorVolumeStudyClass():
                 idx += 1
 
             if not bar_heights:
-                logger.info("No AUC values to plot")
+                self.logger.info("No AUC values to plot")
                 return None
 
             # Create bar graph
@@ -1987,7 +1984,7 @@ class TumorVolumeStudyClass():
                 idx += 1
 
             if not bar_heights:
-                logger.info("No tumor volume change values to plot")
+                self.logger.info("No tumor volume change values to plot")
                 return None
 
             bars = ax.bar(
@@ -2199,7 +2196,7 @@ class TumorVolumeStudyClass():
                 arm_ranges[arm] = (start_idx, idx - 1)
 
             if not bar_heights:
-                logger.info("No tumor volume change values to plot")
+                self.logger.info("No tumor volume change values to plot")
                 return None
 
             bars = ax.bar(
@@ -2356,8 +2353,10 @@ class TumorVolumeStudyClass():
 class TumorVolumeExperimentClass():
     # Class supports the organiziation, presentation, and analysis of tumor volume experimental groups
     def __init__(self, experiment:str, experiment_col:list, study_col:list, study_dict:dict[str, TumorVolumeStudyClass]):
+        # Save logger
+        self.logger = logger
 
-        # Sasve experiment name
+        # Save experiment name
         self.experiment = experiment
 
         # Copy column and dictionary information
@@ -2438,11 +2437,11 @@ class TumorVolumeExperimentClass():
     def summarize(self):
         # Write summary to log file
         # Header
-        logger.info("")
-        logger.info(f"-------------------")
+        self.logger.info("")
+        self.logger.info(f"-------------------")
 
         # Experntal Group Header
-        logger.info(f"Experiment: {self.experiment}")
+        self.logger.info(f"Experiment: {self.experiment}")
 
         # Write summary for each study
         study_keys = list(self.experiment_study_dict.keys())
@@ -2642,7 +2641,7 @@ class TumorVolumeExperimentClass():
 
         # Check if we have data to plot
         if len(study_means) == 0:
-            logger.info("No studies with data to plot")
+            self.logger.info("No studies with data to plot")
             return None
 
         # ---------------- Plotting ----------------
@@ -2877,7 +2876,7 @@ class TumorVolumeExperimentClass():
 
         # Check if we have data to plot
         if len(study_means) == 0:
-            logger.info("No studies with data to plot")
+            self.logger.info("No studies with data to plot")
             return None
 
         # ---------------- Plotting ----------------
@@ -3310,7 +3309,7 @@ class TumorVolumeExperimentClass():
         #   NO DATA TO PLOT
         # ---------------------------------------------------------
         if len(study_labels) == 0:
-            logger.info("No AUC data available to plot")
+            self.logger.info("No AUC data available to plot")
             return None
 
         # ---------------------------------------------------------
@@ -3551,7 +3550,7 @@ class TumorVolumeExperimentClass():
 
                 # t-test
                 t_stat, p_value = ttest_ind(trt_vals_raw, ctrl_vals_raw, equal_var=False)
-                logger.info(f"Study={study}, t-stat={t_stat}, p-value={p_value}")
+                self.logger.info(f"Study={study}, t-stat={t_stat}, p-value={p_value}")
 
                 ctrl_mean = np.mean(ctrl_vals)
                 trt_mean = np.mean(trt_vals)
@@ -3628,7 +3627,6 @@ class TumorVolumeExperimentClass():
                 # Check if any style contains 'grid'
                 grid_styles = ['grid', 'seaborn-v0_8-whitegrid', 'seaborn-v0_8-darkgrid']
                 if any(grid_style in styles for grid_style in grid_styles):
-                    print('grid_styles found')
                     ax.grid(True)
                     ax.set_axisbelow(True)
 
@@ -3709,7 +3707,7 @@ class TumorVolumeDataClass():
     # Load, analyze, sumarrize, and plot tumor volume data
     def __init__(self):
         # Set up logger
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
 
         # tumor volume
         self.tumor_volume_data_fn:str|None = None
@@ -3763,7 +3761,7 @@ class TumorVolumeDataClass():
             self.tmz_data_df = df
             self.tmz_data_fn = fn
         except FileNotFoundError:
-            logger.info(f'Could not load the cnv file: {fn}')
+            self.logger.info(f'Could not load the cnv file: {fn}')
             return
 
         # Store units
@@ -3797,10 +3795,10 @@ class TumorVolumeDataClass():
         # Check for missing or unspecified columns
         if missing_column_names:
             column_names_check_out = False
-            logger.info(f'Extra columns are included')
+            self.logger.info(f'Extra columns are included')
         if columns_not_included:
             column_names_check_out = False
-            logger.info(f'Columns are missing: {columns_not_included}')
+            self.logger.info(f'Columns are missing: {columns_not_included}')
 
 
         return column_names_check_out, missing_column_names, columns_not_included
@@ -3987,7 +3985,7 @@ class TumorVolumeDataClass():
         try:
             from lxml import etree
         except Exception:
-            logger.info("lxml is not installed. Install it (pip install lxml) to perform XSD validation.")
+            self.logger.info("lxml is not installed. Install it (pip install lxml) to perform XSD validation.")
             return False
 
         xml_doc = etree.parse(xml_path)
@@ -3996,9 +3994,9 @@ class TumorVolumeDataClass():
         schema = etree.XMLSchema(schema_doc)
         valid = schema.validate(xml_doc)
         if not valid:
-            logger.info("Validation errors:")
+            self.logger.info("Validation errors:")
             for err in schema.error_log:
-                logger.info(err.message)
+                self.logger.info(err.message)
         return valid
     def dataframe_to_csv(self, df: pd.DataFrame, csv_path: str, index=False):
         """
@@ -4052,7 +4050,7 @@ class TumorVolumeDataClass():
 
         # Check if data is avaialble
         if self.unique_pdx_ids is None:
-            logger.info('Load data before creating time_series dictionary')
+            self.logger.info('Load data before creating time_series dictionary')
             return
 
         # Loop through pdx ids
@@ -4089,7 +4087,7 @@ class TumorVolumeDataClass():
 
         # Check if data is available
         if self.unique_studies is None:
-            logger.info('Can not generate study dictionary. Load data file first.')
+            self.logger.info('Can not generate study dictionary. Load data file first.')
             return
 
         # Create dictionary
@@ -4116,7 +4114,7 @@ class TumorVolumeDataClass():
 
         # Check if data is available
         if self.unique_experiments is None:
-            logger.info('Can not generate experimental group dictionary. Load data file first.')
+            self.logger.info('Can not generate experimental group dictionary. Load data file first.')
             return
 
         # Create dictionary
@@ -4147,50 +4145,50 @@ class TumorVolumeDataClass():
     # Command line summary
     def write_file_summary_text(self):
         # Data Summary
-        logger.info(f'num_of_data_points = {self.num_of_data_points}')
-        logger.info(f'num_of_time_series = {self.num_of_time_series}\n')
+        self.logger.info(f'num_of_data_points = {self.num_of_data_points}')
+        self.logger.info(f'num_of_time_series = {self.num_of_time_series}\n')
 
         # Study Summary
-        logger.info(f'num_of_contributors = {self.num_of_contributors}')
+        self.logger.info(f'num_of_contributors = {self.num_of_contributors}')
         write_title_list('unique_contributors', self.unique_contributors)
 
-        logger.info(f'num_of_arms = {self.num_of_arms}')
+        self.logger.info(f'num_of_arms = {self.num_of_arms}')
         write_title_list('unique_arms', self.unique_arms)
 
-        logger.info(f'num_of_studies = {self.num_of_studies}')
+        self.logger.info(f'num_of_studies = {self.num_of_studies}')
         write_title_list('unique_studies', self.unique_studies)
 
-        logger.info(f'num_unique_pdx_ids = {self.num_unique_pdx_ids}')
-        logger.info(f'unique_pdx_ids')
+        self.logger.info(f'num_unique_pdx_ids = {self.num_unique_pdx_ids}')
+        self.logger.info(f'unique_pdx_ids')
         column_print(self.unique_pdx_ids, number_of_columns=5)
 
-        logger.info(f'num_unique_pdxs = {self.num_unique_pdxs}')
+        self.logger.info(f'num_unique_pdxs = {self.num_unique_pdxs}')
         write_title_list('unique_pdxs', self.unique_pdxs)
 
-        logger.info(f'num_disease_types = {self.num_disease_types}\n')
+        self.logger.info(f'num_disease_types = {self.num_disease_types}\n')
         write_title_list('unique_disease_types', self.unique_disease_types)
 
         # Add on columns
-        logger.info(f'unique_matched_controls')
+        self.logger.info(f'unique_matched_controls')
         column_print(self.unique_matched_controls, number_of_columns=5)
-        logger.info(f'num_matched_controls = {self.num_matched_controls}')
-        logger.info(f'num_unmatched = {self.num_unmatched}')
+        self.logger.info(f'num_matched_controls = {self.num_matched_controls}')
+        self.logger.info(f'num_unmatched = {self.num_unmatched}')
     def list_time_series(self):
         # check if file is loaded
         if self.unique_pdx_ids is None:
-            logger.info('')
+            self.logger.info('')
         # Write one line time series description to command line
-        logger.info('')
+        self.logger.info('')
         for pdx in self.unique_pdx_ids:
             tv_time_series_obj = self.tumor_vol_time_series_dict[pdx]
-            logger.info(tv_time_series_obj.summary())
+            self.logger.info(tv_time_series_obj.summary())
     def write_study_summary(self):
 
         # Write study summary header
-        logger.info('')
-        logger.info('')
-        logger.info(f'Data file: {self.tmz_data_fn}')
-        logger.info(f'Study ids: ' + ', '.join(self.unique_studies))
+        self.logger.info('')
+        self.logger.info('')
+        self.logger.info(f'Data file: {self.tmz_data_fn}')
+        self.logger.info(f'Study ids: ' + ', '.join(self.unique_studies))
 
         # Write study summary to log file
         for study in self.unique_studies:
