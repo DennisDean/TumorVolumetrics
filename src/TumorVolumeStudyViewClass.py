@@ -5,36 +5,31 @@
 
 # Set up a module-level logger
 
-from logging_config import logger
-
-# Extend Existing Class
-from FigureGraphicsViewClass import FigureGraphicsView
-
-# Import
-
-# Computing
-import numpy as np
 import re
 
 # Plotting
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from matplotlib.colors import LinearSegmentedColormap
-
-# Science Plot Styles
-import scienceplots #Needed
-
+import matplotlib.pyplot as plt
+# Computing
+import numpy as np
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve
+from PySide6.QtGui import QColor, QPixmap, QIcon
 # Interface
 from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox, QScrollArea
-from PySide6.QtCore import QPropertyAnimation, QEasingCurve, QSize
-from PySide6.QtGui import QColor, QPixmap, QIcon
+from matplotlib.colors import LinearSegmentedColormap
 
+# Extend Existing Class
+from FigureGraphicsViewClass import FigureGraphicsView
 # Tumor volume classes
 from TumorVolumeClass import TumorVolumeDataClass
-
 # GUI Interface
 from TumorVolumeStudyView import Ui_MainWindow
+from logging_config import logger
+
+
+# Import
+# Science Plot Styles
 
 # Utilities
 def set_layout_visible(layout, visible: bool):
@@ -61,12 +56,11 @@ def set_layout_visible(layout, visible: bool):
 def latex_available():
     try:
         mpl.rcParams["text.usetex"] = True
-        import matplotlib.pyplot as plt
         plt.figure()
         plt.text(0.5, 0.5, r"$\alpha$")
         plt.close()
         return True
-    except Exception:
+    except (RuntimeError, FileNotFoundError, OSError, ValueError):
         return False
     finally:
         mpl.rcParams["text.usetex"] = False
@@ -139,6 +133,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.graphicsView_visual_bottom_left = None
         self.graphicsView_visual_bottom_right = None
         self.original_graphics_views = None
+        self.graphic_views:list|None = None
 
         # Animation references
         self._gb_animation = None
@@ -148,13 +143,20 @@ class TumorVolumeStudyWindow(QMainWindow):
         self._gb_evfre_anim = None
         self._gb_spidr_anim = None
         self._gb_objrp_anim = None
+        self._groupbox_anim_map:dict|None = None
 
         # Plotting infrastructure (initialize to None before setup)
         self.plot_types = None
+        self.plotting_function_dict:dict|None = None
         self.plot_select_comboBox = None
         self.plotting_functions = None
         self.experiment_graphics_views = None
         self.available_style_colors = None
+
+        self.rotation_option_dict:dict|None = None
+        self.cutoff_options:list|None = None
+        self.rotation_option_dict:dict|None = None
+        self.objective_response_colors:dict|None = None
 
         # 4. WIDGET POPULATION (populate combo boxes)
         self.ui.comboBox_configuration_study.addItems(self.studies)
@@ -237,26 +239,19 @@ class TumorVolumeStudyWindow(QMainWindow):
     # Inititialize Utilities
     def initialize_plotting(self):
         # Setup study plotting
-        self.plot_types = ["Spider_Plot", "Event_Free_Survivial", "Area_Under_the_Curve",
-                           "Percent_TV_Change", "Objective_Response"]
         self.plot_select_comboBox = [self.ui.comboBox_configuration_plot_upper_left_2,
                                      self.ui.comboBox_configuration_plot_upper_right_2,
                                      self.ui.comboBox_configuration_plot_lower_left_2,
                                      self.ui.comboBox_configuration_plot_lower_right_2]
-        self.plotting_function_dict = {"Spider_Plot": "plot_spider",
-                                       "Event_Free_Survivial": "plot_event_free_survival",
-                                       "Area_Under_the_Curve": "plot_auc_bar",
-                                       "Percent_TV_Change": "plot_percent_tumor_vol_change_bar",
-                                       "Objective_Response": "plot_vol_change_as_objective_response_bar"}
 
         # Get plotting function dict from TumorVolumeClass
         # Start process of replacing plotting function dict with metadata complete
         unique_studies = self.tv_data_obj.unique_studies
         first_study = self.tv_data_obj.tumor_vol_study_dict[unique_studies[0]]
-        self.plotting_function_dict_2 = first_study.plotting_function_dict_2
+        self.plotting_function_dict = first_study.plotting_function_dict_2
 
         # Get avaialble plot type
-        self.plot_types = list(self.plotting_function_dict_2.keys())
+        self.plot_types = list(self.plotting_function_dict.keys())
         self.plot_types.sort()
 
         # Initialize selection comboBoxes
@@ -441,7 +436,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.ui.comboBox_obj_res_shorten_labels.setCurrentIndex(1)
 
         # Get current style color selection
-        if self.available_style_colors == None:
+        if self.available_style_colors is None:
             # First initialization add default color
             available_style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         else:
@@ -585,14 +580,16 @@ class TumorVolumeStudyWindow(QMainWindow):
                 combo_box.addItem(icon, color_name, userData=color)
             combo_box.setCurrentIndex((count+color_shift)%num_color)
             count += 1
-    def _extract_color_from_label(self, color_label):
+    @staticmethod
+    def _extract_color_from_label(color_label):
         """Extract hex color from a label like 'Color 1 (#1f77b4)'"""
         match = re.search(r'#[0-9a-fA-F]{6}', color_label)
         if match:
             return match.group(0)
         # If no hex code found, assume it's already a valid color
         return color_label
-    def _is_hex_color(self,s: str) -> bool:
+    @staticmethod
+    def _is_hex_color(s: str) -> bool:
         if not isinstance(s, str):
             return False
         if not s.startswith("#"):
@@ -605,7 +602,8 @@ class TumorVolumeStudyWindow(QMainWindow):
             return True
         except ValueError:
             return False
-    def _mpl_code_to_hex(self,code: str) -> str:
+    @staticmethod
+    def _mpl_code_to_hex(code: str) -> str:
         base_map = {
             "b": "#0000FF",
             "g": "#008000",
@@ -679,7 +677,7 @@ class TumorVolumeStudyWindow(QMainWindow):
                 plot_style.append(self.plot_scienceplot_color)
             if self.plot_scienceplot_grid != 'No Grid'.lower():
                 plot_style.append(self.plot_scienceplot_grid)
-            if self.use_latex == False:
+            if not self.use_latex:
                 plot_style.append(self.plot_scienceplot_grid)
         else:
             logger.info(f'Plot style module not supported: {self.plot_style_module}')
@@ -692,8 +690,7 @@ class TumorVolumeStudyWindow(QMainWindow):
             # Use matplotlib default if style not configured
             return plt.rcParams['axes.prop_cycle'].by_key()['color']
 
-        # module = ("Matplotlib", "Science Plots")
-        plot_style_module = self.ui.comboBox_plot_style_module.currentText()
+        # get plot style
         plot_style = self.get_plot_style()
 
         # Apply the style temporarily to extract colors
@@ -709,8 +706,7 @@ class TumorVolumeStudyWindow(QMainWindow):
             # Use matplotlib default if style not configured
             return plt.rcParams['axes.prop_cycle'].by_key()['color']
 
-        # module = ("Matplotlib", "Science Plots")
-        plot_style_module = self.ui.comboBox_plot_style_module.currentText()
+        # Get plot style
         plot_style = self.get_plot_style()
 
         # Apply the style temporarily to extract colors
@@ -753,7 +749,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         self.initialize_event_free_group_box()
     def update_plot_style(self):
         # Update figures
-        plot_style = self.get_plot_style()
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
 
         # Update Objective Response Plot Options
@@ -800,6 +795,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         set_layout_visible(self.ui.verticalLayout_plot_scienceplot_options, bool(new_index))
         set_layout_visible(self.ui.verticalLayout_matplotlib_options,not bool(new_index))
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
+    @staticmethod
     def toggle_event_free_cutoff_options(new_index):
         # Handle fixed cutoff options
         common_across_arms = 0
@@ -882,7 +878,8 @@ class TumorVolumeStudyWindow(QMainWindow):
 
         anim.start()
         groupbox._anim = anim  # keep alive+
-    def _update_scroll_area(self, groupbox: QGroupBox):
+    @staticmethod
+    def _update_scroll_area(groupbox: QGroupBox):
         """Force the scroll area to update when groupbox size changes"""
         scroll_area = groupbox
         # Walk up the parent hierarchy to find the scroll area
@@ -1017,7 +1014,8 @@ class TumorVolumeStudyWindow(QMainWindow):
             self._gb_pertv_anim.setEndValue(header_height)
 
         self._gb_pertv_anim.start()
-    def _recompute_groupbox_height(self, groupbox):
+    @staticmethod
+    def _recompute_groupbox_height(groupbox):
         layout = groupbox.layout()
         if not layout:
             return
@@ -1048,7 +1046,7 @@ class TumorVolumeStudyWindow(QMainWindow):
         for idx in range(num_figures):
             # Get plot information
             selected_plot = self.plot_select_comboBox[idx].currentText()
-            plot_metadata = self.plotting_function_dict_2[selected_plot]
+            plot_metadata = self.plotting_function_dict[selected_plot]
             plot_name = plot_metadata["function"]
             graphic_view = self.graphic_views[idx]
 
@@ -1138,11 +1136,6 @@ class TumorVolumeStudyWindow(QMainWindow):
         pr_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_pr.currentText())
         cr_color = self._extract_color_from_label(self.ui.comboBox_objective_plot_cr.currentText())
 
-        pd_index = self.ui.comboBox_objective_plot_pd.currentIndex()
-        sd_index = self.ui.comboBox_objective_plot_sd.currentIndex()
-        pr_index = self.ui.comboBox_objective_plot_pr.currentIndex()
-        cr_index = self.ui.comboBox_objective_plot_cr.currentIndex()
-
         # Construct custom parameter dictionary
         custom_params = {"objective_response_colors":
                              {"PD": pd_color, "SD": sd_color, "PR": pr_color,"CR": cr_color},
@@ -1166,7 +1159,8 @@ class TumorVolumeStudyWindow(QMainWindow):
         return custom_params
 
     # Figure specific options
-    def transform_color(self, rgb_color, target_rgb, blend_weight=0.4, brightness_adjust=1.0):
+    @staticmethod
+    def transform_color(rgb_color, target_rgb, blend_weight=0.4, brightness_adjust=1.0):
         """Blend with target color and adjust brightness"""
         # Blend
         blended = tuple(c1 * (1 - blend_weight) + c2 * blend_weight
@@ -1223,10 +1217,12 @@ class TumorVolumeStudyWindow(QMainWindow):
                 colors[key] = mcolors.rgb2hex(blended).upper()
 
             return colors
-    def blend_colors(self, color1, color2, weight=0.5):
+    @staticmethod
+    def blend_colors(color1, color2, weight=0.5):
         """Blend two RGB colors together"""
         return tuple(c1 * (1 - weight) + c2 * weight for c1, c2 in zip(color1, color2))
-    def _is_grayscale_colormap(self, colors):
+    @staticmethod
+    def _is_grayscale_colormap(colors):
         """
         Detect if a list of colors represents a grayscale colormap.
         Returns True if all colors have R=G=B (within tolerance).

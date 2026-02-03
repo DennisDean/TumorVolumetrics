@@ -77,6 +77,7 @@ https://www.gnu.org/licenses/agpl-3.0.html for full terms.
 import os
 import sys
 import matplotlib as mpl
+from typing import Optional
 
 import TumorVolumeStudyViewClass
 from logging_config import logger
@@ -125,7 +126,7 @@ def latex_available():
         plt.text(0.5, 0.5, r"$\alpha$")
         plt.close()
         return True
-    except Exception:
+    except (RuntimeError, FileNotFoundError, OSError):
         return False
     finally:
         mpl.rcParams["text.usetex"] = False
@@ -175,6 +176,7 @@ class MainApp(QMainWindow):
         self.tumor_volume_file_path:str|None = None
         self.tumor_volume_data_obj:TumorVolumeDataClass|None = None
 
+        self.unique_diseases:list[str]|None = None
         self.unique_contributors:list[str]|None = None
         self.unique_experiments:list[str]|None = None
         self.unique_studies:list[str]|None = None
@@ -185,8 +187,8 @@ class MainApp(QMainWindow):
         self.tv_file_path:str|None = None
         self.tv_fn:str|None = None
         self.tumor_volume_file_window:TumorVolumeFileWindow|None = None
-        self.tumor_volume_experiment_window:TumorVolumeExperimentViewClass|None = None
-        self.tumor_volume_study_window:TumorVolumeStudyViewClass|None = None
+        self.tumor_volume_experiment_window:Optional[TumorVolumeExperimentViewClass] = None
+        self.tumor_volume_study_window:Optional[TumorVolumeStudyViewClass] = None
 
         #-------------------------------------------------------------
         # Connect buttons to response, default if file view during development
@@ -223,7 +225,7 @@ class MainApp(QMainWindow):
 
         # Check if Latex is available
         self.use_latex = latex_available()
-        if self.use_latex == False:
+        if not self.use_latex:
             self.logger.info(f'Full style sheet functionality requires Latex installed')
 
         #----------------------------------------------------
@@ -320,8 +322,6 @@ class MainApp(QMainWindow):
         ----------
         parent : QWidget or None
             Parent widget for the dialog.
-        xml_text : str
-            The XML text to write to the file.
         """
 
         # Open save dialog

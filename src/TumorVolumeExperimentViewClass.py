@@ -1,12 +1,8 @@
 # Code for displaying a tumor experiment pllots
 
-#TODO: Semantic color coding of objective response with gray and blue tones
-#TODO: Check with a dataset that contains multuple experiments
+#TODO: Check with a dataset that contains multiple experiments
 
 # Set up a module-level logger
-
-
-from matplotlib.colors import ListedColormap
 
 from logging_config import logger
 
@@ -60,12 +56,11 @@ def set_layout_visible(layout, visible: bool):
 def latex_available():
     try:
         mpl.rcParams["text.usetex"] = True
-        import matplotlib.pyplot as plt
         plt.figure()
         plt.text(0.5, 0.5, r"$\alpha$")
         plt.close()
         return True
-    except Exception:
+    except (RuntimeError, FileNotFoundError, OSError, ValueError):
         return False
     finally:
         mpl.rcParams["text.usetex"] = False
@@ -98,6 +93,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
 
         # Style configuration data structures
         self.current_plot_style = 0
+        self.objective_response_colors:dict|None = None
         self.style_modules_supported = ['Matplotlib', 'Science Plots']
         self.matplotlib_style_sheets_options = [
             "default", "classic", "fast",
@@ -127,9 +123,17 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.graphicsView_visual_bottom_left = None
         self.graphicsView_visual_bottom_right = None
         self.original_graphics_views = None
+        self.graphic_views: list|None = None
 
         # Animation references
-        self._gb_animation = None
+        self._gb_animation:QPropertyAnimation|None = None
+        self._gb_confg_anim:QPropertyAnimation|None = None
+        self._gb_style_anim:QPropertyAnimation|None = None
+        self._gb_avauc_anim:QPropertyAnimation|None = None
+        self._gb_avgch_anim:QPropertyAnimation|None = None
+        self._gb_logch_anim:QPropertyAnimation|None = None
+        self._gb_objrp_anim:QPropertyAnimation|None = None
+        self._gb_tcrat_anim:QPropertyAnimation|None = None
 
         # Plotting infrastructure (initialize to None before setup)
         self.plot_types = None
@@ -137,6 +141,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.plotting_functions = None
         self.experiment_graphics_views = None
         self.available_style_colors = None
+        self.plotting_function_dict:dict|None = None
 
         # 4. WIDGET POPULATION (populate combo boxes)
         self.ui.comboBox_configuration_experiments.addItems(self.experiments)
@@ -213,14 +218,11 @@ class TumorVolumeExperimentWindow(QMainWindow):
                            "AUC_with_Control_Bar", "Log2_Fold_Change_w_Error"]
         self.plot_select_comboBox = [self.ui.comboBox_configuration_plot_upper_left, self.ui.comboBox_configuration_plot_upper_right,
                             self.ui.comboBox_configuration_plot_lower_left, self.ui.comboBox_configuration_plot_lower_right]
-        self.plotting_function_dict = {"Avg_TV_Change_Bar":"plot_average_tumor_volume_change_bar", "TV_Control_Bar":"plot_tumor_control_ratio_bar",
-                            "Objective_Response_Bar":"proportion_in_objective_response_classification_bar", "AUC_with_Control_Bar":"plot_auc_with_controls_bar",
-                            "Log2_Fold_Change_w_Error":"plot_log2fc_points"}
         experiment_list = list(self.tv_data_obj.tumor_vol_experiment_dict.keys())
         first_experiment_key = experiment_list[0]
         experiment_obj = self.tv_data_obj.tumor_vol_experiment_dict[first_experiment_key]
-        self.plotting_function_dict_2 = experiment_obj.plotting_function_dict_2
-        self.plot_types = list(self.plotting_function_dict_2.keys())
+        self.plotting_function_dict = experiment_obj.plotting_function_dict_2 # will need to revist renaming plotting_function_dict_2
+        self.plot_types = list(self.plotting_function_dict.keys())
 
 
         # Initialize selection comboBoxes
@@ -311,7 +313,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
             gbox.setChecked(gstate)
             gbox.layout().activate()
             header_height = gbox.fontMetrics().height()+16
-            if gstate == False:
+            if not gstate:
                 gbox.setMaximumHeight(header_height)
 
         # Annimate style groupboxes
@@ -390,14 +392,16 @@ class TumorVolumeExperimentWindow(QMainWindow):
                 combo_box.addItem(icon, color_name, userData=color)
             combo_box.setCurrentIndex((count + color_shift) % num_color)
             count += 1
-    def _extract_color_from_label(self, color_label):
+    @staticmethod
+    def _extract_color_from_label(color_label):
         """Extract hex color from a label like 'Color 1 (#1f77b4)'"""
         match = re.search(r'#[0-9a-fA-F]{6}', color_label)
         if match:
             return match.group(0)
         # If no hex code found, assume it's already a valid color
         return color_label
-    def _is_hex_color(self,s: str) -> bool:
+    @staticmethod
+    def _is_hex_color(s: str) -> bool:
         if not isinstance(s, str):
             return False
         if not s.startswith("#"):
@@ -410,7 +414,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
             return True
         except ValueError:
             return False
-    def _mpl_code_to_hex(self,code: str) -> str:
+    @staticmethod
+    def _mpl_code_to_hex(code: str) -> str:
 
         # If it's already a hex color, return it as-is
         if isinstance(code, str) and code.startswith('#'):
@@ -600,7 +605,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         self.ui.comboBox_obj_res_shorten_labels.setCurrentIndex(1)
 
         # Get current style color selection
-        if self.available_style_colors == None:
+        if self.available_style_colors is None:
             # First initialization add default color
             available_style_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         else:
@@ -620,7 +625,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # self._populate_color_comboboxes(orc_cboxes, available_style_colors, color_shift=2)
 
         # Set Index
-        color_shift = 2  # don't use the first two colors, assuming two arms
         idx_max = len(available_style_colors)-4
         for idx, cbox in enumerate(orc_cboxes):
             cbox.setCurrentIndex(idx_max)
@@ -672,7 +676,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
     # Update Group Box Parameters
     def update_plot_style(self):
         # Update figures
-        plot_style = self.get_plot_style()
         self._recompute_groupbox_height(self.ui.groupBox_plot_style_sheet)
 
         # Update Objective Response Plot Options
@@ -846,7 +849,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
                 plot_style.append(self.plot_scienceplot_color)
             if self.plot_scienceplot_grid != 'No Grid'.lower():
                 plot_style.append(self.plot_scienceplot_grid)
-            if self.use_latex == False:
+            if not self.use_latex:
                 plot_style.append(self.plot_scienceplot_grid)
         else:
             logger.info(f'Plot style module not supported: {self.plot_style_module}')
@@ -855,8 +858,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         return plot_style
     def get_style_colors_2(self):
         # rewrite of generated code to return style colors
-        # module = ("Matplotlib", "Science Plots")
-        plot_style_module = self.ui.comboBox_plot_style_module.currentText()
         plot_style = self.get_plot_style()
 
         # Apply the style temporarily to extract colors
@@ -868,7 +869,6 @@ class TumorVolumeExperimentWindow(QMainWindow):
         return colors
     def get_style_colors(self):
         # module = ("Matplotlib", "Science Plots")
-        plot_style_module = self.ui.comboBox_plot_style_module.currentText()
         plot_style = self.get_plot_style()
 
         # Apply the style temporarily to extract colors
@@ -897,50 +897,50 @@ class TumorVolumeExperimentWindow(QMainWindow):
         # Respond to figure comboBox change
         plot_style = self.get_plot_style()
         self.draw_figure_group(plot_style = plot_style)
-    def _populate_color_comboboxes(self, combo_boxes, available_style_colors:list[str]|None, color_shift:int=0):
-        """Populate ALL combo boxes with ALL available colors from the current style.
-
-        Args:
-            combo_boxes: List of combo box objects to populate. If None, attempts to
-                         find combo boxes using default naming convention.
-        """
-
-        # Convert to hex
-        if not self._is_hex_color(available_style_colors[0]):
-            available_style_colors = [ self._mpl_code_to_hex(c) for c in available_style_colors]
-
-        # Get objective response curves
-        #obj_res_colors = self.get_response_colors_from_colormap(available_style_colors)
-        #available_style_colors.extend(obj_res_colors)
-
-        # If no combo boxes provided, try default naming convention
-        if combo_boxes is None:
-            combo_boxes = []
-            response_types = ['PD', 'SD', 'PR', 'CR']
-
-            for response in response_types:
-                combo_box_name = f'comboBox_{response}_color'
-                if hasattr(self.ui, combo_box_name):
-                    combo_boxes.append(getattr(self.ui, combo_box_name))
-
-        # Populate EACH combo box with ALL available colors
-        count = 0
-        for idx, combo_box in enumerate(combo_boxes):
-            combo_box.clear()
-
-            # Add ALL colors from the style to this combo box
-            num_color = len(available_style_colors)
-            for i, color in enumerate(available_style_colors):
-                # Create a colored icon for visual reference
-                pixmap = QPixmap(20, 20)
-                pixmap.fill(QColor(color))
-                icon = QIcon(pixmap)
-
-                # Add to combo box with color name/hex
-                color_name = f"Color {i+1} ({color})"
-                combo_box.addItem(icon, color_name, userData=color)
-            combo_box.setCurrentIndex((count+color_shift)%num_color)
-            count += 1
+    # def _populate_color_comboboxes(self, combo_boxes, available_style_colors:list[str]|None, color_shift:int=0):
+    #     """Populate ALL combo boxes with ALL available colors from the current style.
+    #
+    #     Args:
+    #         combo_boxes: List of combo box objects to populate. If None, attempts to
+    #                      find combo boxes using default naming convention.
+    #     """
+    #
+    #     # Convert to hex
+    #     if not self._is_hex_color(available_style_colors[0]):
+    #         available_style_colors = [ self._mpl_code_to_hex(c) for c in available_style_colors]
+    #
+    #     # Get objective response curves
+    #     #obj_res_colors = self.get_response_colors_from_colormap(available_style_colors)
+    #     #available_style_colors.extend(obj_res_colors)
+    #
+    #     # If no combo boxes provided, try default naming convention
+    #     if combo_boxes is None:
+    #         combo_boxes = []
+    #         response_types = ['PD', 'SD', 'PR', 'CR']
+    #
+    #         for response in response_types:
+    #             combo_box_name = f'comboBox_{response}_color'
+    #             if hasattr(self.ui, combo_box_name):
+    #                 combo_boxes.append(getattr(self.ui, combo_box_name))
+    #
+    #     # Populate EACH combo box with ALL available colors
+    #     count = 0
+    #     for idx, combo_box in enumerate(combo_boxes):
+    #         combo_box.clear()
+    #
+    #         # Add ALL colors from the style to this combo box
+    #         num_color = len(available_style_colors)
+    #         for i, color in enumerate(available_style_colors):
+    #             # Create a colored icon for visual reference
+    #             pixmap = QPixmap(20, 20)
+    #             pixmap.fill(QColor(color))
+    #             icon = QIcon(pixmap)
+    #
+    #             # Add to combo box with color name/hex
+    #             color_name = f"Color {i+1} ({color})"
+    #             combo_box.addItem(icon, color_name, userData=color)
+    #         combo_box.setCurrentIndex((count+color_shift)%num_color)
+    #         count += 1
 
     # Custom Figure
     def update_study_view(self):
@@ -1109,7 +1109,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
             self._gb_tcrat_anim.setEndValue(header_height)
 
         self._gb_tcrat_anim.start()
-    def _recompute_groupbox_height(self, groupbox):
+    @staticmethod
+    def _recompute_groupbox_height(groupbox):
         layout = groupbox.layout()
         if not layout:
             return
@@ -1137,7 +1138,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         for idx in range(num_figures):
             # Get Plot Information
             selected_plot = self.plot_select_comboBox[idx].currentText()
-            plot_name = self.plotting_function_dict_2[selected_plot]['function']
+            plot_name = self.plotting_function_dict[selected_plot]['function']
             graphic_view = self.graphic_views[idx]
 
             # Get custom parameters
@@ -1249,7 +1250,8 @@ class TumorVolumeExperimentWindow(QMainWindow):
         return custom_params
 
     # Figure specific options
-    def transform_color(self, rgb_color, target_rgb, blend_weight=0.4, brightness_adjust=1.0):
+    @staticmethod
+    def transform_color(rgb_color, target_rgb, blend_weight=0.4, brightness_adjust=1.0):
         """Blend with target color and adjust brightness"""
         # Blend
         blended = tuple(c1 * (1 - blend_weight) + c2 * blend_weight
@@ -1306,10 +1308,12 @@ class TumorVolumeExperimentWindow(QMainWindow):
                 colors[key] = mcolors.rgb2hex(blended).upper()
 
             return colors
-    def blend_colors(self, color1, color2, weight=0.5):
+    @staticmethod
+    def blend_colors(color1, color2, weight=0.5):
         """Blend two RGB colors together"""
         return tuple(c1 * (1 - weight) + c2 * weight for c1, c2 in zip(color1, color2))
-    def _is_grayscale_colormap(self, colors):
+    @staticmethod
+    def _is_grayscale_colormap(colors):
         """
         Detect if a list of colors represents a grayscale colormap.
         Returns True if all colors have R=G=B (within tolerance).
