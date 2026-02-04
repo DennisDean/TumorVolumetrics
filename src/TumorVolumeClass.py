@@ -8,41 +8,37 @@
 #    Assessment of Patient-Derived Xenograft Growth and Antitumor Activity:
 #         The NCI PDXNet Consensus, Mol Cancer Ther (2024) 23 (7): 924–938
 #
+# Computation
+import bisect
+# Utilities
+import copy
+import math
+import os
+import re
+import uuid
+import xml.etree.ElementTree as ET
+from contextlib import nullcontext
+from pathlib import Path
+from typing import Optional
+# Visualization
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+import numpy as np
+# Data
+import pandas as pd
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.figure import Figure
 from narwhals import Boolean
-
-# To Do
-
-# Import modules
+from scipy.stats import sem, t, ttest_ind
 
 # Setup Log file
 from logging_config import logger
 
-# Utilities
-import copy
-import os
-import re
-from contextlib import nullcontext
-from pathlib import Path
-from typing import Optional
 
-# Data
-import pandas as pd
-import numpy as np
-import uuid
-import xml.etree.ElementTree as ET
-
-# Computation
-import bisect
-import math
-from lifelines import KaplanMeierFitter
-from scipy.stats import sem, t, ttest_ind
-
-# Visualization
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvas
-def _mpl_code_to_hex(self, code: str) -> str:
+# To Do
+# Import modules
+def _mpl_code_to_hex(code: str) -> str:
     base_map = {
         "b": "#0000FF",
         "g": "#008000",
@@ -189,7 +185,7 @@ def set_xaxis_visible(ax, visible: bool, label: str | None = None):
         ax.set_xlabel(label)
 
 # Main class
-class TumorVolumeTimeSeriesClass():
+class TumorVolumeTimeSeriesClass:
     # Init
     def __init__(self, time_day:Optional[np.ndarray], tumor_volume:Optional[np.ndarray],
                  tumor_weigth:Optional[np.ndarray]=None, contributor:str|None = None, arm:str|None = None,
@@ -216,9 +212,9 @@ class TumorVolumeTimeSeriesClass():
         self.study_group:str|None = study_group
         self.study:str|None = study
         self.pdx_id:str|None = pdx_id
-        self.tumor:str|tumor = tumor
-        self.disease_type:str|disease_type = disease_type
-        self.matched_controls:str|matched_controls = matched_controls
+        self.tumor:str|None = tumor
+        self.disease_type:str|None = disease_type
+        self.matched_controls:str|None = matched_controls
 
         # Compute variables
         self.num_points = len(time_day)
@@ -338,14 +334,14 @@ class TumorVolumeTimeSeriesClass():
             max_index = idx_list[0] + 1  # +1 so slicing includes this point
 
         # Slice data up to max_index
-        t = np.array(self.time_day[:max_index])
+        td = np.array(self.time_day[:max_index])
         v = np.array(self.tumor_volume[:max_index])
 
         # Compute AUC
-        auc = np.trapezoid(v, t)
+        auc = np.trapezoid(v, td)
 
         # Normalized AUC per day
-        time_duration = t[-1] - t[0] if len(t) > 1 else math.nan
+        time_duration = td[-1] - td[0] if len(td) > 1 else math.nan
         normalized_auc = auc / time_duration if time_duration > 0 else math.nan
 
         return auc, normalized_auc
@@ -376,7 +372,7 @@ class TumorVolumeTimeSeriesClass():
             cutoff_day = compute_day
 
         # Determine maximum usable index
-        idx_list = [i for i, t in enumerate(self.time_day) if t >= cutoff_day]
+        idx_list = [i for i, td in enumerate(self.time_day) if td >= cutoff_day]
 
         if len(idx_list) == 0:
             max_index = len(self.time_day)
@@ -384,7 +380,7 @@ class TumorVolumeTimeSeriesClass():
             max_index = idx_list[0] + 1
 
         # Slice data up to max_index
-        t = np.array(self.time_day[:max_index])
+        td = np.array(self.time_day[:max_index])
         v = np.array(self.tumor_volume[:max_index])
 
         # Check validity - need at least 2 points and positive initial volume
@@ -395,7 +391,7 @@ class TumorVolumeTimeSeriesClass():
         percent_tv_change = 100 * (v[-1] - v[0]) / v[0]
 
         # Normalized percent change per day
-        time_duration = t[-1] - t[0]
+        time_duration = td[-1] - td[0]
         if time_duration <= 0:
             return math.nan, math.nan
 
@@ -437,15 +433,22 @@ class TumorVolumeTimeSeriesClass():
         Parameters
         ----------
         figsize : tuple
-            Size of the matplotlib figure.
+            Size of the matplotlib figure. Default is (8, 5).
         volume_label : str
-            Label for the tumor volume axis.
+            Label for the tumor volume axis. Default is "Tumor Volume".
+        volume_units : str
+            Units for tumor volume measurements. Default is "mm^3".
         weight_label : str
-            Label for the tumor weight axis.
+            Label for the tumor weight axis. Default is "Weight".
+        weight_units : str
+            Units for tumor weight measurements. Default is "mg".
         title : str or None
-            Optional custom title. If None, a title is built from metadata.
+            Optional custom title. If None, a title is built from metadata. Default is None.
         plot_weight : bool
             Whether to plot tumor weight data (if available). Default is True.
+        tv_transform_str : str
+            String describing the transformation applied to tumor volume data.
+            Default is "No Transform".
         """
 
         if self.time_day is None or self.tumor_volume is None:
@@ -457,6 +460,7 @@ class TumorVolumeTimeSeriesClass():
                       plot_weight)
 
         # Create subplots with height ratio of 1:3 (weight:volume)
+        ax2: Axes|None = None
         if has_weight:
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize, sharex=True,
                                            gridspec_kw={'height_ratios': [5, 1]})
@@ -513,7 +517,7 @@ class TumorVolumeTimeSeriesClass():
     # Class functions
     def __str__(self):
         return self.summary()
-class TumorVolumeStudyClass():
+class TumorVolumeStudyClass:
     # Data structure for storing, analysisng, and plotting study data
     def __init__(self, study_id:str, arm_col:list[str], id_col:list[str], tumor_col:list[str],
                       study_tv_time_dict:dict[str, TumorVolumeTimeSeriesClass]):
@@ -536,7 +540,7 @@ class TumorVolumeStudyClass():
         # Create arms diction
         study_arms_dict = {}
         for arm in self.unique_arms:
-            arm_ids = list(set([id_col[i] for i, id in enumerate(arm_col) if id == arm]))
+            arm_ids = list(set([id_col[i] for i, idx in enumerate(arm_col) if idx == arm]))
             study_arms_dict[arm] = arm_ids
         self.study_arms_dict = study_arms_dict
 
@@ -645,27 +649,32 @@ class TumorVolumeStudyClass():
         }
 
     # Transform functions
-    def tv_to_tv(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def tv_to_tv( tumor_volume_data_list: np.ndarray) -> np.ndarray:
         tv_to_tv: np.ndarray = tumor_volume_data_list
         return tv_to_tv
-    def tv_percent_change(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def tv_percent_change(tumor_volume_data_list: np.ndarray) -> np.ndarray:
         tv_per_change: np.ndarray = tumor_volume_data_list
         vo = tv_per_change[0]
         tv_per_change = 100.0 * (tv_per_change - vo) / vo
         return tv_per_change
-    def tv_proportion_volume_change(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def tv_proportion_volume_change(tumor_volume_data_list: np.ndarray) -> np.ndarray:
         log2_change = tumor_volume_data_list.copy()
         vo = log2_change[0]  # baseline volume
         log2_change = np.log2(log2_change / vo)
         return log2_change
-    def tv_percent_prog_regres_endpoint(self, tumor_volume_data_list: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def tv_percent_prog_regres_endpoint(tumor_volume_data_list: np.ndarray) -> np.ndarray:
         pct_change = tumor_volume_data_list.copy()
         vo = pct_change[0]
         pct_change = ((pct_change - vo) / vo) * 100
         return pct_change
 
     # Computation
-    def compute_event_time(self, time_day, volume, delta=1.0, cutoff=None):
+    @staticmethod
+    def compute_event_time(time_day, volume, delta=1.0, cutoff=None):
         """
         Compute the event time for one mouse.
 
@@ -694,16 +703,16 @@ class TumorVolumeStudyClass():
         baseline = volume[0]
         doubling_threshold = baseline * (1 + delta)
 
-        for t, v in zip(time_day, volume):
+        for td, v in zip(time_day, volume):
             # If we've passed the time cutoff, censor here
-            if cutoff is not None and t > cutoff:
+            if cutoff is not None and td > cutoff:
                 return cutoff, 0  # Censored at cutoff time
 
             # Check if event occurred
             if v >= doubling_threshold:
                 # If event is before cutoff, it's a real event
-                if cutoff is None or t <= cutoff:
-                    return t, 1
+                if cutoff is None or td <= cutoff:
+                    return td, 1
                 else:
                     # Event happened after cutoff, so censor at cutoff
                     return cutoff, 0
@@ -731,16 +740,17 @@ class TumorVolumeStudyClass():
                 if ts is None:
                     continue
 
-                t, e = self.compute_event_time(ts.time_day,ts.tumor_volume,delta=delta,cutoff=cutoff)
+                td, e = self.compute_event_time(ts.time_day,ts.tumor_volume,delta=delta,cutoff=cutoff)
 
-                if t is not None:
-                    times.append(t)
+                if td is not None:
+                    times.append(td)
                     events.append(e)
 
             result[arm] = {"time": np.array(times), "event": np.array(events)}
 
         return result
-    def compute_numbers_at_risk(self, survival_dict, grid_points=10):
+    @staticmethod
+    def compute_numbers_at_risk(survival_dict, grid_points=10):
         # Compute numbers at risk for all arms at shared time grid
         """
         Returns:
@@ -753,16 +763,17 @@ class TumorVolumeStudyClass():
         risk_table = {}
 
         for arm in survival_dict:
-            t = survival_dict[arm]["time"]
+            td = survival_dict[arm]["time"]
             at_risk = []
             for tg in t_grid:
-                still_at_risk = np.sum(t >= tg)
+                still_at_risk = np.sum(td >= tg)
                 at_risk.append(still_at_risk)
 
             risk_table[arm] = np.array(at_risk)
 
         return t_grid, risk_table
-    def compute_logrank_pvalue(self, survival_dict):
+    @staticmethod
+    def compute_logrank_pvalue(survival_dict):
         # Log-rank p-value comparing all arms
         arms = list(survival_dict.keys())
 
@@ -915,7 +926,7 @@ class TumorVolumeStudyClass():
         return fig, ax, style_context
 
     # Visualization
-    def plot_spider(self, plot_style=None, figsize=(10, 6), volume_label="Tumor Volume", volume_units="mm^3",
+    def plot_spider(self, plot_style=None, figsize=(10, 6), volume_units="mm^3",
             weight_label="Weight", weight_units="mg", title=None, plot_weight=True, show_individual=True,
             show_aggregate=True, aggregate_sem=True, error_bars=False, aggregate_marker='s',
             tv_transform_str="No Transform", parent_widget=None):
@@ -933,8 +944,6 @@ class TumorVolumeStudyClass():
         figsize : tuple
             Figure size as (width, height) in inches. Defaults to (10, 6).
             Only applies to standalone mode.
-        volume_label : str
-            Label for tumor volume y-axis.
         volume_units : str
             Units for tumor volume (e.g., "mm^3").
         weight_label : str
@@ -1090,10 +1099,10 @@ class TumorVolumeStudyClass():
                     transformed_volume = tv_transform_f(ts.tumor_volume)
 
                     # Store for aggregation by time point
-                    for t, v in zip(ts.time_day, transformed_volume):
-                        if t not in arm_time_vol[arm]:
-                            arm_time_vol[arm][t] = []
-                        arm_time_vol[arm][t].append(v)
+                    for td, v in zip(ts.time_day, transformed_volume):
+                        if td not in arm_time_vol[arm]:
+                            arm_time_vol[arm][td] = []
+                        arm_time_vol[arm][td].append(v)
 
                     # Spider (volume)
                     if show_individual:
@@ -1106,10 +1115,10 @@ class TumorVolumeStudyClass():
 
                     # Weight
                     if has_weight and hasattr(ts, "tumor_weight") and ts.tumor_weight is not None:
-                        for t, w in zip(ts.time_day, ts.tumor_weight):
-                            if t not in arm_time_wgt[arm]:
-                                arm_time_wgt[arm][t] = []
-                            arm_time_wgt[arm][t].append(w)
+                        for td, w in zip(ts.time_day, ts.tumor_weight):
+                            if td not in arm_time_wgt[arm]:
+                                arm_time_wgt[arm][td] = []
+                            arm_time_wgt[arm][td].append(w)
 
                         if show_individual:
                             ax_w.plot(ts.time_day,
@@ -1134,8 +1143,8 @@ class TumorVolumeStudyClass():
                     mean_vol = []
                     sem_vol = []
 
-                    for t in time_points:
-                        values = np.array(arm_time_vol[arm][t])
+                    for td in time_points:
+                        values = np.array(arm_time_vol[arm][td])
                         mean_vol.append(np.mean(values))
                         if aggregate_sem:
                             sem_vol.append(sem(values))
@@ -1177,8 +1186,8 @@ class TumorVolumeStudyClass():
                         mean_w = []
                         sem_w = []
 
-                        for t in time_points_w:
-                            values = np.array(arm_time_wgt[arm][t])
+                        for td in time_points_w:
+                            values = np.array(arm_time_wgt[arm][td])
                             mean_w.append(np.mean(values))
                             if aggregate_sem:
                                 sem_w.append(sem(values))
@@ -1636,7 +1645,7 @@ class TumorVolumeStudyClass():
             else:
                 xaxis_owner = ax_km
 
-            for ax in (ax_list):
+            for ax in ax_list:
                 set_xaxis_visible(ax, ax is xaxis_owner, label="Time (days)")
 
 
@@ -1770,7 +1779,7 @@ class TumorVolumeStudyClass():
                     bar_heights.append(auc_val)
                     bar_colors.append(arm_colors[arm])
                     # Apply label shortening based on parameter
-                    if shorten_x_labels==True:
+                    if shorten_x_labels:
                         bar_labels.append(remove_alpha(str(ts_id)))
                     else:
                         bar_labels.append(str(ts_id))
@@ -1891,7 +1900,7 @@ class TumorVolumeStudyClass():
 
         return fig, ax
     def plot_percent_tumor_vol_change_bar( self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
-            control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
+            control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, show_bar_labels=False,
             title="Tumor Volume Change (%)", color_cycle=None, show_axis_labels: bool = True, plot_normalized_tv_change=False,
             shorten_x_labels:bool=True, show_legend: bool = True, plot_style=None, parent_widget=None, x_label_rotation:int=0):
         """
@@ -1947,7 +1956,6 @@ class TumorVolumeStudyClass():
             prop_cycle = plt.rcParams['axes.prop_cycle']
             colors = prop_cycle.by_key()['color']
             edge_color = plt.rcParams['axes.edgecolor']
-            line_color = plt.rcParams['text.color']
 
             # Now create color map using style colors
             if color_cycle is None:
@@ -1972,7 +1980,7 @@ class TumorVolumeStudyClass():
                     bar_x_positions.append(idx)
                     bar_heights.append(tv_change_val)
                     bar_colors.append(arm_colors[arm])
-                    if shorten_x_labels == True:
+                    if shorten_x_labels:
                         bar_labels.append(remove_alpha(str(ts_id)))
                     else:
                         bar_labels.append((str(ts_id)))
@@ -2083,7 +2091,7 @@ class TumorVolumeStudyClass():
         return fig, ax
     def plot_vol_change_as_objective_response_bar(self, compute_day: int | None = None, figsize=(12, 6), sort_descending=True,
             control_arms=("control", "vehicle", "placebo"), bar_alpha=0.85, bar_edgecolor="black", show_bar_labels=False,
-            title="Objective Response", color_cycle=None, show_axis_labels: bool = True, show_legend: bool = True,
+            title="Objective Response", show_axis_labels: bool = True, show_legend: bool = True,
             objective_response_colors:dict|None = None, y_range: list | None = None, plot_style=None, parent_widget=None,
             shorten_x_labels:bool=True, x_label_rotation:int=0):
         """
@@ -2118,7 +2126,7 @@ class TumorVolumeStudyClass():
 
             # Match response code ordering
             sorted_resp_list = [
-                (ts_id, next(r for t, r in resp_code_list if t == ts_id))
+                (ts_id, next(r for td, r in resp_code_list if td == ts_id))
                 for ts_id, _ in vol_change_list
             ]
 
@@ -2345,7 +2353,7 @@ class TumorVolumeStudyClass():
     # Class functions
     def __str__(self):
         return f'Tumor Volume Study Class, study = {self.study_id}, num of arms = {len(self.unique_arms)}, arms: {", ".join(self.unique_arms)}'
-class TumorVolumeExperimentClass():
+class TumorVolumeExperimentClass:
     # Class supports the organiziation, presentation, and analysis of tumor volume experimental groups
     def __init__(self, experiment:str, experiment_col:list, study_col:list, study_dict:dict[str, TumorVolumeStudyClass]):
         # Save logger
@@ -2445,6 +2453,7 @@ class TumorVolumeExperimentClass():
             self.experiment_study_dict[study].summarize()
 
     # Computation
+    @staticmethod
     def log2fc_ci(meanA, sdA, nA, meanB, sdB, nB, confidence=0.95):
         # Fold change
         fc = meanB / meanA
@@ -2502,7 +2511,8 @@ class TumorVolumeExperimentClass():
             raise ValueError(f"'{plot_name}' is not a callable method")
 
         return plot_function(parent_widget=parent_widget, plot_style = plot_style, **plot_kwargs)
-    def _create_styled_figure(self, plot_style=None, parent_widget=None):
+    @staticmethod
+    def _create_styled_figure(plot_style=None, parent_widget=None):
         """
         Create a matplotlib figure with optional style applied, supporting both standalone and Qt widget modes.
 
@@ -2592,7 +2602,6 @@ class TumorVolumeExperimentClass():
             - Sets self.current_tumor_volume_canvas to FigureCanvas
             - Replaces parent_widget's layout contents
         """
-        import numpy as np
 
         # Sort studies
         study_keys = sorted(self.study_keys)
@@ -2630,7 +2639,7 @@ class TumorVolumeExperimentClass():
 
             study_means.append(mean_val)
             study_errors.append(err_val)
-            if shorten_x_labels is True:
+            if shorten_x_labels:
                 study = remove_alpha(study)
             study_labels.append(study)
 
@@ -2653,20 +2662,12 @@ class TumorVolumeExperimentClass():
             # Get style colors
             prop_cycle = plt.rcParams['axes.prop_cycle']
             colors = prop_cycle.by_key()['color']
-            bar_colors = [colors[i % len(colors)] for i in range(len(study_means))]
             line_color = plt.rcParams['text.color']  # Will be white for dark themes
 
             # Assign colors to bars (cycling if more bars than colors)
             bar_colors = [colors[i % len(colors)] for i in range(len(study_means))]
 
-            bars = ax.bar(
-                x,
-                study_means,
-                yerr=study_errors,
-                color=bar_colors[0],
-                ecolor=line_color,  # Error bars match theme
-                capsize=5,
-            )
+            ax.bar(x, study_means, yerr=study_errors, color=bar_colors[0], ecolor=line_color, capsize=5)
 
             # Add lines between each study
             ax.axhline(0, color=line_color, linewidth=1)
@@ -2706,7 +2707,7 @@ class TumorVolumeExperimentClass():
                 ax.set_title(title)
 
             # Ticks
-            if show_axis_labels == True:
+            if show_axis_labels:
                 ax.set_xticks(x)
                 ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
             else:
@@ -2772,31 +2773,36 @@ class TumorVolumeExperimentClass():
             show_axis_labels=True, x_label_rotation = 0, compute_day: int | None = None,
             shorten_x_labels:Boolean=True, title:str|None=None, figsize=(10, 6), parent_widget=None):
         """
-        Plot the T/C (Treatment/Control) ratio for each study with standard error.
+            Plot the T/C (Treatment/Control) ratio for each study with standard error.
 
-        Creates a bar chart showing the ratio of mean treatment tumor volume to mean control
-        tumor volume, with error bars calculated using the delta method. Can be embedded in
-        a Qt widget or displayed as a standalone matplotlib figure.
+            Creates a bar chart showing the ratio of mean treatment tumor volume to mean control
+            tumor volume, with error bars calculated using the delta method. Can be embedded in
+            a Qt widget or displayed as a standalone matplotlib figure.
 
-        Args:
-            control_arms: Tuple of arm names to treat as controls (case-insensitive).
-            error_metric: Error bar type - currently only "std" supported (uses SE calculation).
-            show_axis_labels: Whether to display axis labels. Defaults to True.
-            compute_day: Optional specific day for computing ratio. Defaults to None (final day).
-            title: Plot title. Defaults to "T/C Ratio (SE) by Study". Set to 'None' to clear the title.
-            figsize: Figure size as (width, height) in inches. Defaults to (10, 6).
-            parent_widget: Optional Qt widget to embed the plot. If provided, renders as
-                          a FigureCanvas within this widget. If None, creates standalone
-                          matplotlib figure. Defaults to None.
+            Args:
+                plot_style: Optional plot style configuration. Defaults to None.
+                control_arms: Tuple of arm names to treat as controls (case-insensitive).
+                             Defaults to ("control", "vehicle", "placebo").
+                show_axis_labels: Whether to display axis labels. Defaults to True.
+                x_label_rotation: Rotation angle in degrees for x-axis labels. Defaults to 0.
+                compute_day: Optional specific day for computing ratio. Defaults to None (final day).
+                shorten_x_labels: Whether to shorten x-axis labels for better readability.
+                                 Defaults to True.
+                title: Plot title. Defaults to "T/C Ratio (SE) by Study". Set to 'None' to clear the title.
+                figsize: Figure size as (width, height) in inches. Defaults to (10, 6).
+                parent_widget: Optional Qt widget to embed the plot. If provided, renders as
+                              a FigureCanvas within this widget. If None, creates standalone
+                              matplotlib figure. Defaults to None.
 
-        Returns:
-            tuple: (fig, ax) - matplotlib Figure and Axes objects for the plot.
-                Returns None if no studies have data to plot.
+            Returns:
+                tuple: (fig, ax) - matplotlib Figure and Axes objects for the plot.
+                    Returns None if no studies have data to plot.
 
-        Side Effects (when parent_widget is provided):
-            - Sets self.current_tumor_control_ratio_canvas to FigureCanvas
-            - Replaces parent_widget's layout contents
-        """
+            Side Effects (when parent_widget is provided):
+                - Sets self.current_tumor_control_ratio_canvas to FigureCanvas
+                - Replaces parent_widget's layout contents
+            """
+
         # Create default title, include compute day if set
         if title is None:
             title = "T/C Ratio (SE) by Study"
@@ -2820,7 +2826,6 @@ class TumorVolumeExperimentClass():
             trtarms = [arm for arm in arms if arm.lower() not in control_arms]
             ctrl_arms = [arm for arm in arms if arm.lower() in control_arms]
 
-            all_changes = []
             treatment = []
             controls = []
 
@@ -2887,20 +2892,12 @@ class TumorVolumeExperimentClass():
             # Get style colors
             prop_cycle = plt.rcParams['axes.prop_cycle']
             colors = prop_cycle.by_key()['color']
-            bar_colors = [colors[i % len(colors)] for i in range(len(study_means))]
             line_color = plt.rcParams['text.color']  # Will be white for dark themes
 
             # Assign colors to bars (cycling if more bars than colors)
             bar_colors = [colors[i % len(colors)] for i in range(len(study_means))]
 
-            bars = ax.bar(
-                x,
-                study_means,
-                yerr=study_errors,
-                color=bar_colors[0],
-                ecolor=line_color,  # Error bars match theme
-                capsize=5,
-            )
+            ax.bar( x, study_means, yerr=study_errors, color=bar_colors[0], ecolor=line_color, capsize=5)
 
             # Add lines between each study
             ax.axhline(0, color=line_color, linewidth=1)
@@ -2940,12 +2937,12 @@ class TumorVolumeExperimentClass():
             ax.set_xticks(x)
 
             # DX Tick Labels
-            if shorten_x_labels == True:
+            if shorten_x_labels:
                 study_labels = map(remove_alpha,study_labels)
             else:
                 study_labels = study_labels.copy()
 
-            if show_axis_labels == True:
+            if show_axis_labels:
                 ax.set_xticklabels(study_labels, rotation=x_label_rotation, ha="center")
             else:
                 ax.set_xticklabels([])
@@ -3064,7 +3061,7 @@ class TumorVolumeExperimentClass():
             OR_ORDER = ["CR", "PR", "SD", "PD"]
             if objective_response_colors is not None:
                 OR_COLORS = [objective_response_colors[o] for o in OR_ORDER]
-            elif plot_style != None:
+            elif plot_style is not None:
                 style_or_dict = {key:c for key,c in zip(OR_ORDER,colors)}
                 OR_COLORS = [style_or_dict[o] for o in OR_ORDER]
             else:
@@ -3153,7 +3150,7 @@ class TumorVolumeExperimentClass():
                 ax.set_xlabel("Study")
 
             ax.set_xticks(x)
-            if shorten_x_labels == False:
+            if not shorten_x_labels:
                 ax.set_xticklabels(study_keys, rotation=x_label_rotation, ha="center")
             else:
                 short_study_keys = list(map(remove_alpha, study_keys))
@@ -3278,7 +3275,7 @@ class TumorVolumeExperimentClass():
             if len(ctrl_vals) == 0 and len(trt_vals) == 0:
                 continue
 
-            if shorten_x_labels == True:
+            if shorten_x_labels:
                 study = remove_alpha(study)
             study_labels.append(study)
 
@@ -3458,14 +3455,14 @@ class TumorVolumeExperimentClass():
         """
 
         # ----- helper: find index for compute_day -----
-        def get_index(days, compute_day):
-            if compute_day is None:
+        def get_index(days, compute_day_local):
+            if compute_day_local is None:
                 return len(days) - 1
             days = list(days)
-            if compute_day >= days[-1]:
+            if compute_day_local >= days[-1]:
                 return len(days) - 1
             for i_d, d in enumerate(days):
-                if compute_day <= d:
+                if compute_day_local <= d:
                     return i_d
             return len(days) - 1
 
@@ -3535,7 +3532,7 @@ class TumorVolumeExperimentClass():
                 if len(ctrl_vals) == 0 or len(trt_vals) == 0:
                     continue
 
-                def sem(x):
+                def sem_local(x):
                     return np.std(x, ddof=1) / np.sqrt(len(x)) if len(x) > 1 else 0.0
 
                 # t-test
@@ -3544,8 +3541,8 @@ class TumorVolumeExperimentClass():
 
                 ctrl_mean = np.mean(ctrl_vals)
                 trt_mean = np.mean(trt_vals)
-                ctrl_sem = sem(ctrl_vals)
-                trt_sem = sem(trt_vals)
+                ctrl_sem = sem_local(ctrl_vals)
+                trt_sem = sem_local(trt_vals)
 
                 # Plot positions
                 ctrl_x = x_counter
@@ -3740,8 +3737,8 @@ class TumorVolumeDataClass:
         self.num_unmatched:int|None
 
         # Create time series dictionary
-        self.tumor_vol_time_series_dict:dict[str:TumorVolumeTimeSeriesClass]|None = None
-        self.tumor_vol_study_dict:dict[str:TumorVolumeStudyClass|None] = None
+        self.tumor_vol_time_series_dict:dict[str,'TumorVolumeTimeSeriesClass']|None = None
+        self.tumor_vol_study_dict:dict[str,'TumorVolumeStudyClass'|None] = None
         self.tumor_vol_experiment_dict:dict[str,TumorVolumeExperimentClass|None] = None
 
     # File loading and saving
@@ -3978,7 +3975,7 @@ class TumorVolumeDataClass:
         """
         try:
             from lxml import etree
-        except Exception:
+        except (ImportError, ModuleNotFoundError):
             self.logger.info("lxml is not installed. Install it (pip install lxml) to perform XSD validation.")
             return False
 
@@ -4096,7 +4093,7 @@ class TumorVolumeDataClass:
 
             # Create a study specific time series dictionary
             unique_study_ids = list(set(id_col))
-            study_tv_time_dict = { idx:self.tumor_vol_time_series_dict[id] for idx in unique_study_ids}
+            study_tv_time_dict = { idx:self.tumor_vol_time_series_dict[idx] for idx in unique_study_ids}
 
             # Create study object
             tv_study_obj = TumorVolumeStudyClass(study, arms_col, id_col, tumor_col, study_tv_time_dict)
@@ -4212,6 +4209,7 @@ def main():
     tvd_obj.list_time_series()
 
     # Example 2
+    pdx_time_obj = None
     if established_test:
         pdx_id = tvd_obj.unique_pdx_ids[0]
         pdx_time_obj = tvd_obj.tumor_vol_time_series_dict[pdx_id]
