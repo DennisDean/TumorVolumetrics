@@ -25,6 +25,7 @@ from typing import Optional
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 import numpy as np
 # Data
 import pandas as pd
@@ -145,8 +146,10 @@ def column_print(string_list:list, number_of_columns: int = 2, space: int = 5, i
     Utility printing XML component summaries to the command line
 
     :param string_list: A list of strings that describe information stored in the annotation file
-    :param number_of_columns: The number of columns to use when printing the list
-    :param space: The space between columns
+    :param number_of_columns: The number of columns to use when printing the list. Default is 2.
+    :param space: The space between columns. Default is 5.
+    :param indent: String to use for indenting each line. Default is "     " (5 spaces).
+    :param sort_list: Whether to sort the string list before printing. Default is False.
     :return: None is returned
     """
     # Pad strings to the same length and calculate the number of rows to print
@@ -207,6 +210,11 @@ class TumorVolumeTimeSeriesClass:
         self.volume_units = volume_units
         self.weight_units = weight_units
 
+        # visualization
+        self.current_tumor_volume_canvas:FigureCanvasQTAgg|None = None
+        self.current_tumor_volume_canvas:FigureCanvasQTAgg|None = None
+        self.current_auc_canvas:FigureCanvasQTAgg|None = None
+
         # Descriptions
         self.contributor:str|None = contributor
         self.arm:str|None = arm
@@ -222,6 +230,8 @@ class TumorVolumeTimeSeriesClass:
         self.max_day = max(self.time_day)
         self.auc, self.normalized_auc = self.compute_auc()
 
+        # Visualization
+        self.current_tumor_volume_canvas:FigureCanvasQTAgg|None = None
 
         # Transforms
         self.tv_transform_options = ["No Transform", "Percent Change", "Prop. Vol. Change", "Percent Prgress/Regress"]
@@ -235,17 +245,8 @@ class TumorVolumeTimeSeriesClass:
         # Objective Response Definition
         # "CR":#08306B # Deep Blue, "PR":#2171B5 # Blue, "SD":#BDBDBD # Gray, "PD":#D94801 # Red-Orange
         self.default_response_color = "#CCCCCC"
-        self.objective_response_names = {
-            "CR": "Complete Response",
-            "PR": "Partial Response",
-            "SD": "Stable Disease",
-            "PD": "Progressive Disease",
-            "" : "Not Defined"}
-        self.objective_response_colors: dict[str, str] = \
-            {"CR": "#08306B",
-             "PR": "#2171B5",
-             "SD": "#BDBDBD",
-             "PD": "#D94801"}
+        self.objective_response_names = {"CR": "Complete Response","PR": "Partial Response","SD": "Stable Disease","PD": "Progressive Disease"}
+        self.objective_response_colors = {"CR": "#08306B","PR": "#2171B5","SD": "#BDBDBD","PD": "#D94801"}
         self.objective_response_colors[""] = self.default_response_color
 
         self.CR_THRESH = -99.0
@@ -525,6 +526,14 @@ class TumorVolumeStudyClass:
 
         # Store logger
         self.logger = logger
+
+        # Gravic view canvas
+        self.current_tumor_volume_canvas:FigureCanvasQTAgg|None = None
+        self.current_auc_canvas:FigureCanvasQTAgg|None = None
+        self.current_tv_change_canvas:FigureCanvasQTAgg|None = None
+        self.current_objective_response_canvas:FigureCanvasQTAgg|None = None
+
+
 
         # Create dictionary for holding data
         self.study_id:str = study_id
@@ -843,6 +852,7 @@ class TumorVolumeStudyClass:
         Args:
             plot_name: String name of the plotting method
             parent_widget: Qt widget to embed the plot
+            plot_style: Style sets plot features accoring to plot style. If value is 'None', defaule sytle is used.
             **plot_kwargs: Any keyword arguments to pass to the plotting function
 
         Returns:
@@ -2360,6 +2370,16 @@ class TumorVolumeExperimentClass:
         # Save logger
         self.logger = logger
 
+        # Plot Canvas
+        self.current_tumor_volume_canvas:FigureCanvasQTAgg = None
+        self.current_tumor_control_ratio_canvas:FigureCanvasQTAgg = None
+        self.current_objective_response_canvas:FigureCanvasQTAgg = None
+        self.current_auc_canvas:FigureCanvasQTAgg = None
+        self.current_log2fc_canvas:FigureCanvasQTAgg = None
+
+
+
+
         # Save experiment name
         self.experiment = experiment
 
@@ -2489,6 +2509,7 @@ class TumorVolumeExperimentClass:
         Args:
             plot_name: String name of the plotting method
             parent_widget: Qt widget to embed the plot
+            plot_style: Style to define plot features. If set to 'None', use default plot style.
             **plot_kwargs: Any keyword arguments to pass to the plotting function
 
         Returns:
@@ -2588,9 +2609,12 @@ class TumorVolumeExperimentClass:
             control_arms: Tuple of arm names to exclude (case-insensitive).
             error_metric: Error bar type - "std" for standard deviation or "sem" for standard error.
             show_axis_labels: Whether to display axis labels. Defaults to True.
+            x_label_rotation: X label rotation in degrees. Defaults to 0.
+            shorten_x_labels: Shorten x labels by removing alphabetic characters. Defaults to False.
             compute_day: Optional specific day for computing percent change. Defaults to None (final day).
             title: Plot title. Defaults to "Average % Tumor Volume Change by Study". Set to 'None' to clear title.
             figsize: Figure size as (width, height) in inches. Defaults to (10, 6).
+            plot_style: Style to define plot features. If set to 'None', use default plot style.
             parent_widget: Optional Qt widget to embed the plot. If provided, renders as
                           a FigureCanvas within this widget. If None, creates standalone
                           matplotlib figure. Defaults to None.
@@ -3020,9 +3044,13 @@ class TumorVolumeExperimentClass:
             control_arms: Tuple of arm names to exclude (case-insensitive).
             show_legend: Whether to display the legend. Defaults to True.
             show_axis_labels: Whether to display axis labels. Defaults to False.
+            x_label_rotation: X label rotation in degrees. Defaults to 0.
+            shorten_x_labels: Shorten x labels by removing alphabetic characters. Defaults to False.
             compute_day: Optional specific day for computing objective response. Defaults to None (final day).
+            objective_response_colors: A dictionary for setting objective response colors.
             title: Plot title. Defaults to "Objective Response Distribution by Study". Set to 'None' to clear the title.
             figsize: Figure size as (width, height) in inches. Defaults to (10, 6).
+            plot_style: Style to define plot features. If set to 'None', use default plot style.
             parent_widget: Optional Qt widget to embed the plot. If provided, renders as
                           a FigureCanvas within this widget. If None, creates standalone
                           matplotlib figure. Defaults to None.
@@ -3696,6 +3724,33 @@ class TumorVolumeDataClass:
     def __init__(self):
         # Set up logger
         self.logger = logger
+
+        # Data Summary Variables
+        # Data Summary
+        self.num_of_data_points:list|None = None
+        self.num_of_time_series:int|None = None
+
+        # Study summary
+        self.unique_contributors:list|None = None
+        self.num_of_contributors:int|None = None
+        self.unique_arms:list|None = None
+        self.num_of_arms:int|None = None
+        self.unique_studies:list|None = None
+        self.num_of_studies:int|None = None
+        self.unique_pdx_ids:list|None = None
+        self.num_unique_pdx_ids:int|None = None
+        self.unique_pdxs:list|None = None
+        self.num_unique_pdxs:int|None = None
+        self.unique_disease_types:list|None = None
+        self.num_disease_types:int|None = None
+
+        # Supplemental variables
+        self.unique_experiments:list|None = None
+        self.num_experiments:list|None = None
+
+        self.unique_matched_controls :list[str]|None = None
+        self.num_matched_controls:int|None = None
+        self.num_unmatched:int|None = None
 
         # tumor volume
         self.tumor_volume_data_fn:str|None = None
