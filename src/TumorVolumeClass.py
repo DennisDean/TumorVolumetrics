@@ -8,6 +8,7 @@
 #    Assessment of Patient-Derived Xenograft Growth and Antitumor Activity:
 #         The NCI PDXNet Consensus, Mol Cancer Ther (2024) 23 (7): 924–938
 #
+from __future__ import annotations
 # Computation
 import bisect
 # Utilities
@@ -3709,7 +3710,7 @@ class TumorVolumeDataClass:
 
         # data information
         self.tmz_data_fn:str|None = None
-        self.tmz_data_df:pd|None = None
+        self.tmz_data_df:pd.DataFrame|None = None
 
         # Data Summary
         self.num_of_data_points:int|None
@@ -3731,7 +3732,7 @@ class TumorVolumeDataClass:
 
         # Add on columns
         self.unique_experiments:list[str]|None
-        self.num_experiments:int|none
+        self.num_experiments:int|None
         self.unique_matched_controls:list|None
         self.num_matched_controls:int|None
         self.num_unmatched:int|None
