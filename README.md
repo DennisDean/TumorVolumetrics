@@ -61,6 +61,15 @@ Right-clicking any figure launches a dialog box for configuring plots including 
 
 ---
 
+## Getting Started
+### Test file
+- Download the test file: [synthetic_tumor_data.csv](public_data/synthetic_tumor_data.csv)
+### Linux Distribution
+- Download the app image from the release section
+- Make the app image executable
+- Double click on the app image
+
+---
 ## Main User Interfaces
 
 TumorVolumetrics includes interfaces for loading data files, visualizing experiment data, and visualizing study data. Interfaces are minimal by design, allowing the user to focus on data review.

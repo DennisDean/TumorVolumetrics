@@ -3827,8 +3827,8 @@ class TumorVolumeDataClass:
         self.create_time_series_dict()
         self.create_study_dict()
         self.create_experiment_dict()
-    @staticmethod
-    def check_column_names(standard_column_names:str, file_column_names:str)->tuple[bool, list, list]:
+
+    def check_column_names(self, standard_column_names:str, file_column_names:str)->tuple[bool, list, list]:
         # Define return value
         column_names_check_out = True
 
