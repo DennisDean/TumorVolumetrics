@@ -7,9 +7,14 @@
 
 **Tumor Volumetrics** is a Python application for exploring, summarizing, and visualizing preclinical tumor volume time-series data. It is designed to make it easy to **generate standard tumor volume figures** to support interactive review of results and generation of publication-quality figures.
 
-<p align="center"> <img src="src/media/tumor_volume_study_treatment_effective_example.png" alt="Study viewer interface"/><br> <b>Figure 1.</b> Study viewer with effective treatment example shown. Viewer configuration and plotting style options are shown on the upper right. Options available for the objective response plot are shown on the lower right.</p>
+<p class="figure">
+  <img src="src/media/tumor_volume_study_treatment_effective_example.png"
+       alt="Study viewer interface"><br>
+  <strong>Figure 1.</strong>
+  Study viewer with effective treatment example shown.
+</p>
 
-Launching a viewer such as the volume study viewer requires only one click, resulting in the display of common tumor volume plots. The viewer can be configured between 1 and 4 figures. In addition, each figure includes a set of parameters made available through a group box. Configuration and parameter options are made available through the Show menu on the upper left corner. See **Figure 1** for an example of a typical study view display.
+Launching a viewer such as the volume study viewer requires only one click, resulting in the display of common tumor volume plots. The viewer can be configured between 1 and 4 figures. In addition, each figure includes a set of parameters made available through a group box. Configuration and parameter options are made available through the Show menu in the upper left corner. See **Figure 1** for an example of a typical study view display.
 
 ---
 
@@ -27,13 +32,23 @@ Users can select a Matplotlib or Science Plot style to update the displayed figu
 
 Right-clicking any figure launches a dialog box for configuring plots including plot width, plot height, and figure DPI. The figure can then either be saved to disk or copied to the clipboard. See **Figure 2** for an example.
 
-<p align="center">
-  <img src="src/media/spider_plot_save_figure_example.png" width="300" alt="Spider plot parameters">
+<figure style="text-align: center;">
+  <img
+    src="src/media/spider_plot_save_figure_example.png"
+    style="width:300px;"
+    alt="Spider plot parameters"
+  >
   <br><br>
-  <img src="src/media/spider_plot_save_figure_example_figure.png" width="300" alt="Generated square spider plot">
-  <br>
-  <b>Figure 2.</b> Example of setting plot parameters (top) and generating a square plot (bottom).
-</p>
+  <img
+    src="src/media/spider_plot_save_figure_example_figure.png"
+    style="width:300px;"
+    alt="Generated square spider plot"
+  >
+  <figcaption>
+    <strong>Figure 2.</strong>
+    Example of setting plot parameters (top) and generating a square plot (bottom).
+  </figcaption>
+</figure>
 
 ---
 
@@ -57,19 +72,41 @@ Key actions:
 - **Lists**  
   Contributor, disease, arms, and tumor volume curve lists are populated upon loading.
 
-<p align="center"> <img src="src/media/tumor_volumetrics_main_interface.png" width="200" alt="Main interface"/><br> <b>Figure 3.</b> Main interface for file access and navigation. </p>
+<p style="text-align: center;">
+  <img
+    src="src/media/tumor_volumetrics_main_interface.png"
+    style="width:200px;"
+    alt="Main interface"
+  ><br>
+  <strong>Figure 3.</strong>
+  Main interface for file access and navigation.
+</p>
 
 ### Show
 
 Clicking on the show pushbutton launches a CSV viewer with the selected data file contents shown.
 
-<p align="center"> <img src="src/media/tumor_voumetrics_file_screen.png" alt="File viewer"/><br> <b>Figure 4.</b> File selection and inspection interface. </p>
+<p style="text-align: center;">
+  <img
+    src="src/media/tumor_voumetrics_file_screen.png"
+    alt="File viewer"
+  ><br>
+  <strong>Figure 4.</strong>
+  File selection and inspection interface.
+</p>
 
 ### Tumor Volume Experiment Viewer
 
 The Experiment Viewer is optimized for cross-study and cross-arm exploration within an experiment. It allows you to quickly configure and generate standard tumor volume plots with minimal setup.
 
-<p align="center"> <img src="src/media/tumor_volume_experiment_view.png" alt="Experiment viewer"/><br> <b>Figure 5.</b> Tumor Volume Experiment Viewer. </p> 
+<p style="text-align: center;">
+  <img
+    src="src/media/tumor_volume_experiment_view.png"
+    alt="Experiment viewer"
+  ><br>
+  <strong>Figure 5.</strong>
+  Tumor Volume Experiment Viewer.
+</p>
 
 Key capabilities:
 - Select experiment, study, and arm combinations
@@ -81,13 +118,57 @@ Key capabilities:
 
 The Study Viewer focuses on **deep inspection of a single study**. It supports arm-level and subject-level exploration and is optimized for understanding response patterns and variability.
 
-<p align="center"> <img src="src/media/tumor_volume_study_viewer.png" alt="Study viewer"/><br> <b>Figure 6.</b> Tumor Volume Study Viewer. </p> 
+<figure style="text-align: center;">
+  <img
+    src="src/media/tumor_volume_study_viewer.png"
+    alt="Study viewer"
+  >
+  <figcaption>
+    <strong>Figure 6.</strong>
+    Tumor Volume Study Viewer.
+  </figcaption>
+</figure>
 
 Key capabilities:
 - Explore arms and individual time series
 - Generate standard study-level plots
 - Configure display and grouping options interactively
 - Support common review patterns used in study evaluation
+
+## Input File Description
+
+The input file is a **tab-delimited dataset** containing tumor volume measurements across multiple experiments and treatment arms. Each row corresponds to a single measurement for a specific tumor model at a given time point. The file is structured with the following columns:
+
+| Column             | Description                                                                        |
+|--------------------|------------------------------------------------------------------------------------|
+| `Contributor`      | Name or ID of the dataset contributor. Groups related samples or experiments.      |
+| `Arms`             | Experimental group assignment, e.g., `PARPi` (treatment) or `Control`.             |
+| `Times`            | Time point of measurement in days.                                                 |
+| `Volume`           | Tumor volume at the given time point, measured in mm³ (or dataset-specific units). |
+| `Experiment`       | Experiment identifier for tracking multiple experiments.                           |
+| `Study`            | Study ID for grouping related experiments.                                         |
+| `ID`               | Unique identifier for each tumor sample or PDX (patient-derived xenograft) model.  |
+| `Tumor`            | Tumor model name.                                                                  |
+| `Disease_Type`     | Description or classification of the tumor type.                                   |
+| `Body_Weight`      | Body weight of the animal at the measurement time, in grams.                       |
+| `Matched Controls` | Identifier for matched control samples corresponding to the treatment arm.         |
+
+### Example Rows
+
+| Contributor   | Arms    | Times | Volume   | Experiment | Study | ID       | Tumor | Disease_Type   | Body_Weight | Matched Controls |
+|---------------|---------|-------|----------|------------|-------|----------|-------|----------------|-------------|------------------|
+| Example_Set_1 | PARPi   | 0     | 204.768  | INV        | INV_1 | PDX1_501 | PDX1  | Example Models | 14.96       | PARPi_Control_1  |
+| Example_Set_1 | PARPi   | 4     | 358.706  | INV        | INV_1 | PDX1_501 | PDX1  | Example Models | 14.29       | PARPi_Control_1  |
+| Example_Set_1 | Control | 0     | 216.5625 | INV        | INV_1 | PDX1_503 | PDX1  | Example Models | 16.87       | PARPi_Control_1  |
+| Example_Set_1 | Control | 4     | 470.596  | INV        | INV_1 | PDX1_503 | PDX1  | Example Models | 16.86       | PARPi_Control_1  |
+
+### Notes
+- The file must be **tab-delimited** (`\t`).  
+- Time points (`Times`) should be numeric and consistently spaced within each experiment for proper analysis.  
+- Each treatment arm should have matched controls to allow paired comparisons.  
+- Column headers **must match exactly** for automated parsing scripts to work.
+- Matched Controls is included as an experiment. The column is not used in the application. 
+- Email the author, see below, to request a test file. 
 
 ---
 

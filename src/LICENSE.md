@@ -1,7 +1,7 @@
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 
-Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+Copyright © 2007 Free Software Foundation, Inc. <https://fsf.org/>
 Everyone is permitted to copy and distribute verbatim copies
 of this license document, but changing it is not allowed.
 
@@ -27,7 +27,7 @@ END OF TERMS AND CONDITIONS
 
 How to Apply These Terms to Your New Programs
 
-If you develop a new program, and you want it to be of the greatest possible use to the public, the best way to achieve this is to make it free software that everyone can redistribute and change under these terms.
+If you develop a new program, the best way to achieve this is to make it free software that everyone can redistribute and change under these terms.
 
 To do so, attach the following notices to the program. It is safest to
 attach them to the start of each source file to most effectively state

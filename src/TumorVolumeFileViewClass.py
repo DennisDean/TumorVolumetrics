@@ -134,7 +134,8 @@ class TumorVolumeFileWindow(QMainWindow):
             self.statusBar().showMessage("Copied to clipboard", 2000)
 
     # === USEFUL GETTER METHODS ===
-    def get_table_info(self, table: QTableWidget):
+    @staticmethod
+    def get_table_info(table: QTableWidget):
         """Get useful table information"""
         print(f"Rows: {table.rowCount()}")
         print(f"Columns: {table.columnCount()}")
@@ -146,24 +147,30 @@ class TumorVolumeFileWindow(QMainWindow):
         current_item = table.currentItem()
         if current_item:
             print(f"Current cell value: {current_item.text()}")
-    def scroll_to_top(self, table: QTableWidget):
+    @staticmethod
+    def scroll_to_top(table: QTableWidget):
         """Scroll to top of table"""
         table.scrollToTop()
-    def scroll_to_bottom(self, table: QTableWidget):
+    @staticmethod
+    def scroll_to_bottom(table: QTableWidget):
         """Scroll to bottom of table"""
         table.scrollToBottom()
-    def scroll_to_item(self, table: QTableWidget, row: int, col: int):
+    @staticmethod
+    def scroll_to_item(table: QTableWidget, row: int, col: int):
         """Scroll to specific cell"""
         item = table.item(row, col)
         if item:
             table.scrollToItem(item, QAbstractItemView.ScrollHint.PositionAtCenter)
-    def clear_selection(self, table: QTableWidget):
+    @staticmethod
+    def clear_selection(table: QTableWidget):
         """Clear current selection"""
         table.clearSelection()
-    def select_row(self, table: QTableWidget, row: int):
+    @staticmethod
+    def select_row(table: QTableWidget, row: int):
         """Select entire row"""
         table.selectRow(row)
-    def select_column(self, table: QTableWidget, col: int):
+    @staticmethod
+    def select_column(table: QTableWidget, col: int):
         """Select entire column"""
         table.selectColumn(col)
 

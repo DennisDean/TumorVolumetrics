@@ -1,7 +1,7 @@
 # Custom Graphic View
 # Provides support for right-clicking on figures
 #
-# With in the if parent_widget:
+# With in the graphic view if the parent_widget:
 # Need to tell canvas to use a custom context menu
 #       canvas.setContextMenuPolicy(Qt.CustomContextMenu)
 #       canvas.customContextMenuRequested.connect(parent_widget.show_context_menu)
@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QSizePolicy,
 )
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PySide6.QtGui import QImage, QGuiApplication, QPixmap
 import matplotlib.pyplot as plt
 import copy

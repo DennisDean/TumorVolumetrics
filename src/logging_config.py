@@ -1,7 +1,7 @@
 import logging
 import json
 from logging.handlers import RotatingFileHandler
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
 APP_NAME = "TumorVolumetrics"
@@ -12,7 +12,11 @@ APP_NAME = "TumorVolumetrics"
 class JSONFormatter(logging.Formatter):
     def format(self, record):
         log_record = {
-            "timestamp": datetime.utcfromtimestamp(record.created).isoformat() + "Z",
+            "timestamp": (
+                datetime.fromtimestamp(record.created, tz=timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            ),
             "level": record.levelname,
             "message": record.getMessage(),
             "logger": record.name,
@@ -27,7 +31,6 @@ class JSONFormatter(logging.Formatter):
                 log_record[key] = value
 
         return json.dumps(log_record)
-
 
 #
 # Create log directory in the user's home folder
