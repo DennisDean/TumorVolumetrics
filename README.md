@@ -1,13 +1,13 @@
 # Tumor Volumetrics
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)]()
-[![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)]()
+[![Status](https://img.shields.io/badge/Status-Beta-yellow.svg)]()
 [![License](https://img.shields.io/badge/License-AGPL--3.0-green.svg)]()
 [![GUI](https://img.shields.io/badge/Interface-PySide6-lightgrey.svg)]()
 
 **Tumor Volumetrics** is a Python application for exploring, summarizing, and visualizing preclinical tumor volume time-series data. It is designed to make it easy to **generate standard tumor volume figures** to support interactive review of results and generation of publication-quality figures.
 
-<p class="figure">
+<p style="text-align: center;">
   <img src="src/media/tumor_volume_study_treatment_effective_example.png"
        alt="Study viewer interface"><br>
   <strong>Figure 1.</strong>
@@ -24,7 +24,18 @@ Tumor Volumetrics is built for scientists and analysts who:
 
 - Work with longitudinal tumor volume data in CSV form
 - Need to rapidly explore common experiment and study plots
+  - See [TumorVolumeClassReadMe.md](src/media/TumorVolumeClassReadMe.md) for figures that can be generated
 - Generate publication-quality plots
+- See [TumorVolumeClassReadMe.md](src/media/TumorVolumeClassReadMe.md) for scripting details
+
+### Plot Style
+Set plot to use Matplotlib or Science Plot styles.
+<p style="text-align: center;">
+  <img src="src/media/study_view_with_config_and_style_change.png"
+       alt="Setting plot style to Matplotlib Dark Background"><br>
+  <strong>Figure 1.</strong>
+  Setting plot style to Matplotlib default style.
+</p>
 
 ### Figure Generation
 
@@ -32,23 +43,21 @@ Users can select a Matplotlib or Science Plot style to update the displayed figu
 
 Right-clicking any figure launches a dialog box for configuring plots including plot width, plot height, and figure DPI. The figure can then either be saved to disk or copied to the clipboard. See **Figure 2** for an example.
 
-<figure style="text-align: center;">
-  <img
-    src="src/media/spider_plot_save_figure_example.png"
-    style="width:300px;"
-    alt="Spider plot parameters"
-  >
-  <br><br>
-  <img
-    src="src/media/spider_plot_save_figure_example_figure.png"
-    style="width:300px;"
-    alt="Generated square spider plot"
-  >
-  <figcaption>
-    <strong>Figure 2.</strong>
-    Example of setting plot parameters (top) and generating a square plot (bottom).
-  </figcaption>
-</figure>
+<!-- noinspection HtmlDeprecatedAttribute -->
+<p style="text-align: center;">
+  <img src="src/media/spider_plot_save_figure_example.png" 
+       width="300" 
+       alt="Spider plot parameters"><br>
+ </p>
+<!-- noinspection HtmlDeprecatedAttribute -->
+<p style="text-align: center;">
+  <img src="src/media/spider_plot_save_figure_example_figure.png" 
+       width="300" 
+       alt="Generated square spider plot"><br>
+</p>
+<p>
+  <strong>Figure 2.</strong> Example of setting plot parameters (top) and generating a square plot (bottom).
+</p>
 
 ---
 
@@ -199,7 +208,27 @@ The long-term goal is a comprehensive PySide6 application that supports:
 
 ---
 
+## Authors
+**Dennis A. Dean, II, PhD**
+dennis.a.dean@gmail.com
+
+## Version
+
+### v0.1
+- First functional release
+
+
 ## License
 
 This project is licensed under the GNU Affero General Public License v3.0.  
 See the LICENSE.md file for details.
+
+## Acknowledgements
+
+The structure of the Python code benefited from the experience and contributions of the PDXNet community. Discussions during the process of writing the following publications were highly influential in shaping the code written for this application:
+
+- **Systematic Establishment of Robustness and Standards in Patient-Derived Xenograft Experiments and Analysis**, *Cancer Res* (2020) 80 (11): 2286–2297  
+- **PDXNet portal: patient-derived Xenograft model, data, workflow and tool discovery**, *NAR Cancer*, Volume 4, Issue 2, June 2022  
+- **Assessment of Patient-Derived Xenograft Growth and Antitumor Activity: The NCI PDXNet Consensus**, *Mol Cancer Ther* (2024) 23 (7): 924–938  
+
+We gratefully acknowledge all members of the PDXNet community for their valuable feedback, discussions, and insights that informed both the design and implementation of this application.

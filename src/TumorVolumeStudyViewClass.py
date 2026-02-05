@@ -605,6 +605,11 @@ class TumorVolumeStudyWindow(QMainWindow):
             return False
     @staticmethod
     def _mpl_code_to_hex(code: str) -> str:
+
+        # If it's already a hex color, return it as-is
+        if isinstance(code, str) and code.startswith('#'):
+            return code.upper()  # Ensure uppercase
+
         base_map = {
             "b": "#0000FF",
             "g": "#008000",

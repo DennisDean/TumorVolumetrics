@@ -165,11 +165,11 @@ def column_print(string_list:list, number_of_columns: int = 2, space: int = 5, i
     for r in range(num_complete_rows):
         start = r * number_of_columns
         end   = start + number_of_columns
-        self.logger.info(indent+" ".join(string_list[start:end]))
+        logger.info(indent+" ".join(string_list[start:end]))
     if remaining_entries > 0:
-        self.logger.info(indent+" ".join(string_list[num_complete_rows * number_of_columns:]))
+        logger.info(indent+" ".join(string_list[num_complete_rows * number_of_columns:]))
 def write_title_list(variable_name:str, value_list:list):
-    self.logger.info(f"{variable_name}: {', '.join(value_list)}")
+    logger.info(f"{variable_name}: {', '.join(value_list)}")
 def remove_alpha(text):
     """
     Remove all alphabetic characters (a-z, A-Z) from a string.
@@ -3805,7 +3805,7 @@ class TumorVolumeDataClass:
             self.tmz_data_df = df
             self.tmz_data_fn = fn
         except FileNotFoundError:
-            self.logger.info(f'Could not load the cnv file: {fn}')
+            self.logger.error(f'Could not load the cnv file: {fn}')
             return
 
         # Store units
@@ -4060,12 +4060,14 @@ class TumorVolumeDataClass:
         unique = lambda x: list(set(x))
 
         # Data Summary
+        print(self.tmz_data_df)
         self.num_of_data_points = self.tmz_data_df.shape[0]
         self.num_of_time_series = len(unique(self.tmz_data_df['id']))
 
         # Study summary
         self.unique_contributors = unique(self.tmz_data_df['contributor'])
         self.unique_contributors.sort()
+        print( self.unique_contributors)
         self.num_of_contributors = len(unique(self.tmz_data_df['contributor']))
         self.unique_arms = unique(self.tmz_data_df['arms'])
         self.num_of_arms = len(unique(self.tmz_data_df['arms']))
@@ -4197,6 +4199,7 @@ class TumorVolumeDataClass:
 
         # Study Summary
         self.logger.info(f'num_of_contributors = {self.num_of_contributors}')
+        print(self.unique_contributors)
         write_title_list('unique_contributors', self.unique_contributors)
 
         self.logger.info(f'num_of_arms = {self.num_of_arms}')
@@ -4257,11 +4260,12 @@ def main():
     established_test = True
 
     # test data
-    test_data_tmz = Path("public_data") / "consensus" / "PVA_with_study_group.tv.csv"
+    test_data_tmz = Path(".." ) / "public_data" / "consensus" / "PVA_with_study_group.tv.csv"
 
     # Example 1: Create data structures
     tvd_obj = TumorVolumeDataClass()
     tvd_obj.load_tmz_csv(test_data_tmz)
+    tvd_obj.summarize_data_frame()
     tvd_obj.write_file_summary_text()
     tvd_obj.list_time_series()
 

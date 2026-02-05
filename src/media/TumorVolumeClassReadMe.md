@@ -183,34 +183,168 @@ The module supports XML data following a hierarchical structure:
 **Figure section under construction**
 
 ### Time Series Class Figures
+
 * Figure 1. Example tumor volume plot
 * Figure 2. Example tumor volume plot with weights subplot
+<!-- Figure 1 -->
+<p style="text-align: center;">
+  <img src="src/media/tumor_volume_time_series.png"
+       alt="Example tumor volume plot"><br>
+  <strong>Figure 1.</strong>
+  Example tumor volume plot.
+</p>
+<!-- Figure 2 -->
+<p style="text-align: center;">
+  <img src="src/media/tumor_volume_time_series_with_weight.png"
+       alt="Example tumor volume plot with weights subplot"><br>
+  <strong>Figure 2.</strong>
+  Example tumor volume plot with weights subplot.
+</p>
 
 ### Study Class Figures
 * Figure 3. Tumor volume spider plot
 * Figure 4. Tumor volume spider plots with weights shown as subplot
-* Figure 5. Average tumor volume curves with error bars
-* Figure 6. Average tumor volume curves with standard deviation shown
-* Figure 7. Event Free Kaplan Meier curve
-* Figure 8. Event Free Kaplan Meier curve with at-risk table
-* Figure 9. Common tumor volume transformations
+* Figure 5. Tumor volume spider plot with just time series data
+* Figure 6. Event Free Kaplan Meier curve
+* Figure 7. Event Free Kaplan Meier curve with at-risk table
+* Figure 8. Common tumor volume transformations
+* Figure 9. Area under the Tumor Volume Curve
 * Figure 10. Change in tumor volume as percentage
 * Figure 11. Change in tumor volume plotted as objective response
-* Figure 12. Area under the Tumor Volume Curve
+
+<!-- Figure 3 -->
+<p style="text-align: center;">
+  <img src="src/media/spider.png"
+       alt="Tumor volume spider plot"><br>
+  <strong>Figure 3.</strong>
+  Example tumor volume plot.
+</p>
+<!-- Figure 4 -->
+<p style="text-align: center;">
+  <img src="src/media/spider_with_weights.png"
+       alt="Tumor volume spider plots with weights shown as subplot"><br>
+  <strong>Figure 4.</strong>
+  Tumor volume spider plots with weights shown as subplot.
+</p>
+<!-- Figure 5 -->
+<p style="text-align: center;">
+  <img src="src/media/spider_time_series_only.png"
+       alt="Tumor volume spider plot with just time series data"><br>
+  <strong>Figure 5.</strong>
+  Tumor volume spider plot with just time series data.
+</p>
+<!-- Figure 6 -->
+<p style="text-align: center;">
+  <img src="src/media/kaplan_meier.png"
+       alt=""><br>
+  <strong>Figure 6.</strong>
+  Event Free Kaplan Meier curve.
+</p>
+<!-- Figure 7 -->
+<p style="text-align: center;">
+  <img src="src/media/kaplan_meier_with_at_risk_plot_table.png"
+       alt=""><br>
+  <strong>Figure 7.</strong>
+  Event Free Kaplan Meier curve with at-risk table.
+</p>
+<!-- Figure 8 -->
+<table align="center">
+  <tr>
+    <td style="text-align: center;">
+      <img src="src/media/transform_spider_1.png" width=500 alt=""><br>
+      <strong>Figure 8a.</strong> Tumor Volume.
+    </td>
+    <td style="text-align: center;">
+      <img src="src/media/transform_spider_2.png"  width=500 alt=""><br>
+      <strong>Figure 8b.</strong> Percent Change.
+    </td>
+  </tr>
+  <tr>
+    <td style="text-align: center;">
+      <img src="src/media/transform_spider_3.png"  width=500 alt=""><br>
+      <strong>Figure 8c.</strong> Log 2 change.
+    </td>
+    <td style="text-align: center;">
+      <img src="src/media/transform_spider_4.png"  width=500 alt="src/media/transform_spider_4.png"><br>
+      <strong>Figure 8d.</strong> Progression/Regression.
+    </td>
+  </tr>
+</table>
+<!-- Figure 9 -->
+<p style="text-align: center;">
+  <img src="src/media/tumor_volume_auc.png"
+       alt=""><br>
+  <strong>Figure 9.</strong>
+  Area Under the Curve by ARM (control and treatment).
+</p>
+<!-- Figure 10 -->
+<p style="text-align: center;">
+  <img src="src/media/tumor_volume_change_with legend.png"
+       alt="Change in tumor volume as percentage"><br>
+  <strong>Figure 9.</strong>
+  Change in tumor volume as percentage.
+</p>
+<!-- Figure 11 -->
+<p style="text-align: center;">
+  <img src="src/media/tumor_volume_change_as_objective_response.png"
+       alt="Change in tumor volume plotted as objective response"><br>
+  <strong>Figure 11.</strong>
+  Change in tumor volume plotted as objective response.
+</p>
+
 
 ### Experiment Class Figures
-* Figure 13. Percent tumor volume change across studies
-* Figure 14. Log2 fold-change across studies
-* Figure 15. Average AUC across studies (control vs treatment)
-* Figure 16. T/C Ratio across studies
-* Figure 17. Objective response proportion across studies
+* Figure 12. Percent tumor volume change across studies
+* Figure 13. Log2 fold-change across studies
+* Figure 14. Average AUC across studies (control vs treatment)
+* Figure 15. T/C Ratio across studies
+* Figure 16. Objective response proportion across studies
+
+<!-- Figure 12 -->
+<p style="text-align: center;">
+  <img src="src/media/percent_tumor_volume_change_across_studies.png"
+       alt="Percent tumor volume change across studies"><br>
+  <strong>Figure 12.</strong>
+  Percent tumor volume change across studies.
+</p>
+<!-- Figure 13 -->
+<p style="text-align: center;">
+  <img src="src/media/log2_change_across_studies.png"
+       alt="Log2 fold-change across studies"><br>
+  <strong>Figure 13.</strong>
+  Log2 fold-change across studies.
+</p>
+<!-- Figure 14 -->
+<p style="text-align: center;">
+  <img src="src/media/average_auc_across_studies.png"
+       alt="Average AUC across studies (control vs treatment)"><br>
+  <strong>Figure 14.</strong>
+  Average AUC across studies (control vs treatment).
+</p>
+<!-- Figure 15 -->
+<p style="text-align: center;">
+  <img src="src/media/TC_ratio_across_studies.png"
+       alt="T/C Ratio across studies"><br>
+  <strong>Figure 15.</strong>
+  T/C Ratio across studies.
+</p>
+<!-- Figure 16 -->
+<p style="text-align: center;">
+  <img src="src/media/objective_response_distribution_across_studies.png"
+       alt="Objective response proportion across studies"><br>
+  <strong>Figure 16.</strong>
+  Objective response proportion across studies.
+</p>
 
 ## Acknowledgements
 
-Source code inspired by the PDXNet Consortium and the following publications:
-* Systematic Establishment of Robustness and Standards in Patient-Derived Xenograft Experiments and Analysis. Cancer Res (2020) 80 (11): 2286–2297
-* PDXNet portal: patient-derived Xenograft model, data, workflow and tool discovery. NAR Cancer, Volume 4, Issue 2, June 2022
-* Assessment of Patient-Derived Xenograft Growth and Antitumor Activity: The NCI PDXNet Consensus. Mol Cancer Ther (2024) 23 (7): 924–938
+The structure of the Python code benefited from the experience and contributions of the PDXNet community. Discussions during the process of writing the following publications were highly influential in shaping the code written for this application:
+
+- **Systematic Establishment of Robustness and Standards in Patient-Derived Xenograft Experiments and Analysis**, *Cancer Res* (2020) 80 (11): 2286–2297  
+- **PDXNet portal: patient-derived Xenograft model, data, workflow and tool discovery**, *NAR Cancer*, Volume 4, Issue 2, June 2022  
+- **Assessment of Patient-Derived Xenograft Growth and Antitumor Activity: The NCI PDXNet Consensus**, *Mol Cancer Ther* (2024) 23 (7): 924–938  
+
+We gratefully acknowledge all members of the PDXNet community for their valuable feedback, discussions, and insights that informed both the design and implementation of this application.
 
 ## License
 
