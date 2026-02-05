@@ -225,7 +225,8 @@ dennis.a.dean@gmail.com
 
 ### v0.1
 - First functional release
-
+  - TumorVolumetricApp (compiled on Ubuntu with PyInstaller)
+  - TumorVolumetricsApp-x85_64.AppImage
 
 ## License
 
