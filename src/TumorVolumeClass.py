@@ -26,6 +26,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+import scienceplots # noqa: F401 - Required to register custom matplotlib styles
 import numpy as np
 # Data
 import pandas as pd

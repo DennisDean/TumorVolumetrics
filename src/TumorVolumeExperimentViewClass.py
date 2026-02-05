@@ -10,6 +10,8 @@ from logging_config import logger
 from FigureGraphicsViewClass import FigureGraphicsView
 
 # Import
+import warnings
+warnings.filterwarnings('ignore')  # This might hide import errors
 
 # Computing
 import re
@@ -19,6 +21,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.colors import LinearSegmentedColormap
+import scienceplots # noqa: F401 - Required to register custom matplotlib styles
 
 # Interface
 from PySide6.QtWidgets import QMainWindow, QGraphicsView, QSizePolicy, QGroupBox
@@ -682,6 +685,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
         combo_boxes = [self.ui.comboBox_objective_plot_pd, self.ui.comboBox_objective_plot_sd,
                        self.ui.comboBox_objective_plot_pr, self.ui.comboBox_objective_plot_cr]
         available_style_colors = self.get_style_colors_2()
+        print(f'Available style colors: {available_style_colors}')
         orignial_color_list_length = len(available_style_colors)
         obj_res_color = self.get_response_colors_from_colormap(available_style_colors)
         obj_res_color_list = [obj_res_color[obj_res] for obj_res in ["PD", "SD", "PR", "CR"]]
@@ -859,6 +863,7 @@ class TumorVolumeExperimentWindow(QMainWindow):
     def get_style_colors_2(self):
         # rewrite of generated code to return style colors
         plot_style = self.get_plot_style()
+        print(f'plot_style = {plot_style}')
 
         # Apply the style temporarily to extract colors
         with plt.style.context(plot_style):

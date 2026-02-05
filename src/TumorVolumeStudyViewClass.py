@@ -11,6 +11,7 @@ import re
 import matplotlib as mpl
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import scienceplots # noqa: F401 - Required to register custom matplotlib styles
 # Computing
 import numpy as np
 from PySide6.QtCore import QPropertyAnimation, QEasingCurve
