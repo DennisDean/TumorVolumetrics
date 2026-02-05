@@ -188,14 +188,14 @@ The module supports XML data following a hierarchical structure:
 * Figure 2. Example tumor volume plot with weights subplot
 <!-- Figure 1 -->
 <p style="text-align: center;">
-  <img src="src/media/tumor_volume_time_series.png"
+  <img src="tumor_volume_time_series.png"
        alt="Example tumor volume plot"><br>
   <strong>Figure 1.</strong>
   Example tumor volume plot.
 </p>
 <!-- Figure 2 -->
 <p style="text-align: center;">
-  <img src="src/media/tumor_volume_time_series_with_weight.png"
+  <img src="tumor_volume_time_series_with_weight.png"
        alt="Example tumor volume plot with weights subplot"><br>
   <strong>Figure 2.</strong>
   Example tumor volume plot with weights subplot.
@@ -214,35 +214,35 @@ The module supports XML data following a hierarchical structure:
 
 <!-- Figure 3 -->
 <p style="text-align: center;">
-  <img src="src/media/spider.png"
+  <img src="spider.png"
        alt="Tumor volume spider plot"><br>
   <strong>Figure 3.</strong>
   Example tumor volume plot.
 </p>
 <!-- Figure 4 -->
 <p style="text-align: center;">
-  <img src="src/media/spider_with_weights.png"
+  <img src="spider_with_weights.png"
        alt="Tumor volume spider plots with weights shown as subplot"><br>
   <strong>Figure 4.</strong>
   Tumor volume spider plots with weights shown as subplot.
 </p>
 <!-- Figure 5 -->
 <p style="text-align: center;">
-  <img src="src/media/spider_time_series_only.png"
+  <img src="spider_time_series_only.png"
        alt="Tumor volume spider plot with just time series data"><br>
   <strong>Figure 5.</strong>
   Tumor volume spider plot with just time series data.
 </p>
 <!-- Figure 6 -->
 <p style="text-align: center;">
-  <img src="src/media/kaplan_meier.png"
+  <img src="kaplan_meier.png"
        alt=""><br>
   <strong>Figure 6.</strong>
   Event Free Kaplan Meier curve.
 </p>
 <!-- Figure 7 -->
 <p style="text-align: center;">
-  <img src="src/media/kaplan_meier_with_at_risk_plot_table.png"
+  <img src="kaplan_meier_with_at_risk_plot_table.png"
        alt=""><br>
   <strong>Figure 7.</strong>
   Event Free Kaplan Meier curve with at-risk table.
@@ -251,42 +251,42 @@ The module supports XML data following a hierarchical structure:
 <table align="center">
   <tr>
     <td style="text-align: center;">
-      <img src="src/media/transform_spider_1.png" width=500 alt=""><br>
+      <img src="transform_spider_1.png" width=500 alt=""><br>
       <strong>Figure 8a.</strong> Tumor Volume.
     </td>
     <td style="text-align: center;">
-      <img src="src/media/transform_spider_2.png"  width=500 alt=""><br>
+      <img src="transform_spider_2.png"  width=500 alt=""><br>
       <strong>Figure 8b.</strong> Percent Change.
     </td>
   </tr>
   <tr>
     <td style="text-align: center;">
-      <img src="src/media/transform_spider_3.png"  width=500 alt=""><br>
+      <img src="transform_spider_3.png"  width=500 alt=""><br>
       <strong>Figure 8c.</strong> Log 2 change.
     </td>
     <td style="text-align: center;">
-      <img src="src/media/transform_spider_4.png"  width=500 alt="src/media/transform_spider_4.png"><br>
+      <img src="transform_spider_4.png"  width=500 alt="src/media/transform_spider_4.png"><br>
       <strong>Figure 8d.</strong> Progression/Regression.
     </td>
   </tr>
 </table>
 <!-- Figure 9 -->
 <p style="text-align: center;">
-  <img src="src/media/tumor_volume_auc.png"
+  <img src="tumor_volume_auc.png"
        alt=""><br>
   <strong>Figure 9.</strong>
   Area Under the Curve by ARM (control and treatment).
 </p>
 <!-- Figure 10 -->
 <p style="text-align: center;">
-  <img src="src/media/tumor_volume_change_with legend.png"
+  <img src="tumor_volume_change_with legend.png"
        alt="Change in tumor volume as percentage"><br>
   <strong>Figure 9.</strong>
   Change in tumor volume as percentage.
 </p>
 <!-- Figure 11 -->
 <p style="text-align: center;">
-  <img src="src/media/tumor_volume_change_as_objective_response.png"
+  <img src="tumor_volume_change_as_objective_response.png"
        alt="Change in tumor volume plotted as objective response"><br>
   <strong>Figure 11.</strong>
   Change in tumor volume plotted as objective response.
@@ -302,35 +302,35 @@ The module supports XML data following a hierarchical structure:
 
 <!-- Figure 12 -->
 <p style="text-align: center;">
-  <img src="src/media/percent_tumor_volume_change_across_studies.png"
+  <img src="percent_tumor_volume_change_across_studies.png"
        alt="Percent tumor volume change across studies"><br>
   <strong>Figure 12.</strong>
   Percent tumor volume change across studies.
 </p>
 <!-- Figure 13 -->
 <p style="text-align: center;">
-  <img src="src/media/log2_change_across_studies.png"
+  <img src="log2_change_across_studies.png"
        alt="Log2 fold-change across studies"><br>
   <strong>Figure 13.</strong>
   Log2 fold-change across studies.
 </p>
 <!-- Figure 14 -->
 <p style="text-align: center;">
-  <img src="src/media/average_auc_across_studies.png"
+  <img src="average_auc_across_studies.png"
        alt="Average AUC across studies (control vs treatment)"><br>
   <strong>Figure 14.</strong>
   Average AUC across studies (control vs treatment).
 </p>
 <!-- Figure 15 -->
 <p style="text-align: center;">
-  <img src="src/media/TC_ratio_across_studies.png"
+  <img src="TC_ratio_across_studies.png"
        alt="T/C Ratio across studies"><br>
   <strong>Figure 15.</strong>
   T/C Ratio across studies.
 </p>
 <!-- Figure 16 -->
 <p style="text-align: center;">
-  <img src="src/media/objective_response_distribution_across_studies.png"
+  <img src="objective_response_distribution_across_studies.png"
        alt="Objective response proportion across studies"><br>
   <strong>Figure 16.</strong>
   Objective response proportion across studies.
