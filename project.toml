@@ -8,37 +8,42 @@ version = "0.1.0"
 description = "A PySide6-based desktop application for analyzing tumor volume data"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "GNU AFFERO"}
+license = { file = "LICENSE" }
 
 authors = [
-    {name = "Dennis A. Dean II", email = "dennis.a.dean@gmail.com"}
+  { name = "Dennis A. Dean II", email = "dennis.a.dean@gmail.com" }
 ]
 
 dependencies = [
-    # GUI Framework
-    "PySide6==6.10.2",
+  # GUI
+  "PySide6>=6.5.0,<7",
 
-    # Data & Scientific Computing
-    "numpy==2.4.2",
-    "pandas<=3.0.0",
-    "scipy==1.17.0",
-    "matplotlib==3.10.8",
+  # Scientific stack
+  "numpy>=1.23.0,<3.0",
+  "pandas>=1.5.0,<3.0",
+  "scipy>=1.10.0,<2.0",
+  "matplotlib>=3.7.0,<4.0",
 
-    # Statistical Analysis
-    "lifelines==0.30.1",
-    "autograd==1.8.0",
-    "autograd-gamma==0.5.0",
+  # Stats
+  "lifelines>=0.27.0,<1.0",
+  "autograd>=1.6.0,<2.0",
+  "autograd-gamma>=0.5.0,<1.0",
 
-    # Visualization Enhancement
-    "SciencePlots==2.2.0",
-    "latex==0.7.0",
+  # Visualization
+  "SciencePlots>=2.0.0,<3.0",
+  "latex>=0.7.0,<1.0",
 
-    # Mathematical Formulas
-    "formulaic==1.2.1",
+  # Modeling
+  "formulaic>=1.0.0,<2.0",
 
-    # Data Compatibility
-    "narwhals==2.16.0"
-    ]
+  # Data compatibility
+  "narwhals>=1.0.0,<3.0"
+]
 
 [project.scripts]
-myapp = "TumorVolumetricsApp.main:main"
+tumorvolumetrics = "tumorvolumetrics.app:main"
+
+[tool.setuptools.package-data]
+tumorvolumetrics = [
+  "data/*"
+]

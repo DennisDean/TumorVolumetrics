@@ -8,7 +8,7 @@
 **Tumor Volumetrics** is a Python application for exploring, summarizing, and visualizing preclinical tumor volume time-series data. It is designed to make it easy to **generate standard tumor volume figures** to support interactive review of results and generation of publication-quality figures.
 
 <p style="text-align: center;">
-  <img src="src/media/tumor_volume_study_treatment_effective_example.png"
+  <img src="https://github.com/DennisDean/TumorVolumetrics/blob/v0.1/src/media/tumor_volume_study_treatment_effective_example.png?raw=true"
        alt="Study viewer interface"><br>
   <strong>Figure 1.</strong>
   Study viewer with effective treatment example shown.
@@ -31,7 +31,7 @@ Tumor Volumetrics is built for scientists and analysts who:
 ### Plot Style
 Set plot to use Matplotlib or Science Plot styles.
 <p style="text-align: center;">
-  <img src="src/media/study_view_with_config_and_style_change.png"
+  <img src="https://github.com/DennisDean/TumorVolumetrics/blob/v0.1/src/media/study_view_with_config_and_style_change.png?raw=true"
        alt="Setting plot style to Matplotlib Dark Background"><br>
   <strong>Figure 1.</strong>
   Setting plot style to Matplotlib default style.
@@ -45,13 +45,13 @@ Right-clicking any figure launches a dialog box for configuring plots including 
 
 <!-- noinspection HtmlDeprecatedAttribute -->
 <p style="text-align: center;">
-  <img src="src/media/spider_plot_save_figure_example.png" 
+  <img src="https://github.com/DennisDean/TumorVolumetrics/blob/v0.1/src/media/spider_plot_save_figure_example.png?raw=true" 
        width="300" 
        alt="Spider plot parameters"><br>
  </p>
 <!-- noinspection HtmlDeprecatedAttribute -->
 <p style="text-align: center;">
-  <img src="src/media/spider_plot_save_figure_example_figure.png" 
+  <img src="https://github.com/DennisDean/TumorVolumetrics/blob/v0.1/src/media/spider_plot_save_figure_example_figure.png?raw=true" 
        width="300" 
        alt="Generated square spider plot"><br>
 </p>
@@ -63,7 +63,7 @@ Right-clicking any figure launches a dialog box for configuring plots including 
 
 ## Getting Started
 ### Test file
-- Download the test file: [synthetic_tumor_data.csv](public_data/synthetic_tumor_data.csv)
+- Download the test file: [synthetic_tumor_data.csv](data/synthetic_tumor_data.csv)
 ### Linux Distribution
 - Download the app image from the release section
 - Make the app image executable
@@ -92,7 +92,7 @@ Key actions:
 
 <p style="text-align: center;">
   <img
-    src="src/media/tumor_volumetrics_main_interface.png"
+    src="https://github.com/DennisDean/TumorVolumetrics/blob/v0.1/src/media/tumor_volumetrics_main_interface.png?raw=true"
     style="width:200px;"
     alt="Main interface"
   ><br>
@@ -106,7 +106,7 @@ Clicking on the show pushbutton launches a CSV viewer with the selected data fil
 
 <p style="text-align: center;">
   <img
-    src="src/media/tumor_voumetrics_file_screen.png"
+    src="https://github.com/DennisDean/TumorVolumetrics/blob/v0.1/src/media/tumor_voumetrics_file_screen.png?raw=true"
     alt="File viewer"
   ><br>
   <strong>Figure 4.</strong>
@@ -119,7 +119,7 @@ The Experiment Viewer is optimized for cross-study and cross-arm exploration wit
 
 <p style="text-align: center;">
   <img
-    src="src/media/tumor_volume_experiment_view.png"
+    src="https://github.com/DennisDean/TumorVolumetrics/blob/v0.1/src/media/tumor_volume_experiment_view.png?raw=true"
     alt="Experiment viewer"
   ><br>
   <strong>Figure 5.</strong>
@@ -138,7 +138,7 @@ The Study Viewer focuses on **deep inspection of a single study**. It supports a
 
 <figure style="text-align: center;">
   <img
-    src="src/media/tumor_volume_study_viewer.png"
+    src="https://github.com/DennisDean/TumorVolumetrics/blob/v0.1/src/media/tumor_volume_study_viewer.png?raw=true"
     alt="Study viewer"
   >
   <figcaption>
