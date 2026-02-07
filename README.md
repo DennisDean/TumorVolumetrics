@@ -4,6 +4,7 @@
 [![Status](https://img.shields.io/badge/Status-Beta-yellow.svg)]()
 [![License](https://img.shields.io/badge/License-AGPL--3.0-green.svg)]()
 [![GUI](https://img.shields.io/badge/Interface-PySide6-lightgrey.svg)]()
+![PyPI](https://img.shields.io/pypi/v/tumorvolumetrics)
 
 **Tumor Volumetrics** is a Python application for exploring, summarizing, and visualizing preclinical tumor volume time-series data. It is designed to make it easy to **generate standard tumor volume figures** to support interactive review of results and generation of publication-quality figures.
 
