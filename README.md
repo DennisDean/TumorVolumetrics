@@ -68,6 +68,9 @@ Right-clicking any figure launches a dialog box for configuring plots including 
 - Download the app image from the release section
 - Make the app image executable
 - Double click on the app image
+### Using pip
+
+pip install tumorvolumetrics
 
 ---
 ## Main User Interfaces
@@ -219,6 +222,7 @@ The long-term goal is a comprehensive PySide6 application that supports:
 
 ## Authors
 **Dennis A. Dean, II, PhD**
+
 dennis.a.dean@gmail.com
 
 ## Version
@@ -227,6 +231,8 @@ dennis.a.dean@gmail.com
 - First functional release
   - TumorVolumetricApp (compiled on Ubuntu with PyInstaller)
   - TumorVolumetricsApp-x85_64.AppImage
+  - Tumor volumetrics wheel and targz 
+  - Simulated data set included
 
 ## License
 
